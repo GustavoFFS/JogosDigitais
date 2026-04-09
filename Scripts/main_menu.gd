@@ -88,7 +88,7 @@ func _build_ui() -> void:
 	btn_box.add_child(quit_button)
 
 	var controls := Label.new()
-	controls.text     = "Controles:\nA/D ou Setas = Mover  |  Espaço = Pular  |  TAB = Trocar Personagem"
+	controls.text     = "Controles:\nA/D ou Setas = Mover  |  Espaço = Pular  |  TAB = Trocar  |  Z = Habilidade"
 	controls.position = Vector2(200, 520)
 	controls.size     = Vector2(760, 60)
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

@@ -24,6 +24,12 @@ var _intro_lbl_mod:   Label
 var _intro_timer:     float = 0.0
 var showing_intro:    bool  = false
 
+# --- Habilidade cooldown ---
+var _rob_ability_bg:   ColorRect
+var _rob_ability_fill: ColorRect
+var _bog_ability_bg:   ColorRect
+var _bog_ability_fill: ColorRect
+
 # --- Checkpoint ---
 var _checkpoint_lbl:   Label
 var _checkpoint_timer: float = 0.0
@@ -162,13 +168,40 @@ func _build_top_panel() -> void:
 	add_child(_lbl_bog)
 
 	var lbl_tab := Label.new()
-	lbl_tab.text                 = "[ TAB ] trocar"
-	lbl_tab.position             = Vector2(685, 56)
-	lbl_tab.size                 = Vector2(200, 18)
+	lbl_tab.text                 = "[ TAB ] trocar   [ Z ] habilidade"
+	lbl_tab.position             = Vector2(685, 55)
+	lbl_tab.size                 = Vector2(200, 14)
 	lbl_tab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_tab.add_theme_font_size_override("font_size", 10)
+	lbl_tab.add_theme_font_size_override("font_size", 9)
 	lbl_tab.add_theme_color_override("font_color", Color(0.28, 0.28, 0.34))
 	add_child(lbl_tab)
+
+	# Barras de cooldown da habilidade (abaixo dos boxes)
+	# ROB
+	_rob_ability_bg        = ColorRect.new()
+	_rob_ability_bg.size   = Vector2(96, 4)
+	_rob_ability_bg.position = Vector2(685, 62)
+	_rob_ability_bg.color  = Color(0.12, 0.12, 0.16)
+	add_child(_rob_ability_bg)
+
+	_rob_ability_fill        = ColorRect.new()
+	_rob_ability_fill.size   = Vector2(96, 4)
+	_rob_ability_fill.position = Vector2(685, 62)
+	_rob_ability_fill.color  = Color(0.25, 0.88, 1.0)
+	add_child(_rob_ability_fill)
+
+	# BOG
+	_bog_ability_bg        = ColorRect.new()
+	_bog_ability_bg.size   = Vector2(96, 4)
+	_bog_ability_bg.position = Vector2(789, 62)
+	_bog_ability_bg.color  = Color(0.12, 0.12, 0.16)
+	add_child(_bog_ability_bg)
+
+	_bog_ability_fill        = ColorRect.new()
+	_bog_ability_fill.size   = Vector2(96, 4)
+	_bog_ability_fill.position = Vector2(789, 62)
+	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22)
+	add_child(_bog_ability_fill)
 
 	# ---- Vidas: 4 coracoes ----
 	var sep_vidas := ColorRect.new()
@@ -215,6 +248,12 @@ func update_level_info(level: Dictionary, idx: int, total: int) -> void:
 			dot.add_theme_color_override("font_color", COLOR_GOLD)
 		else:
 			dot.add_theme_color_override("font_color", COLOR_DIM)
+
+func update_ability(rob_ratio: float, bog_ratio: float) -> void:
+	_rob_ability_fill.size.x = 96.0 * clamp(rob_ratio, 0.0, 1.0)
+	_rob_ability_fill.color  = Color(0.25, 0.88, 1.0) if rob_ratio >= 1.0 else Color(0.18, 0.42, 0.55)
+	_bog_ability_fill.size.x = 96.0 * clamp(bog_ratio, 0.0, 1.0)
+	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22) if bog_ratio >= 1.0 else Color(0.45, 0.28, 0.10)
 
 func update_character(rob_active: bool) -> void:
 	if rob_active:

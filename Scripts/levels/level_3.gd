@@ -2,44 +2,41 @@ extends RefCounted
 class_name Level3Data
 
 ## Fase 3 - Telhados
-## Alta gravidade + pulo potente. Loopy subiu nos telhados.
+## Gravidade moderada com pulo mais alto. Dificuldade intermediaria.
 
 static func get_data() -> Dictionary:
 	return {
 		"name": "Telhados",
-		"description": "Ele está nos telhados! Como subiu tão rápido?\nPule alto e desça rápido para alcançá-lo!",
-		"modifier_hint": "Gravidade Alta  +  Pulo Potente  ·  Cuidado com as quedas!",
+		"description": "Ele está nos telhados! Pule alto e cuidado com a queda rápida!",
+		"modifier_hint": "Gravidade Elevada  +  Pulo Forte",
 		"bg_color":       Color(0.07, 0.06, 0.14),
-		"platform_color": Color(0.58, 0.32, 0.26),
+		"platform_color": Color(0.56, 0.30, 0.24),
 		"modifiers": {
 			"speed_mult":   1.0,
-			"jump_mult":    1.5,
-			"gravity_mult": 1.7,
+			"jump_mult":    1.25,
+			"gravity_mult": 1.35,
 			"friction":     1.0,
 			"air_control":  1.0,
 		},
 		"platforms": [
-			[0,    620, 260, 28],   # Início
-			[340,  510, 110, 18],   # Salto inicial
-			[520,  390, 100, 18],   # Alto
-			[700,  490, 110, 18],   # Descida
-			[900,  375, 90,  18],   # Pular com força
-			[1060, 505, 130, 18],   # Descida
-			[1260, 560, 200, 22],   # CHECKPOINT 1
-			[1530, 430, 100, 18],   # Subida alta
-			[1710, 300, 90,  18],   # Telhado alto!
-			[1880, 420, 100, 18],   # Descida
-			[2070, 545, 110, 18],   # Quase no fim
-			[2250, 620, 350, 28],   # Final
+			[0,    620, 280, 28],
+			[360,  520, 120, 18],
+			[560,  420, 110, 18],
+			[760,  520, 120, 18],
+			[970,  420, 100, 18],
+			[1150, 545, 210, 22],   # CHECKPOINT
+			[1440, 440, 120, 18],
+			[1640, 340, 110, 18],
+			[1840, 440, 120, 18],
+			[2040, 545, 120, 18],
+			[2230, 620, 360, 28],
 		],
 		"checkpoints": [
-			[1320, 535],
-			[1940, 395],
+			[1210, 520],
 		],
 		"hazards": [
-			[460, 592, 40, 22],
-			[810, 592, 70, 22],
-			[1160, 592, 80, 22],
+			[480, 592, 50, 22],
+			[870, 592, 70, 22],
 		],
 		"exit_pos":    [2510, 580],
 		"spawn_rob":   [60,   560],

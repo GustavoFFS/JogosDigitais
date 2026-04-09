@@ -2,53 +2,51 @@ extends RefCounted
 class_name Level5Data
 
 ## Fase 5 - Encontro com Loopy
-## Todos os modificadores combinados. Fase final — Loopy fica parado.
+## Modificadores combinados em nivel desafiador mas justo. Loopy parado no final.
 
 static func get_data() -> Dictionary:
 	return {
 		"name": "Encontro com Loopy",
 		"description": "Ali está o Loopy! Ele parou...\nAlcance-o e traga seu amigo de volta!",
-		"modifier_hint": "Velocidade Alta  +  Gelo  +  Gravidade  ·  Tudo junto!",
+		"modifier_hint": "Velocidade  +  Gelo  +  Gravidade  ·  Tudo junto!",
 		"bg_color":       Color(0.16, 0.10, 0.07),
-		"platform_color": Color(0.72, 0.56, 0.30),
+		"platform_color": Color(0.70, 0.54, 0.28),
 		"modifiers": {
-			"speed_mult":   1.3,
-			"jump_mult":    1.3,
-			"gravity_mult": 1.4,
-			"friction":     0.15,
-			"air_control":  0.50,
+			"speed_mult":   1.2,
+			"jump_mult":    1.2,
+			"gravity_mult": 1.2,
+			"friction":     0.22,
+			"air_control":  0.65,
 		},
 		"platforms": [
-			[0,    620, 260, 28],   # Início
-			[360,  520, 100, 18],   # Velocidade alta: não extrapole!
-			[540,  420, 80,  18],   # Subida
-			[710,  520, 110, 18],   # Descida
-			[900,  430, 80,  18],   # Salto com gelo
-			[1070, 550, 185, 22],   # CHECKPOINT 1
-			[1340, 450, 90,  18],   # Subida
-			[1510, 350, 80,  18],   # Topo — alto e estreito
-			[1690, 450, 90,  18],   # Descida
-			[1870, 550, 135, 22],   # CHECKPOINT 2
-			[2060, 450, 80,  18],   # Volta a dificultar
-			[2230, 350, 80,  18],   # Alto + estreito
-			[2410, 450, 90,  18],   # Descida
-			[2590, 550, 105, 18],   # Penúltimo
-			[2770, 620, 430, 28],   # Plataforma final — Loopy aqui
+			[0,    620, 280, 28],
+			[380,  530, 110, 18],
+			[570,  440, 90,  18],
+			[750,  530, 120, 18],
+			[950,  445, 90,  18],
+			[1130, 560, 200, 22],  # CHECKPOINT 1
+			[1420, 465, 110, 18],
+			[1620, 370, 100, 18],
+			[1820, 465, 110, 18],
+			[2020, 560, 200, 22],  # CHECKPOINT 2
+			[2300, 465, 100, 18],
+			[2490, 375, 90,  18],
+			[2670, 465, 100, 18],
+			[2850, 620, 450, 28],  # Plataforma final — Loopy aqui
 		],
 		"checkpoints": [
-			[1130, 525],
-			[1930, 525],
+			[1190, 535],
+			[2080, 535],
 		],
 		"hazards": [
-			[450, 592, 65, 22],
-			[810, 592, 72, 22],
-			[1450, 592, 50, 22],
-			[1990, 592, 60, 22],
-			[2310, 592, 70, 22],
+			[480, 592, 60, 22],
+			[860, 592, 65, 22],
+			[1540, 592, 55, 22],
+			[2140, 592, 60, 22],
 		],
-		"exit_pos":    [3110, 580],
+		"exit_pos":    [3220, 580],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [155,  560],
-		"loopy_start": [2950, 572],
-		"loopy_end":   [2950, 572],   # Loopy fica parado no final
+		"loopy_start": [3060, 572],
+		"loopy_end":   [3060, 572],
 	}
