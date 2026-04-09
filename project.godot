@@ -68,6 +68,10 @@ pause={
 
 3d/physics_engine="Jolt Physics"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
+
 [rendering]
 
 rendering_device/driver.windows="d3d12"

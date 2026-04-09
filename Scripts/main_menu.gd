@@ -60,7 +60,7 @@ func _build_ui():
 
 	# High concept
 	var concept = Label.new()
-	concept.text = "\"Um jogo onde voce nunca controla da mesma forma duas vezes.\""
+	concept.text = "\"Um jogo onde você nunca controla da mesma forma duas vezes.\""
 	concept.position = Vector2(220, 240)
 	concept.size = Vector2(720, 30)
 	concept.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -93,7 +93,7 @@ func _build_ui():
 
 	# Controles
 	controls_label = Label.new()
-	controls_label.text = "Controles:\nA/D ou Setas = Mover  |  Espaco = Pular  |  TAB = Trocar Personagem"
+	controls_label.text = "Controles:\nA/D ou Setas = Mover  |  Espaço = Pular  |  TAB = Trocar Personagem"
 	controls_label.position = Vector2(200, 520)
 	controls_label.size = Vector2(760, 60)
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
