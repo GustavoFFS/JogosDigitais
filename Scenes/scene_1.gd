@@ -567,7 +567,7 @@ func _create_scenery(idx: int) -> void:
 	while bx < LEVEL_W + 200:
 		var bw := 110.0 + (b_idx % 5) * 20.0
 		var bh := 190.0 + (b_idx % 7) * 26.0
-		var bc := palette[b_idx % palette.size()]
+		var bc = palette[b_idx % palette.size()]
 
 		var bld := ColorRect.new()
 		bld.position = Vector2(bx, 620 - bh)
