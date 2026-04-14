@@ -13,10 +13,14 @@ func _ready() -> void:
 	ability_cooldown = 2.2
 
 func _use_ability() -> void:
-	if not sprite:
+	if not sprite or is_locked:
 		return
+		
+	is_locked = true
+	
 	var dir := -1.0 if sprite.flip_h else 1.0
 	velocity.x = dir * base_speed * speed_mult * 2.8
+	get_tree().create_timer(0.1).timeout.connect(func(): is_locked = false)
 	# Flash visual azul-claro (cor do Rob)
 	var tw := create_tween()
 	tw.tween_property(sprite, "modulate", Color(0.55, 0.88, 1.0, 1.0), 0.04)

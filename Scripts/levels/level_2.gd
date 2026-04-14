@@ -15,7 +15,7 @@ static func get_data() -> Dictionary:
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,
 			"gravity_mult": 1.0,
-			"friction":     0.08,
+			"friction":     0.12,
 			"air_control":  0.80,
 		},
 		"platforms": [
@@ -31,6 +31,19 @@ static func get_data() -> Dictionary:
 			[2020, 560, 140, 18],   # Perto do fim
 			[2230, 620, 380, 28],   # Final
 		],
+
+			#[0,    620, 320, 28],   # Início — largo para aprender o gelo
+			#[400,  550,  70, 18],   # Primeiro gap — estreito, cuidado ao parar
+			#[560,  465,  68, 18],   # Sobe um pouco
+			#[710,  545,  72, 18],   # Pequeno respiro
+			#[860,  455,  68, 18],   # Salto sobre buraco largo
+			#[1060, 560, 200, 22],   # CHECKPOINT — largo, jogador respira
+			#[1340, 475,  70, 18],   # Retoma dificuldade
+			#[1490, 385,  68, 18],   # Alta — cuidado com o overshooting
+			#[1638, 475,  70, 18],   # Descida
+			#[1800, 555,  72, 18],   # Quase lá
+			#[1960, 620, 380, 28],   # Final
+
 		"checkpoints": [
 			[1220, 535],
 		],

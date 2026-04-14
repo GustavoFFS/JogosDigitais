@@ -14,6 +14,11 @@ var _bog_bg:       ColorRect
 var _lbl_rob:      Label
 var _lbl_bog:      Label
 var _hearts:       Array = []   # 4 Labels de coracao
+var _pulse_tween: Tween = null
+var _rob_was_ready: bool  = false
+var _bog_was_ready: bool  = false
+var _rob_flash_tween: Tween = null
+var _bog_flash_tween: Tween = null
 
 # --- Intro de fase ---
 var _intro_overlay:   Panel
@@ -251,10 +256,36 @@ func update_level_info(level: Dictionary, idx: int, total: int) -> void:
 
 func update_ability(rob_ratio: float, bog_ratio: float) -> void:
 	_rob_ability_fill.size.x = 96.0 * clamp(rob_ratio, 0.0, 1.0)
-	_rob_ability_fill.color  = Color(0.25, 0.88, 1.0) if rob_ratio >= 1.0 else Color(0.18, 0.42, 0.55)
 	_bog_ability_fill.size.x = 96.0 * clamp(bog_ratio, 0.0, 1.0)
-	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22) if bog_ratio >= 1.0 else Color(0.45, 0.28, 0.10)
 
+	var rob_ready := rob_ratio >= 1.0
+	var bog_ready := bog_ratio >= 1.0
+
+	# Cores normais (cheio vs carregando)
+	_rob_ability_fill.color = Color(0.25, 0.88, 1.0)  if rob_ready else Color(0.18, 0.42, 0.55)
+	_bog_ability_fill.color = Color(1.0,  0.62, 0.22) if bog_ready else Color(0.45, 0.28, 0.10)
+
+	# Flash do Rob: só dispara na transição não-pronto → pronto
+	if rob_ready and not _rob_was_ready:
+		if _rob_flash_tween:
+			_rob_flash_tween.kill()
+		_rob_ability_fill.color = Color.WHITE
+		_rob_flash_tween = create_tween()
+		_rob_flash_tween.tween_property(_rob_ability_fill, "color", Color(0.25, 0.88, 1.0), 0.45)\
+			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+	# Flash do Bog
+	if bog_ready and not _bog_was_ready:
+		if _bog_flash_tween:
+			_bog_flash_tween.kill()
+		_bog_ability_fill.color = Color.WHITE
+		_bog_flash_tween = create_tween()
+		_bog_flash_tween.tween_property(_bog_ability_fill, "color", Color(1.0, 0.62, 0.22), 0.45)\
+			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+	_rob_was_ready = rob_ready
+	_bog_was_ready = bog_ready
+	
 func update_character(rob_active: bool) -> void:
 	if rob_active:
 		_rob_bg.color = Color(0.10, 0.22, 0.40)
@@ -268,13 +299,28 @@ func update_character(rob_active: bool) -> void:
 		_lbl_bog.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 
 func update_lives(lives: int) -> void:
+	# Para pulse anterior
+	if _pulse_tween:
+		_pulse_tween.kill()
+		_pulse_tween = null
+
 	for i in range(_hearts.size()):
 		var heart: Label = _hearts[i]
+		heart.pivot_offset = Vector2(23, 20)  # centro do coração
+		heart.scale = Vector2.ONE             # reseta escala
 		if i < lives:
 			heart.add_theme_color_override("font_color", COLOR_HEART_ON)
 		else:
 			heart.add_theme_color_override("font_color", COLOR_HEART_OFF)
 
+	# Pulsa o último coração restante quando lives == 1
+	if lives == 1:
+		var last_heart: Label = _hearts[0]
+		_pulse_tween = create_tween().set_loops()
+		_pulse_tween.tween_property(last_heart, "scale", Vector2(1.28, 1.28), 0.38)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_pulse_tween.tween_property(last_heart, "scale", Vector2.ONE, 0.38)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 # ============================================================
 # CHECKPOINT NOTIFICATION
 # ============================================================

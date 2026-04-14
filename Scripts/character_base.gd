@@ -20,6 +20,7 @@ var jump_mult:    float = 1.0
 var gravity_mult: float = 1.0
 var friction:     float = 1.0
 var air_control:  float = 1.0
+var is_locked: bool = false # Nova variável para travar o movimento normal
 
 # Coyote time
 var coyote_timer: float = 0.0
@@ -104,6 +105,7 @@ func _use_ability() -> void:
 	pass  # sobrescrito pelas subclasses
 
 func _apply_horizontal_movement(direction: float, _delta: float) -> void:
+	if is_locked: return # Se estiver travado, ignora o lerp e o input normal
 	if direction != 0:
 		var target := direction * get_speed()
 		if is_on_floor():

@@ -23,6 +23,7 @@ func _ready() -> void:
 		Level3Data.get_data(),
 		Level4Data.get_data(),
 		Level5Data.get_data(),
+		Level6Data.get_data(),
 	]
 
 # ============================================================

@@ -29,6 +29,9 @@ var bg_rect: ColorRect
 # Tela de vitoria
 var victory_overlay: ColorRect = null
 
+# Plataformas moveis
+var _moving_platforms: Array = []
+
 const DEATH_Y: float = 950.0
 
 # ============================================================
@@ -52,6 +55,7 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_loopy(delta)
 	_check_death()
+	_update_moving_platforms(delta)  # <- adicione esta linha
 	hud.update_ability(rob.get_ability_ratio(), bog.get_ability_ratio())
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -99,7 +103,11 @@ func _load_level() -> void:
 	_create_scenery(idx)
 	for p in level["platforms"]:
 		_create_platform(p[0], p[1], p[2], p[3], level["platform_color"])
-
+	
+	# Plataformas moveis — adicione estas duas linhas abaixo
+	for mp in level.get("moving_platforms", []):
+		_spawn_moving_platform(mp, level["platform_color"])
+		
 	# Checkpoints e hazards
 	for cp in level.get("checkpoints", []):
 		_create_checkpoint(cp[0], cp[1])
@@ -120,6 +128,7 @@ func _load_level() -> void:
 	hud.start_fade(-1, Callable())
 
 func _clear_level() -> void:
+	_moving_platforms.clear()  # <- adicione esta linha
 	for node in level_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -159,6 +168,54 @@ func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> v
 	add_child(body)
 	level_nodes.append(body)
 
+func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
+	var w: float = mp["w"]
+	var h: float = mp["h"]
+
+	var body := AnimatableBody2D.new()
+	body.sync_to_physics = true
+	body.position = Vector2(mp["x_min"] + w / 2.0, mp["y"])
+
+	var shape := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size   = Vector2(w, h)
+	shape.shape = rect
+	body.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size     = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color    = color
+	body.add_child(visual)
+
+	var top_line := ColorRect.new()
+	top_line.size     = Vector2(w, 3)
+	top_line.position = Vector2(-w / 2.0, -h / 2.0)
+	top_line.color    = color.lightened(0.3)
+	body.add_child(top_line)
+
+	add_child(body)
+	level_nodes.append(body)
+	_moving_platforms.append({
+		"node":  body,
+		"x_min": mp["x_min"] + w / 2.0,
+		"x_max": mp["x_max"] + w / 2.0,
+		"speed": mp["speed"],
+		"dir":   1.0
+	})
+
+func _update_moving_platforms(delta: float) -> void:
+	for mp in _moving_platforms:
+		if not is_instance_valid(mp["node"]):
+			continue
+		var movement :float= mp["speed"] * mp["dir"] * delta
+		mp["node"].move_and_collide(Vector2(movement, 0))
+		
+		var px :float = mp["node"].position.x
+		if px >= mp["x_max"]:
+			mp["dir"] = -1.0
+		elif px <= mp["x_min"]:
+			mp["dir"] = 1.0			
 # ============================================================
 # CHECKPOINTS
 # ============================================================

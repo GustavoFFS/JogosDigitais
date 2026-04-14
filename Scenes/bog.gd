@@ -21,9 +21,11 @@ func _use_ability() -> void:
 		velocity.y = 680.0
 		velocity.x = 0.0
 	else:
+		is_locked = true
 		# No chao: empurrao frontal forte
 		var dir := -1.0 if sprite.flip_h else 1.0
-		velocity.x = dir * base_speed * speed_mult * 2.2
+		velocity.x = dir * base_speed * speed_mult * 3.2
+		get_tree().create_timer(0.2).timeout.connect(func(): is_locked = false)
 	# Flash visual laranja (cor do Bog)
 	var tw := create_tween()
 	tw.tween_property(sprite, "modulate", Color(1.0, 0.60, 0.22, 1.0), 0.04)

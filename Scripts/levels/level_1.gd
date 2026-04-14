@@ -34,6 +34,7 @@ static func get_data() -> Dictionary:
 			[2430, 555, 160, 18],   # Perto da saída
 			[2620, 620, 420, 28],   # Plataforma final
 		],
+
 		# [x, y] - topo da bandeira
 		"checkpoints": [
 			[1260, 530],
