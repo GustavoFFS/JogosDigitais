@@ -593,41 +593,40 @@ func _add_reunion_scene() -> void:
 	scene.modulate.a = 0.0
 	victory_overlay.add_child(scene)
 
-	# Silhuetas de edifícios ao fundo
+	# Edifícios ao fundo (silhuetas com janelas)
 	for i in range(9):
-		var bx := 40 + i * 130
-		var bh := 60 + ((i * 37) % 50)
-		_v_rect(scene, bx, 400 - bh, 110, bh, Color(0.22, 0.18, 0.32))
-		# janelas acesas
+		var bx: float = 40.0 + i * 130.0
+		var bh: float = 60.0 + ((i * 37) % 50)
+		_v_rect(scene, bx, 420.0 - bh, 110.0, bh, Color(0.20, 0.16, 0.30))
 		for jy in range(3):
 			for jx in range(3):
 				if (i + jx + jy) % 3 == 0:
-					_v_rect(scene, bx + 12 + jx * 30, 400 - bh + 10 + jy * 16, 10, 8,
-							Color(1.0, 0.85, 0.45, 0.85))
+					_v_rect(scene, bx + 12.0 + jx * 30, 420.0 - bh + 10.0 + jy * 16,
+							10.0, 8.0, Color(1.0, 0.85, 0.45, 0.9))
 
-	# Sol baixo
-	_v_rect(scene, 540, 380, 72, 72, Color(1.0, 0.78, 0.35, 0.9))
-	_v_rect(scene, 520, 400, 112, 36, Color(1.0, 0.62, 0.32, 0.55))
+	# Sol pôr-do-sol
+	_v_rect(scene, 540.0, 375.0, 72.0, 72.0, Color(1.0, 0.78, 0.35))
+	_v_rect(scene, 510.0, 410.0, 132.0, 30.0, Color(1.0, 0.58, 0.28, 0.6))
 
 	# Chão
-	_v_rect(scene, 0, 460, 1152, 100, Color(0.22, 0.18, 0.14))
-	_v_rect(scene, 0, 460, 1152, 4,   Color(0.12, 0.10, 0.08))
-	# Linha da calçada
-	_v_rect(scene, 0, 520, 1152, 2, Color(0.35, 0.28, 0.20))
+	_v_rect(scene, 0.0, 460.0, 1152.0, 120.0, Color(0.20, 0.15, 0.12))
+	_v_rect(scene, 0.0, 460.0, 1152.0, 4.0,   Color(0.12, 0.09, 0.06))
+	# Calçada
+	_v_rect(scene, 0.0, 530.0, 1152.0, 2.0, Color(0.35, 0.28, 0.20))
 
-	# Os 3 amigos lado a lado (pés na linha y=560)
-	_draw_rob_sil(scene,   420, 560, 2.0)
-	_draw_loopy_sil(scene, 576, 560, 2.0)
-	_draw_bog_sil(scene,   740, 560, 2.0)
+	# Título
+	_v_label(scene, "— REENCONTRO —", 0.0, 290.0, 28, Color(1.0, 0.90, 0.50), true)
 
-	# Corações e exclamações de alegria
-	_add_heart(scene, 460, 320)
-	_add_heart(scene, 706, 330)
-	_v_label(scene, "♪", 552, 300, 40, Color(1.0, 0.85, 0.45))
-	_v_label(scene, "♫", 640, 290, 36, Color(1.0, 0.75, 0.35))
+	# Os 3 amigos lado a lado (pés em y=560)
+	_draw_rob_sil(scene,   430.0, 560.0, 2.0)
+	_draw_loopy_full(scene, 576.0, 560.0, 1.8)
+	_draw_bog_sil(scene,   730.0, 560.0, 2.0)
 
-	# Moldura superior (título da cena)
-	_v_label(scene, "— REENCONTRO —", 0, 290, 26, Color(1.0, 0.88, 0.45), true)
+	# Corações de alegria acima das cabeças
+	_add_heart(scene, 430.0, 310.0)
+	_add_heart(scene, 720.0, 315.0)
+	_v_label(scene, "♪", 500.0, 285.0, 34, Color(1.0, 0.85, 0.45))
+	_v_label(scene, "♫", 635.0, 285.0, 34, Color(1.0, 0.75, 0.35))
 
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
@@ -658,80 +657,125 @@ func _add_heart(parent: Node, x: float, y: float) -> void:
 	_v_rect(parent, x + 2,  y + 12, 18, 8,  red)
 	_v_rect(parent, x + 6,  y + 18, 10, 6,  red)
 
-# ---- Personagens (silhuetas coloridas simples em ColorRects) ----
+# ---- Personagens ----
+#
+# Coord system: cx = centro horizontal, cy = pés. `dy` = distância do
+# TOPO do retângulo acima dos pés (maior = mais alto na tela).
 
-func _draw_loopy_sil(parent: Node, cx: float, cy: float, s: float) -> void:
-	# Capa roxa
-	_v_rect(parent, cx - 22 * s, cy - 80 * s, 16 * s, 60 * s, Color(0.42, 0.24, 0.52))
-	_v_rect(parent, cx + 10 * s, cy - 70 * s, 14 * s, 40 * s, Color(0.42, 0.24, 0.52))
-	# Tênis verdes
-	_v_rect(parent, cx - 10 * s, cy - 6  * s, 10 * s, 6  * s, Color(0.36, 0.60, 0.32))
-	_v_rect(parent, cx + 2  * s, cy - 6  * s, 10 * s, 6  * s, Color(0.36, 0.60, 0.32))
-	_v_rect(parent, cx - 10 * s, cy,           10 * s, 2  * s, Color(0.10, 0.08, 0.06))
-	_v_rect(parent, cx + 2  * s, cy,           10 * s, 2  * s, Color(0.10, 0.08, 0.06))
-	# Jeans
-	_v_rect(parent, cx - 9  * s, cy - 26 * s, 8  * s, 20 * s, Color(0.28, 0.38, 0.62))
-	_v_rect(parent, cx + 1  * s, cy - 26 * s, 8  * s, 20 * s, Color(0.28, 0.38, 0.62))
-	# Moletom
-	_v_rect(parent, cx - 13 * s, cy - 58 * s, 26 * s, 34 * s, Color(0.92, 0.74, 0.22))
-	# Braço esq com patinho
-	_v_rect(parent, cx - 18 * s, cy - 55 * s, 6  * s, 18 * s, Color(0.92, 0.74, 0.22))
-	_v_rect(parent, cx - 26 * s, cy - 52 * s, 10 * s, 8  * s, Color(1.00, 0.82, 0.18))
-	_v_rect(parent, cx - 21 * s, cy - 58 * s, 6  * s, 5  * s, Color(1.00, 0.82, 0.18))
-	_v_rect(parent, cx - 30 * s, cy - 54 * s, 3  * s, 2  * s, Color(0.95, 0.55, 0.15))
-	# Cabeça
-	_v_rect(parent, cx - 10 * s, cy - 82 * s, 20 * s, 20 * s, Color(0.96, 0.82, 0.66))
-	# Barba
-	_v_rect(parent, cx - 10 * s, cy - 68 * s, 20 * s, 10 * s, Color(0.48, 0.32, 0.18))
-	# Olho feliz (sorridente)
-	_v_rect(parent, cx - 6  * s, cy - 80 * s, 3  * s, 3  * s, Color.BLACK)
-	_v_rect(parent, cx + 3  * s, cy - 80 * s, 3  * s, 3  * s, Color.BLACK)
-	# Sorriso
-	_v_rect(parent, cx - 4  * s, cy - 72 * s, 8  * s, 1.5 * s, Color(0.6, 0.2, 0.2))
-	# Gorro verde
-	_v_rect(parent, cx - 12 * s, cy - 102 * s, 24 * s, 12 * s, Color(0.32, 0.55, 0.28))
-	_v_rect(parent, cx - 11 * s, cy - 94  * s, 22 * s, 3  * s, Color(0.24, 0.42, 0.20))
-	# Folha
-	_v_rect(parent, cx - 2  * s, cy - 114 * s, 6  * s, 5  * s, Color(0.55, 0.78, 0.30))
-	# Cajado + xícara
-	_v_rect(parent, cx + 16 * s, cy - 110 * s, 3  * s, 110 * s, Color(0.36, 0.22, 0.12))
-	_v_rect(parent, cx + 12 * s, cy - 120 * s, 12 * s, 9  * s, Color(0.96, 0.94, 0.88))
-	_v_rect(parent, cx + 13 * s, cy - 122 * s, 10 * s, 5  * s, Color(0.52, 0.32, 0.18))
-	# Vapor
-	_v_rect(parent, cx + 14 * s, cy - 132 * s, 2  * s, 4  * s, Color(0.85, 0.85, 0.80, 0.7))
-	_v_rect(parent, cx + 18 * s, cy - 136 * s, 2  * s, 5  * s, Color(0.85, 0.85, 0.80, 0.7))
+func _pr(parent: Node, cx: float, cy: float, s: float,
+		 dx: float, dy: float, w: float, h: float, col: Color) -> void:
+	var r := ColorRect.new()
+	r.position = Vector2(cx + dx * s, cy - dy * s)
+	r.size     = Vector2(w * s, h * s)
+	r.color    = col
+	parent.add_child(r)
+
+func _draw_loopy_full(parent: Node, cx: float, cy: float, s: float) -> void:
+	var skin   := Color(0.96, 0.82, 0.66)
+	var hair   := Color(0.42, 0.26, 0.14)
+	var beard  := Color(0.52, 0.36, 0.20)
+	var beanie := Color(0.30, 0.55, 0.28)
+	var leaf   := Color(0.55, 0.78, 0.30)
+	var hood   := Color(0.95, 0.74, 0.22)
+	var cape   := Color(0.44, 0.24, 0.52)
+	var jeans  := Color(0.30, 0.40, 0.62)
+	var shoe   := Color(0.36, 0.60, 0.32)
+	var staff  := Color(0.34, 0.20, 0.10)
+	var cup    := Color(0.96, 0.94, 0.88)
+	var tea    := Color(0.50, 0.30, 0.16)
+	var duck   := Color(1.00, 0.82, 0.18)
+	var beak   := Color(0.96, 0.56, 0.14)
+	var dark   := Color(0.10, 0.08, 0.06)
+
+	_pr(parent, cx, cy, s, -30,  95, 60, 75, cape)
+	_pr(parent, cx, cy, s, -14,  9, 12, 9, shoe)
+	_pr(parent, cx, cy, s,   2,  9, 12, 9, shoe)
+	_pr(parent, cx, cy, s, -14,  2, 12, 2, dark)
+	_pr(parent, cx, cy, s,   2,  2, 12, 2, dark)
+	_pr(parent, cx, cy, s, -12, 38, 10, 29, jeans)
+	_pr(parent, cx, cy, s,   2, 38, 10, 29, jeans)
+	_pr(parent, cx, cy, s, -18, 72, 36, 34, hood)
+	_pr(parent, cx, cy, s, -18, 40, 36, 3, Color(hood.r * 0.7, hood.g * 0.6, hood.b * 0.4))
+	_pr(parent, cx, cy, s, -24, 65, 7, 22, hood)
+	_pr(parent, cx, cy, s, -36, 55, 12, 8, duck)
+	_pr(parent, cx, cy, s, -30, 62,  8, 7, duck)
+	_pr(parent, cx, cy, s, -38, 60,  3, 2, dark)
+	_pr(parent, cx, cy, s, -42, 58,  4, 3, beak)
+	_pr(parent, cx, cy, s,  17, 65, 7, 22, hood)
+	_pr(parent, cx, cy, s,  16, 55, 10, 45, cape)
+	_pr(parent, cx, cy, s, -12, 100, 24, 26, skin)
+	_pr(parent, cx, cy, s, -12, 84, 24, 13, beard)
+	_pr(parent, cx, cy, s, -10, 75, 20,  5, beard)
+	_pr(parent, cx, cy, s, -14, 98, 4, 12, hair)
+	_pr(parent, cx, cy, s,  10, 98, 4, 12, hair)
+	_pr(parent, cx, cy, s, -7, 93, 3, 3, dark)
+	_pr(parent, cx, cy, s,  3, 93, 3, 3, dark)
+	_pr(parent, cx, cy, s, -2, 88, 4, 4, Color(skin.r * 0.85, skin.g * 0.72, skin.b * 0.60))
+	_pr(parent, cx, cy, s, -4, 82, 8, 1.5, dark)
+	_pr(parent, cx, cy, s, -15, 118, 30, 14, beanie)
+	_pr(parent, cx, cy, s, -14, 106, 28, 3, Color(beanie.r * 0.65, beanie.g * 0.65, beanie.b * 0.60))
+	_pr(parent, cx, cy, s,  2, 125, 7, 6, leaf)
+	_pr(parent, cx, cy, s,  6, 130, 4, 4, leaf)
+	_pr(parent, cx, cy, s, 22, 122, 4, 70, staff)
+	_pr(parent, cx, cy, s, 18, 134, 14, 11, cup)
+	_pr(parent, cx, cy, s, 20, 132,  9,  4, tea)
+	_pr(parent, cx, cy, s, 32, 130,  3,  6, cup)
+	_v_label(parent, "Loopy", cx - 32.0, cy + 14.0, 14, Color(0.95, 0.80, 0.35))
 
 func _draw_rob_sil(parent: Node, cx: float, cy: float, s: float) -> void:
-	var skin := Color(0.98, 0.84, 0.70)
-	_v_rect(parent, cx - 10 * s, cy - 6  * s, 8  * s, 6  * s, Color(0.14, 0.14, 0.18))
-	_v_rect(parent, cx + 2  * s, cy - 6  * s, 8  * s, 6  * s, Color(0.14, 0.14, 0.18))
-	_v_rect(parent, cx - 9  * s, cy - 24 * s, 7  * s, 18 * s, Color(0.22, 0.28, 0.42))
-	_v_rect(parent, cx + 2  * s, cy - 24 * s, 7  * s, 18 * s, Color(0.22, 0.28, 0.42))
-	_v_rect(parent, cx - 12 * s, cy - 48 * s, 24 * s, 24 * s, Color(0.30, 0.65, 1.00))
-	_v_rect(parent, cx - 16 * s, cy - 42 * s, 4  * s, 18 * s, skin)
-	_v_rect(parent, cx + 12 * s, cy - 42 * s, 4  * s, 18 * s, skin)
-	_v_rect(parent, cx - 8  * s, cy - 62 * s, 16 * s, 14 * s, skin)
-	_v_rect(parent, cx - 9  * s, cy - 66 * s, 18 * s, 6  * s, Color(0.22, 0.16, 0.10))
-	_v_rect(parent, cx - 4  * s, cy - 56 * s, 2  * s, 2  * s, Color.BLACK)
-	_v_rect(parent, cx + 2  * s, cy - 56 * s, 2  * s, 2  * s, Color.BLACK)
-	_v_rect(parent, cx - 3  * s, cy - 50 * s, 6  * s, 1.2 * s, Color(0.6, 0.2, 0.2))
-	_v_label(parent, "Rob", cx - 30, cy + 8, 14, Color(0.55, 0.88, 1.0))
+	var skin  := Color(0.98, 0.84, 0.70)
+	var shirt := Color(0.30, 0.65, 1.00)
+	var pants := Color(0.22, 0.28, 0.42)
+	var shoe  := Color(0.14, 0.14, 0.18)
+	var hair  := Color(0.22, 0.16, 0.10)
+	var dark  := Color(0.05, 0.05, 0.05)
+	# Pés
+	_pr(parent, cx, cy, s, -12,  8,  10, 8, shoe)
+	_pr(parent, cx, cy, s,   2,  8,  10, 8, shoe)
+	# Calça
+	_pr(parent, cx, cy, s, -10, 32, 9, 24, pants)
+	_pr(parent, cx, cy, s,   1, 32, 9, 24, pants)
+	# Camisa
+	_pr(parent, cx, cy, s, -14, 60, 28, 28, shirt)
+	# Braços
+	_pr(parent, cx, cy, s, -18, 55, 4, 22, skin)
+	_pr(parent, cx, cy, s,  14, 55, 4, 22, skin)
+	# Cabeça
+	_pr(parent, cx, cy, s,  -9, 80, 18, 20, skin)
+	# Cabelo
+	_pr(parent, cx, cy, s, -10, 84, 20, 7, hair)
+	# Olhos
+	_pr(parent, cx, cy, s, -5, 74, 2, 2, dark)
+	_pr(parent, cx, cy, s,  3, 74, 2, 2, dark)
+	# Sorriso
+	_pr(parent, cx, cy, s, -3, 68, 6, 1.5, Color(0.6, 0.2, 0.2))
+	_v_label(parent, "Rob", cx - 24.0, cy + 14.0, 14, Color(0.55, 0.88, 1.0))
 
 func _draw_bog_sil(parent: Node, cx: float, cy: float, s: float) -> void:
-	var skin := Color(0.98, 0.78, 0.62)
-	_v_rect(parent, cx - 12 * s, cy - 6  * s, 10 * s, 6  * s, Color(0.18, 0.14, 0.10))
-	_v_rect(parent, cx + 2  * s, cy - 6  * s, 10 * s, 6  * s, Color(0.18, 0.14, 0.10))
-	_v_rect(parent, cx - 11 * s, cy - 26 * s, 9  * s, 20 * s, Color(0.36, 0.24, 0.14))
-	_v_rect(parent, cx + 2  * s, cy - 26 * s, 9  * s, 20 * s, Color(0.36, 0.24, 0.14))
-	_v_rect(parent, cx - 16 * s, cy - 54 * s, 32 * s, 28 * s, Color(1.00, 0.55, 0.20))
-	_v_rect(parent, cx - 20 * s, cy - 48 * s, 4  * s, 20 * s, skin)
-	_v_rect(parent, cx + 16 * s, cy - 48 * s, 4  * s, 20 * s, skin)
-	_v_rect(parent, cx - 10 * s, cy - 70 * s, 20 * s, 16 * s, skin)
-	_v_rect(parent, cx - 11 * s, cy - 74 * s, 22 * s, 6  * s, Color(0.10, 0.08, 0.06))
-	_v_rect(parent, cx - 5  * s, cy - 62 * s, 2  * s, 2  * s, Color.BLACK)
-	_v_rect(parent, cx + 3  * s, cy - 62 * s, 2  * s, 2  * s, Color.BLACK)
-	_v_rect(parent, cx - 3  * s, cy - 56 * s, 6  * s, 1.2 * s, Color(0.5, 0.2, 0.2))
-	_v_label(parent, "Bog", cx - 30, cy + 8, 14, Color(1.0, 0.65, 0.30))
+	var skin  := Color(0.98, 0.78, 0.62)
+	var shirt := Color(1.00, 0.55, 0.20)
+	var pants := Color(0.36, 0.24, 0.14)
+	var shoe  := Color(0.18, 0.14, 0.10)
+	var hair  := Color(0.10, 0.08, 0.06)
+	var dark  := Color(0.05, 0.05, 0.05)
+	# Pés (mais largos)
+	_pr(parent, cx, cy, s, -14,  8,  12, 8, shoe)
+	_pr(parent, cx, cy, s,   2,  8,  12, 8, shoe)
+	# Calça
+	_pr(parent, cx, cy, s, -12, 34, 11, 26, pants)
+	_pr(parent, cx, cy, s,   1, 34, 11, 26, pants)
+	# Camisa (mais largo)
+	_pr(parent, cx, cy, s, -18, 64, 36, 30, shirt)
+	# Braços
+	_pr(parent, cx, cy, s, -22, 58, 4, 22, skin)
+	_pr(parent, cx, cy, s,  18, 58, 4, 22, skin)
+	# Cabeça
+	_pr(parent, cx, cy, s, -11, 86, 22, 22, skin)
+	_pr(parent, cx, cy, s, -12, 90, 24, 7, hair)
+	_pr(parent, cx, cy, s, -6, 80, 2, 2, dark)
+	_pr(parent, cx, cy, s,  4, 80, 2, 2, dark)
+	_pr(parent, cx, cy, s, -3, 72, 6, 1.5, Color(0.5, 0.2, 0.2))
+	_v_label(parent, "Bog", cx - 24.0, cy + 14.0, 14, Color(1.0, 0.65, 0.30))
 
 func _wait_for_menu_input() -> void:
 	while true:

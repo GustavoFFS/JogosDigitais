@@ -249,7 +249,7 @@ func _build_newspaper() -> void:
 	root.add_child(photo_ground)
 
 	# Loopy detalhado (tons sépia para parecer foto de jornal)
-	_draw_loopy(root, PX + 816, PY + 336, 1.4, true)
+	_draw_loopy(root, PX + 816, PY + 355, 1.3, true)
 
 	# Cantos da moldura (decoração de foto antiga)
 	for cx in [PX + 652, PX + 970]:
@@ -259,11 +259,6 @@ func _build_newspaper() -> void:
 			corner.size     = Vector2(10, 10)
 			corner.color    = Color(0.10, 0.08, 0.05)
 			root.add_child(corner)
-
-	# Legenda "FOTO DE ARQUIVO"
-	_nl(root, "· FOTO DE ARQUIVO ·",
-		PX + 656, PY + 164, 320, 16, 10,
-		Color(0.20, 0.14, 0.06), HORIZONTAL_ALIGNMENT_CENTER)
 
 	_nl(root, "Loopy, visto pela última vez saindo do Café Loop",
 		PX + 656, PY + 374, 320, 18, 10,
@@ -318,99 +313,118 @@ func _rect(parent: Node, x: float, y: float, w: float, h: float, col: Color) -> 
 	r.color    = col
 	parent.add_child(r)
 
-## Desenha o Loopy centrado em (cx, cy) nos pés. Escala e paleta sépia opcional.
-## Baseado no personagem: gorro verde com folha, barba, capa roxa,
-## moletom amarelo, jeans, tênis verde, cajado com xícara e patinho de borracha.
+## Desenha o Loopy com base em (cx, cy) = posição dos pés (centro).
+## Cada _r(dx, dy, w, h, col) desenha um retângulo onde dy = distância do TOPO
+## do retângulo acima dos pés. Ou seja, dy maior = mais alto na tela.
 func _draw_loopy(parent: Node, cx: float, cy: float, s: float, sepia: bool) -> void:
-	var pal_skin   := Color(0.96, 0.82, 0.66)
-	var pal_hair   := Color(0.42, 0.26, 0.14)
-	var pal_beard  := Color(0.48, 0.32, 0.18)
-	var pal_beanie := Color(0.32, 0.55, 0.28)
-	var pal_leaf   := Color(0.55, 0.78, 0.30)
-	var pal_hood   := Color(0.92, 0.74, 0.22)
-	var pal_cape   := Color(0.42, 0.24, 0.52)
-	var pal_jeans  := Color(0.28, 0.38, 0.62)
-	var pal_shoe   := Color(0.36, 0.60, 0.32)
-	var pal_staff  := Color(0.36, 0.22, 0.12)
-	var pal_cup    := Color(0.96, 0.94, 0.88)
-	var pal_tea    := Color(0.52, 0.32, 0.18)
-	var pal_duck   := Color(1.00, 0.82, 0.18)
-	var pal_steam  := Color(0.85, 0.85, 0.80, 0.7)
-	var pal_dark   := Color(0.10, 0.08, 0.06)
+	var skin   := _sp(Color(0.96, 0.82, 0.66), sepia)
+	var hair   := _sp(Color(0.42, 0.26, 0.14), sepia)
+	var beard  := _sp(Color(0.52, 0.36, 0.20), sepia)
+	var beanie := _sp(Color(0.30, 0.55, 0.28), sepia)
+	var leaf   := _sp(Color(0.55, 0.78, 0.30), sepia)
+	var hood   := _sp(Color(0.95, 0.74, 0.22), sepia)
+	var cape   := _sp(Color(0.44, 0.24, 0.52), sepia)
+	var jeans  := _sp(Color(0.30, 0.40, 0.62), sepia)
+	var shoe   := _sp(Color(0.36, 0.60, 0.32), sepia)
+	var staff  := _sp(Color(0.34, 0.20, 0.10), sepia)
+	var cup    := _sp(Color(0.96, 0.94, 0.88), sepia)
+	var tea    := _sp(Color(0.50, 0.30, 0.16), sepia)
+	var duck   := _sp(Color(1.00, 0.82, 0.18), sepia)
+	var beak   := _sp(Color(0.96, 0.56, 0.14), sepia)
+	var steam  := _sp(Color(0.85, 0.85, 0.80), sepia); steam.a = 0.7
+	var dark   := _sp(Color(0.10, 0.08, 0.06), sepia)
 
-	if sepia:
-		# Converte cada cor em tom sépia para parecer foto antiga
-		var cols := [pal_skin, pal_hair, pal_beard, pal_beanie, pal_leaf,
-					 pal_hood, pal_cape, pal_jeans, pal_shoe, pal_staff,
-					 pal_cup, pal_tea, pal_duck, pal_steam, pal_dark]
-		for i in cols.size():
-			var c: Color = cols[i]
-			var g := c.r * 0.3 + c.g * 0.59 + c.b * 0.11
-			cols[i] = Color(g * 0.95 + 0.10, g * 0.78 + 0.05, g * 0.55, c.a)
-		pal_skin = cols[0]; pal_hair = cols[1]; pal_beard = cols[2]
-		pal_beanie = cols[3]; pal_leaf = cols[4]; pal_hood = cols[5]
-		pal_cape = cols[6]; pal_jeans = cols[7]; pal_shoe = cols[8]
-		pal_staff = cols[9]; pal_cup = cols[10]; pal_tea = cols[11]
-		pal_duck = cols[12]; pal_steam = cols[13]; pal_dark = cols[14]
+	# Capa roxa atrás (largura cheia, atrás do corpo)
+	_prect(parent, cx, cy, s, -30,  95, 60, 75, cape)
 
-	# Capa roxa (atrás)
-	_prect(parent, cx, cy, s, -22, 80, 16, 60, pal_cape)
-	_prect(parent, cx, cy, s, -20, 45, 10, 20, pal_cape)
-	# Tênis verdes
-	_prect(parent, cx, cy, s, -10, 6,  10, 6, pal_shoe)
-	_prect(parent, cx, cy, s,  2,  6,  10, 6, pal_shoe)
-	# Solas escuras
-	_prect(parent, cx, cy, s, -10, 0, 10, 2, pal_dark)
-	_prect(parent, cx, cy, s,  2,  0, 10, 2, pal_dark)
+	# Pés: tênis verdes + sola escura
+	_prect(parent, cx, cy, s, -14,  9, 12, 9, shoe)
+	_prect(parent, cx, cy, s,   2,  9, 12, 9, shoe)
+	_prect(parent, cx, cy, s, -14,  2, 12, 2, dark)
+	_prect(parent, cx, cy, s,   2,  2, 12, 2, dark)
+
 	# Jeans
-	_prect(parent, cx, cy, s, -9, 26, 8, 20, pal_jeans)
-	_prect(parent, cx, cy, s,  1, 26, 8, 20, pal_jeans)
-	# Rasgado
-	_prect(parent, cx, cy, s, -8, 16, 6, 2, Color(pal_jeans.r + 0.12, pal_jeans.g + 0.10, pal_jeans.b + 0.08))
-	# Moletom
-	_prect(parent, cx, cy, s, -13, 58, 26, 34, pal_hood)
-	_prect(parent, cx, cy, s, -13, 26, 26, 3, Color(pal_hood.r * 0.7, pal_hood.g * 0.7, pal_hood.b * 0.5))
-	# Capa frente
-	_prect(parent, cx, cy, s,  10, 70, 12, 40, pal_cape)
-	# Braço esq com patinho
-	_prect(parent, cx, cy, s, -18, 55,  6, 18, pal_hood)
-	_prect(parent, cx, cy, s, -26, 52, 10,  8, pal_duck)
-	_prect(parent, cx, cy, s, -21, 58,  6,  5, pal_duck)
-	_prect(parent, cx, cy, s, -27, 56,  2,  1.5, pal_dark)
-	_prect(parent, cx, cy, s, -30, 54,  3,  2, pal_duck if sepia else Color(0.95, 0.55, 0.15))
-	# Cabeça
-	_prect(parent, cx, cy, s, -10, 82, 20, 20, pal_skin)
-	# Barba
-	_prect(parent, cx, cy, s, -10, 68, 20, 10, pal_beard)
-	_prect(parent, cx, cy, s, -8,  64, 16,  4, pal_beard)
-	# Boca
-	_prect(parent, cx, cy, s, -3, 72, 6, 1.5, pal_dark)
-	# Olho
-	_prect(parent, cx, cy, s, -6, 80, 3, 3, pal_dark)
-	# Nariz
-	_prect(parent, cx, cy, s, -10, 78, 3, 3, Color(pal_skin.r * 0.85, pal_skin.g * 0.72, pal_skin.b * 0.60))
-	# Cabelo
-	_prect(parent, cx, cy, s, -12, 88, 6, 6, pal_hair)
-	_prect(parent, cx, cy, s, -13, 82, 3, 6, pal_hair)
-	# Gorro
-	_prect(parent, cx, cy, s, -12, 102, 24, 12, pal_beanie)
-	_prect(parent, cx, cy, s, -11, 108, 22,  4, Color(pal_beanie.r * 0.75, pal_beanie.g * 0.75, pal_beanie.b * 0.70))
-	_prect(parent, cx, cy, s, -12,  94, 24,  3, Color(pal_beanie.r * 0.80, pal_beanie.g * 0.80, pal_beanie.b * 0.75))
-	# Folha
-	_prect(parent, cx, cy, s, -2, 114, 6, 5, pal_leaf)
-	_prect(parent, cx, cy, s,  0, 118, 3, 3, pal_leaf)
-	# Cajado
-	_prect(parent, cx, cy, s, 16,   6, 3, 110, pal_staff)
-	# Xícara
-	_prect(parent, cx, cy, s, 12, 120, 12, 9, pal_cup)
-	_prect(parent, cx, cy, s, 13, 122, 10, 5, pal_tea)
-	_prect(parent, cx, cy, s, 24, 124, 3,  5, pal_cup)
-	# Vapor
-	_prect(parent, cx, cy, s, 14, 132, 2, 4, pal_steam)
-	_prect(parent, cx, cy, s, 18, 136, 2, 5, pal_steam)
-	_prect(parent, cx, cy, s, 16, 142, 2, 3, pal_steam)
+	_prect(parent, cx, cy, s, -12, 38, 10, 29, jeans)
+	_prect(parent, cx, cy, s,   2, 38, 10, 29, jeans)
+	# Rasgo no jeans
+	_prect(parent, cx, cy, s,  -9, 22,  7, 2,
+			Color(jeans.r + 0.10, jeans.g + 0.08, jeans.b + 0.06))
 
-## Desenha um retângulo em coordenadas relativas ao personagem (pés = cy, centro = cx).
+	# Moletom amarelo (corpo)
+	_prect(parent, cx, cy, s, -18, 72, 36, 34, hood)
+	# Sombra inferior do moletom
+	_prect(parent, cx, cy, s, -18, 40, 36, 3,
+			Color(hood.r * 0.7, hood.g * 0.6, hood.b * 0.4))
+
+	# Braço esquerdo segurando patinho
+	_prect(parent, cx, cy, s, -24, 65, 7, 22, hood)
+	# Patinho de borracha
+	_prect(parent, cx, cy, s, -36, 55, 12, 8, duck)
+	_prect(parent, cx, cy, s, -30, 62,  8, 7, duck)   # cabeça pato
+	_prect(parent, cx, cy, s, -38, 60,  3, 2, dark)    # olhinho
+	_prect(parent, cx, cy, s, -42, 58,  4, 3, beak)    # bico
+
+	# Braço direito (segurando cajado)
+	_prect(parent, cx, cy, s,  17, 65, 7, 22, hood)
+
+	# Capa à frente (lado direito, abaixo do braço)
+	_prect(parent, cx, cy, s,  16, 55, 10, 45, cape)
+
+	# Cabeça (pele)
+	_prect(parent, cx, cy, s, -12, 100, 24, 26, skin)
+
+	# Barba (cobre metade inferior do rosto)
+	_prect(parent, cx, cy, s, -12, 84, 24, 13, beard)
+	_prect(parent, cx, cy, s, -10, 75, 20,  5, beard)
+
+	# Cabelo lateral (sob gorro)
+	_prect(parent, cx, cy, s, -14, 98, 4, 12, hair)
+	_prect(parent, cx, cy, s,  10, 98, 4, 12, hair)
+
+	# Olhos
+	_prect(parent, cx, cy, s, -7, 93, 3, 3, dark)
+	_prect(parent, cx, cy, s,  3, 93, 3, 3, dark)
+
+	# Nariz
+	_prect(parent, cx, cy, s, -2, 88, 4, 4,
+			Color(skin.r * 0.85, skin.g * 0.72, skin.b * 0.60))
+
+	# Boca (linha na barba)
+	_prect(parent, cx, cy, s, -4, 82, 8, 1.5, dark)
+
+	# Gorro verde
+	_prect(parent, cx, cy, s, -15, 118, 30, 14, beanie)
+	_prect(parent, cx, cy, s, -14, 106, 28, 3,
+			Color(beanie.r * 0.65, beanie.g * 0.65, beanie.b * 0.60))
+
+	# Folha no gorro
+	_prect(parent, cx, cy, s,  2, 125, 7, 6, leaf)
+	_prect(parent, cx, cy, s,  6, 130, 4, 4, leaf)
+
+	# Cajado (atrás, vertical — do braço direito até a xícara)
+	_prect(parent, cx, cy, s, 22, 122, 4, 70, staff)
+
+	# Xícara no topo do cajado
+	_prect(parent, cx, cy, s, 18, 134, 14, 11, cup)
+	_prect(parent, cx, cy, s, 20, 132,  9,  4, tea)
+	_prect(parent, cx, cy, s, 32, 130,  3,  6, cup)  # alça
+
+	# Vapor da xícara
+	_prect(parent, cx, cy, s, 22, 140, 2, 4, steam)
+	_prect(parent, cx, cy, s, 26, 145, 2, 5, steam)
+	_prect(parent, cx, cy, s, 20, 150, 2, 4, steam)
+
+## Converte cor para tom sépia, mantendo alfa.
+func _sp(c: Color, sepia: bool) -> Color:
+	if not sepia:
+		return c
+	var g: float = c.r * 0.3 + c.g * 0.59 + c.b * 0.11
+	return Color(clamp(g * 0.95 + 0.12, 0.0, 1.0),
+				 clamp(g * 0.78 + 0.06, 0.0, 1.0),
+				 clamp(g * 0.55,        0.0, 1.0),
+				 c.a)
+
+## Retângulo relativo: dx horizontal em torno de cx, dy = topo acima dos pés cy.
 func _prect(parent: Node, cx: float, cy: float, s: float,
 			dx: float, dy: float, w: float, h: float, col: Color) -> void:
 	_rect(parent, cx + dx * s, cy - dy * s, w * s, h * s, col)

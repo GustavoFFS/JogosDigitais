@@ -46,7 +46,7 @@ static func get_data() -> Dictionary:
 			[1910, 592, 45, 22],
 			[2390, 592, 55, 22],
 		],
-		"exit_pos":    [3160, 580],
+		"exit_pos":    [3080, 590],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [155,  560],
 		"loopy_start": [3000, 572],
