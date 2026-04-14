@@ -353,69 +353,67 @@ func _draw_loopy(parent: Node, cx: float, cy: float, s: float, sepia: bool) -> v
 		pal_staff = cols[9]; pal_cup = cols[10]; pal_tea = cols[11]
 		pal_duck = cols[12]; pal_steam = cols[13]; pal_dark = cols[14]
 
-	# Helpers de posição (cx = centro horizontal, cy = pés)
-	var x = func(dx: float) -> float: return cx + dx * s
-	var y = func(dy: float) -> float: return cy - dy * s
-
-	# Capa roxa (atrás) — flutuando para trás
-	_rect(parent, x.call(-22), y.call(80), 16 * s, 60 * s, pal_cape)
-	_rect(parent, x.call(-20), y.call(45), 10 * s, 20 * s, pal_cape)
+	# Capa roxa (atrás)
+	_prect(parent, cx, cy, s, -22, 80, 16, 60, pal_cape)
+	_prect(parent, cx, cy, s, -20, 45, 10, 20, pal_cape)
 	# Tênis verdes
-	_rect(parent, x.call(-10), y.call(6),  10 * s, 6 * s, pal_shoe)
-	_rect(parent, x.call(2),   y.call(6),  10 * s, 6 * s, pal_shoe)
+	_prect(parent, cx, cy, s, -10, 6,  10, 6, pal_shoe)
+	_prect(parent, cx, cy, s,  2,  6,  10, 6, pal_shoe)
 	# Solas escuras
-	_rect(parent, x.call(-10), y.call(0),  10 * s, 2 * s, pal_dark)
-	_rect(parent, x.call(2),   y.call(0),  10 * s, 2 * s, pal_dark)
+	_prect(parent, cx, cy, s, -10, 0, 10, 2, pal_dark)
+	_prect(parent, cx, cy, s,  2,  0, 10, 2, pal_dark)
 	# Jeans
-	_rect(parent, x.call(-9),  y.call(26), 8 * s, 20 * s, pal_jeans)
-	_rect(parent, x.call(1),   y.call(26), 8 * s, 20 * s, pal_jeans)
-	# Detalhe rasgado (mais claro)
-	_rect(parent, x.call(-8),  y.call(16), 6 * s, 2 * s, Color(pal_jeans.r + 0.12, pal_jeans.g + 0.10, pal_jeans.b + 0.08))
-	# Moletom amarelo
-	_rect(parent, x.call(-13), y.call(58), 26 * s, 34 * s, pal_hood)
-	# Sombra moletom (contorno inferior)
-	_rect(parent, x.call(-13), y.call(26), 26 * s, 3 * s, Color(pal_hood.r * 0.7, pal_hood.g * 0.7, pal_hood.b * 0.5))
-	# Capa (frente - lado direito visível)
-	_rect(parent, x.call(10),  y.call(70), 12 * s, 40 * s, pal_cape)
-	# Braço esquerdo (segura patinho)
-	_rect(parent, x.call(-18), y.call(55), 6 * s, 18 * s, pal_hood)
-	# Patinho de borracha
-	_rect(parent, x.call(-26), y.call(52), 10 * s, 8 * s, pal_duck)
-	_rect(parent, x.call(-21), y.call(58), 6 * s, 5 * s, pal_duck)  # cabeça do pato
-	_rect(parent, x.call(-27), y.call(56), 2 * s, 1.5 * s, pal_dark)  # olhinho
-	# Bico
-	_rect(parent, x.call(-30), y.call(54), 3 * s, 2 * s, Color(0.95, 0.55, 0.15) if not sepia else pal_duck)
-	# Cabeça (pele)
-	_rect(parent, x.call(-10), y.call(82), 20 * s, 20 * s, pal_skin)
+	_prect(parent, cx, cy, s, -9, 26, 8, 20, pal_jeans)
+	_prect(parent, cx, cy, s,  1, 26, 8, 20, pal_jeans)
+	# Rasgado
+	_prect(parent, cx, cy, s, -8, 16, 6, 2, Color(pal_jeans.r + 0.12, pal_jeans.g + 0.10, pal_jeans.b + 0.08))
+	# Moletom
+	_prect(parent, cx, cy, s, -13, 58, 26, 34, pal_hood)
+	_prect(parent, cx, cy, s, -13, 26, 26, 3, Color(pal_hood.r * 0.7, pal_hood.g * 0.7, pal_hood.b * 0.5))
+	# Capa frente
+	_prect(parent, cx, cy, s,  10, 70, 12, 40, pal_cape)
+	# Braço esq com patinho
+	_prect(parent, cx, cy, s, -18, 55,  6, 18, pal_hood)
+	_prect(parent, cx, cy, s, -26, 52, 10,  8, pal_duck)
+	_prect(parent, cx, cy, s, -21, 58,  6,  5, pal_duck)
+	_prect(parent, cx, cy, s, -27, 56,  2,  1.5, pal_dark)
+	_prect(parent, cx, cy, s, -30, 54,  3,  2, pal_duck if sepia else Color(0.95, 0.55, 0.15))
+	# Cabeça
+	_prect(parent, cx, cy, s, -10, 82, 20, 20, pal_skin)
 	# Barba
-	_rect(parent, x.call(-10), y.call(68), 20 * s, 10 * s, pal_beard)
-	_rect(parent, x.call(-8),  y.call(64), 16 * s, 4 * s, pal_beard)
-	# Boca (pequena linha escura)
-	_rect(parent, x.call(-3),  y.call(72), 6 * s, 1.5 * s, pal_dark)
+	_prect(parent, cx, cy, s, -10, 68, 20, 10, pal_beard)
+	_prect(parent, cx, cy, s, -8,  64, 16,  4, pal_beard)
+	# Boca
+	_prect(parent, cx, cy, s, -3, 72, 6, 1.5, pal_dark)
 	# Olho
-	_rect(parent, x.call(-6),  y.call(80), 3 * s, 3 * s, pal_dark)
-	# Nariz (tom um pouco mais escuro que pele)
-	_rect(parent, x.call(-10), y.call(78), 3 * s, 3 * s, Color(pal_skin.r * 0.85, pal_skin.g * 0.72, pal_skin.b * 0.60))
-	# Cabelo (saindo do gorro)
-	_rect(parent, x.call(-12), y.call(88), 6 * s, 6 * s, pal_hair)
-	_rect(parent, x.call(-13), y.call(82), 3 * s, 6 * s, pal_hair)
-	# Gorro verde
-	_rect(parent, x.call(-12), y.call(102), 24 * s, 12 * s, pal_beanie)
-	_rect(parent, x.call(-11), y.call(108), 22 * s, 4 * s, Color(pal_beanie.r * 0.75, pal_beanie.g * 0.75, pal_beanie.b * 0.70))
-	_rect(parent, x.call(-12), y.call(94),  24 * s, 3 * s, Color(pal_beanie.r * 0.80, pal_beanie.g * 0.80, pal_beanie.b * 0.75))  # barra
-	# Folha no gorro
-	_rect(parent, x.call(-2),  y.call(114), 6 * s, 5 * s, pal_leaf)
-	_rect(parent, x.call(0),   y.call(118), 3 * s, 3 * s, pal_leaf)
-	# Cajado (atrás, inclinado à direita)
-	_rect(parent, x.call(16),  y.call(6),   3 * s, 110 * s, pal_staff)
-	# Xícara no topo do cajado
-	_rect(parent, x.call(12),  y.call(120), 12 * s, 9 * s, pal_cup)
-	_rect(parent, x.call(13),  y.call(122), 10 * s, 5 * s, pal_tea)  # chá
-	_rect(parent, x.call(24),  y.call(124), 3 * s, 5 * s, pal_cup)   # alça
+	_prect(parent, cx, cy, s, -6, 80, 3, 3, pal_dark)
+	# Nariz
+	_prect(parent, cx, cy, s, -10, 78, 3, 3, Color(pal_skin.r * 0.85, pal_skin.g * 0.72, pal_skin.b * 0.60))
+	# Cabelo
+	_prect(parent, cx, cy, s, -12, 88, 6, 6, pal_hair)
+	_prect(parent, cx, cy, s, -13, 82, 3, 6, pal_hair)
+	# Gorro
+	_prect(parent, cx, cy, s, -12, 102, 24, 12, pal_beanie)
+	_prect(parent, cx, cy, s, -11, 108, 22,  4, Color(pal_beanie.r * 0.75, pal_beanie.g * 0.75, pal_beanie.b * 0.70))
+	_prect(parent, cx, cy, s, -12,  94, 24,  3, Color(pal_beanie.r * 0.80, pal_beanie.g * 0.80, pal_beanie.b * 0.75))
+	# Folha
+	_prect(parent, cx, cy, s, -2, 114, 6, 5, pal_leaf)
+	_prect(parent, cx, cy, s,  0, 118, 3, 3, pal_leaf)
+	# Cajado
+	_prect(parent, cx, cy, s, 16,   6, 3, 110, pal_staff)
+	# Xícara
+	_prect(parent, cx, cy, s, 12, 120, 12, 9, pal_cup)
+	_prect(parent, cx, cy, s, 13, 122, 10, 5, pal_tea)
+	_prect(parent, cx, cy, s, 24, 124, 3,  5, pal_cup)
 	# Vapor
-	_rect(parent, x.call(14),  y.call(132), 2 * s, 4 * s, pal_steam)
-	_rect(parent, x.call(18),  y.call(136), 2 * s, 5 * s, pal_steam)
-	_rect(parent, x.call(16),  y.call(142), 2 * s, 3 * s, pal_steam)
+	_prect(parent, cx, cy, s, 14, 132, 2, 4, pal_steam)
+	_prect(parent, cx, cy, s, 18, 136, 2, 5, pal_steam)
+	_prect(parent, cx, cy, s, 16, 142, 2, 3, pal_steam)
+
+## Desenha um retângulo em coordenadas relativas ao personagem (pés = cy, centro = cx).
+func _prect(parent: Node, cx: float, cy: float, s: float,
+			dx: float, dy: float, w: float, h: float, col: Color) -> void:
+	_rect(parent, cx + dx * s, cy - dy * s, w * s, h * s, col)
 
 ## Desenha o Rob (silhueta simples colorida) nos pés (cx, cy).
 func _draw_rob(parent: Node, cx: float, cy: float, s: float) -> void:
