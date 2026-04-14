@@ -213,6 +213,10 @@ func _load_level() -> void:
 
 	_create_level_exit(Vector2(level["exit_pos"][0], level["exit_pos"][1]))
 
+	# Blocos empurráveis (só Bog consegue mover — can_push=true)
+	for pb in level.get("pushable_blocks", []):
+		_create_pushable_block(pb[0], pb[1], pb[2], pb[3])
+
 	# Estrelas coletáveis da fase (pula as já coletadas nesta partida)
 	var stars: Array = level.get("stars", [])
 	GameManager.stars_in_level = stars.size()
@@ -474,6 +478,68 @@ func _create_level_exit(pos: Vector2) -> void:
 func _on_exit_body_entered(body: Node) -> void:
 	if body == current_character and not hud.fading:
 		_complete_level()
+
+# ============================================================
+# BLOCOS EMPURRÁVEIS (apenas Bog move)
+# ============================================================
+
+func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
+	var body := RigidBody2D.new()
+	body.add_to_group("pushable")
+	body.position      = Vector2(x + w / 2.0, y + h / 2.0)
+	body.mass          = 3.0
+	body.gravity_scale = 1.2
+	body.lock_rotation = true
+	body.linear_damp   = 6.0
+	body.angular_damp  = 10.0
+	body.collision_layer = 1
+	body.collision_mask  = 1
+
+	var shape := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size   = Vector2(w, h)
+	shape.shape = rect
+	body.add_child(shape)
+
+	# Caixa de madeira (tons quentes)
+	var visual := ColorRect.new()
+	visual.size     = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color    = Color(0.58, 0.38, 0.22)
+	body.add_child(visual)
+
+	# Borda clara em cima e escura em baixo (efeito de madeira)
+	var top := ColorRect.new()
+	top.size     = Vector2(w, 4)
+	top.position = Vector2(-w / 2.0, -h / 2.0)
+	top.color    = Color(0.78, 0.56, 0.32)
+	body.add_child(top)
+
+	var bot := ColorRect.new()
+	bot.size     = Vector2(w, 3)
+	bot.position = Vector2(-w / 2.0, h / 2.0 - 3)
+	bot.color    = Color(0.30, 0.18, 0.10)
+	body.add_child(bot)
+
+	# Tira diagonal (madeira)
+	var stripe := ColorRect.new()
+	stripe.size     = Vector2(w, 2)
+	stripe.position = Vector2(-w / 2.0, 0)
+	stripe.color    = Color(0.42, 0.26, 0.14)
+	body.add_child(stripe)
+
+	# Ícone "BOG" indicando que só Bog move
+	var lbl := Label.new()
+	lbl.text     = "BOG"
+	lbl.position = Vector2(-w / 2.0, -h / 2.0 - 20)
+	lbl.size     = Vector2(w, 18)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.26))
+	body.add_child(lbl)
+
+	add_child(body)
+	level_nodes.append(body)
 
 # ============================================================
 # ESTRELAS COLETÁVEIS

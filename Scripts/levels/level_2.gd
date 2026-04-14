@@ -52,10 +52,14 @@ static func get_data() -> Dictionary:
 			[880, 590, 90, 22],
 			[1740, 460, 70, 22],
 		],
+		"pushable_blocks": [
+			[180, 580, 40, 40],
+		],
 		"stars": [
 			[645, 430],
 			[1710, 355],
 			[2085, 530],
+			[280, 460],   # Estrela do Bog
 		],
 		"exit_pos":    [2520, 580],
 		"spawn_rob":   [60,   560],
