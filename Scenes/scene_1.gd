@@ -40,6 +40,9 @@ var _stars_left_in_level: int = 0
 # Blocos empurráveis (para mostrar dica de proximidade)
 var _pushable_blocks: Array = []
 
+# Pause overlay
+var _pause_overlay: Control = null
+
 # ============================================================
 # INICIALIZACAO
 # ============================================================
@@ -78,8 +81,6 @@ func _unhandled_input(event: InputEvent) -> void:
 # ============================================================
 # PAUSE
 # ============================================================
-
-var _pause_overlay: Control = null
 
 func _toggle_pause() -> void:
 	if _pause_overlay and is_instance_valid(_pause_overlay):
@@ -176,6 +177,9 @@ func _setup_characters() -> void:
 	current_character = rob
 	rob.set_active(true)
 	bog.set_active(false)
+	# Rob e Bog não colidem entre si (atravessam um ao outro)
+	rob.add_collision_exception_with(bog)
+	bog.add_collision_exception_with(rob)
 
 func _load_level() -> void:
 	_clear_level()

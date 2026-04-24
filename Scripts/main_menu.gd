@@ -202,7 +202,7 @@ func _build_character_intro() -> void:
 	_intro_visible = true
 
 func _build_hero_card(parent: Node, sprite_path: String,
-					  x: float, name: String, color: Color,
+					  x: float, hero_name: String, color: Color,
 					  subtitle: String, bullets: Array) -> void:
 	# Retrato (sprite do jogo)
 	var tex: Texture2D = load(sprite_path)
@@ -225,7 +225,7 @@ func _build_hero_card(parent: Node, sprite_path: String,
 	parent.move_child(frame_bg, parent.get_child_count() - 2)  # atrás do sprite
 
 	# Nome grande
-	_nl(parent, name, x, 130, 470, 52, 44, color, HORIZONTAL_ALIGNMENT_CENTER)
+	_nl(parent, hero_name, x, 130, 470, 52, 44, color, HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Subtítulo
 	_nl(parent, subtitle, x, 350, 470, 24, 16,

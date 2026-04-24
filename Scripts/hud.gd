@@ -18,6 +18,7 @@ var _lbl_bog:      Label
 var _hearts:       Array = []   # 4 Labels de coracao
 var _lbl_stars:    Label        # contador de estrelas
 var _btn_pause:    Button       # botão de pause
+var _help_overlay: Control = null
 var _pulse_tween: Tween = null
 var _rob_was_ready: bool  = false
 var _bog_was_ready: bool  = false
@@ -275,8 +276,6 @@ func _on_pause_pressed() -> void:
 # ============================================================
 # OVERLAY DE AJUDA (pausa o jogo e mostra dicas)
 # ============================================================
-
-var _help_overlay: Control = null
 
 func is_help_visible() -> bool:
 	return _help_overlay != null and is_instance_valid(_help_overlay)
