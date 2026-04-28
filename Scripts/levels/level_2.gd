@@ -60,9 +60,9 @@ static func get_data() -> Dictionary:
 			[180, 580, 40, 40],
 		],
 		"stars": [
-			[645, 430],
-			[1710, 355],
-			[2085, 530],
+			[510, 460],   # No gap deslizante após o início — escorregar e cair = morte
+			[1700, 290],  # Bem acima da plataforma 1640/380
+			[2160, 470],  # No gap final — desliza demais e cai no espinho
 			[280, 460],   # Estrela do Bog
 		],
 		"exit_pos":    [2520, 580],

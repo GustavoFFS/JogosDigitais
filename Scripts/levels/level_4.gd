@@ -53,9 +53,9 @@ static func get_data() -> Dictionary:
 			[100, 580, 40, 40],
 		],
 		"stars": [
-			[535, 420],
-			[1495, 350],
-			[2305, 350],
+			[400, 420],   # No gap — controle aéreo 0.20 torna ajuste muito difícil
+			[1490, 295],  # Bem acima da plataforma alta
+			[2330, 295],  # Acima da segunda plataforma alta
 			[200, 445],   # Estrela do Bog
 		],
 		"exit_pos":    [2900, 580],

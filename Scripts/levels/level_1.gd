@@ -50,9 +50,9 @@ static func get_data() -> Dictionary:
 			[200, 580, 40, 40],
 		],
 		"stars": [
-			[700, 430],
-			[1730, 345],
-			[2290, 430],
+			[970, 400],   # Sobre o gap, requer pulo preciso entre plataformas
+			[1705, 290],  # Bem acima da plataforma alta — exige pulo no limite
+			[2370, 410],  # No gap antes da saída
 			[300, 460],   # Estrela do Bog — empurre o bloco para baixo dela
 		],
 		"exit_pos":    [2940, 580],

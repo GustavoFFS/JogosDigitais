@@ -55,9 +55,9 @@ static func get_data() -> Dictionary:
 			[140, 580, 40, 40],
 		],
 		"stars": [
-			[615, 405],
-			[1665, 335],
-			[2535, 340],
+			[510, 380],   # No gap entre plataformas — speed/gelo fazem deslizar
+			[1685, 280],  # Bem acima da plataforma 1600/370
+			[2560, 285],  # Acima da plataforma 2470/375
 			[220, 425],   # Estrela do Bog
 		],
 		"exit_pos":    [3100, 590],

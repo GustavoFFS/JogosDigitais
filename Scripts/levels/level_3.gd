@@ -47,9 +47,9 @@ static func get_data() -> Dictionary:
 			[140, 580, 40, 40],
 		],
 		"stars": [
-			[615, 385],
-			[1695, 305],
-			[2090, 510],
+			[450, 385],   # No gap após a primeira subida — gravidade alta dificulta
+			[1670, 250],  # Bem acima da plataforma alta — pulo no limite
+			[2125, 415],  # No gap final, gravidade puxa rápido
 			[220, 410],   # Estrela do Bog
 		],
 		"exit_pos":    [2510, 580],

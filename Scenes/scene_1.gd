@@ -834,7 +834,17 @@ func _add_victory_label(txt: String, y: float, fs: int, col: Color) -> void:
 	tw.tween_property(lbl, "modulate:a", 1.0, 0.55)
 
 func _run_victory_sequence() -> void:
-	_add_victory_sky()
+	# Calcula o "rank" do final com base nas estrelas coletadas.
+	# tier: 0=básico, 1=bom, 2=brilhante, 3=lendário (100%).
+	var total: int = GameManager.stars_total_game
+	var got:   int = GameManager.stars_collected
+	var pct:   float = 0.0 if total == 0 else float(got) / total
+	var tier:  int = 0
+	if pct >= 1.0:        tier = 3
+	elif pct >= 0.75:     tier = 2
+	elif pct >= 0.5:      tier = 1
+
+	_add_victory_sky(tier)
 
 	_add_victory_label("Você alcançou o Loopy!", 18, 38, Color(0.28, 1.0, 0.42))
 	await get_tree().create_timer(1.4).timeout
@@ -852,54 +862,123 @@ func _run_victory_sequence() -> void:
 					   166, 20, Color(1.0, 0.92, 0.38))
 	await get_tree().create_timer(1.5).timeout
 
-	_add_victory_label("O efeito do chá foi embora.", 200, 17, Color(0.70, 0.70, 0.82))
-	await get_tree().create_timer(1.2).timeout
+	# Frase específica do tier (só nos finais melhores Loopy reage diferente)
+	match tier:
+		3:
+			_add_victory_label("— Vocês me trouxeram TODAS as estrelas?! Que jornada lendária! —",
+							   200, 17, Color(1.0, 0.88, 0.30))
+		2:
+			_add_victory_label("— Olha quantas estrelas! Vocês brilharam de verdade. —",
+							   200, 17, Color(0.95, 0.85, 0.45))
+		1:
+			_add_victory_label("— Voltaram com algumas estrelas... bom resgate, amigos. —",
+							   200, 17, Color(0.85, 0.85, 0.95))
+		_:
+			_add_victory_label("O efeito do chá foi embora.",
+							   200, 17, Color(0.70, 0.70, 0.82))
+	await get_tree().create_timer(1.4).timeout
 
-	_add_reunion_scene()
+	_add_reunion_scene(tier)
 	await get_tree().create_timer(0.8).timeout
 
-	# Tudo abaixo do reencontro (sem sobrepor as silhuetas)
-	var stars_msg := "★  Estrelas coletadas: %d / %d" % [GameManager.stars_collected, GameManager.stars_total_game]
-	_add_victory_label(stars_msg, 588, 18, Color(1.0, 0.88, 0.40))
+	# Estatísticas e título do final
+	var stats_msg := "★  %d / %d   ·   💀  %d morte%s" % [
+		got, total, GameManager.deaths,
+		"" if GameManager.deaths == 1 else "s"
+	]
+	_add_victory_label(stats_msg, 588, 18, _tier_color(tier))
 	await get_tree().create_timer(0.8).timeout
 
-	_add_victory_label("Os três amigos estão juntos novamente!",
-					   614, 20, Color(0.95, 0.95, 1.0))
+	_add_victory_label(_tier_title(tier), 612, 24, _tier_color(tier))
 	await get_tree().create_timer(0.9).timeout
 
 	_add_victory_label("Pressione  ESPAÇO  para voltar ao menu",
-					   634, 13, Color(0.55, 0.55, 0.65))
+					   636, 13, Color(0.55, 0.55, 0.65))
 
 	await get_tree().create_timer(0.4).timeout
 	_wait_for_menu_input()
+
+func _tier_title(tier: int) -> String:
+	match tier:
+		3: return "★  FINAL LENDÁRIO  ·  Os três heróis brilham para sempre  ★"
+		2: return "✦  Final Brilhante  ·  Um resgate cheio de glória"
+		1: return "Bom resgate!  Os três amigos estão juntos novamente"
+		_: return "Resgate concluído  ·  Loopy está em casa"
+	return ""
+
+func _tier_color(tier: int) -> Color:
+	match tier:
+		3: return Color(1.0, 0.85, 0.25)   # dourado
+		2: return Color(1.0, 0.92, 0.55)   # dourado claro
+		1: return Color(0.85, 0.92, 1.0)   # prateado/azul claro
+		_: return Color(0.85, 0.85, 0.95)
+	return Color.WHITE
 
 # ============================================================
 # CENA VISUAL DO REENCONTRO (os 3 amigos juntos)
 # ============================================================
 
-func _add_victory_sky() -> void:
+func _add_victory_sky(tier: int = 0) -> void:
+	# Cores do céu mudam conforme o tier (mais brilho/dourado nos finais melhores)
+	var sky_col   := Color(0.18, 0.12, 0.28)
+	var dusk_col  := Color(0.85, 0.45, 0.30)
+	var glow_col  := Color(0.98, 0.72, 0.35)
+	if tier == 1:
+		dusk_col = Color(0.90, 0.55, 0.30)
+		glow_col = Color(1.00, 0.78, 0.40)
+	elif tier == 2:
+		sky_col  = Color(0.22, 0.14, 0.34)
+		dusk_col = Color(1.00, 0.62, 0.30)
+		glow_col = Color(1.00, 0.86, 0.45)
+	elif tier == 3:
+		sky_col  = Color(0.30, 0.18, 0.45)
+		dusk_col = Color(1.00, 0.70, 0.30)
+		glow_col = Color(1.00, 0.94, 0.55)
+
 	var sky := ColorRect.new()
 	sky.position = Vector2(0, 230)
 	sky.size     = Vector2(1152, 80)
-	sky.color    = Color(0.18, 0.12, 0.28)
+	sky.color    = sky_col
 	victory_overlay.add_child(sky)
 	var dusk := ColorRect.new()
 	dusk.position = Vector2(0, 310)
 	dusk.size     = Vector2(1152, 80)
-	dusk.color    = Color(0.85, 0.45, 0.30)
+	dusk.color    = dusk_col
 	victory_overlay.add_child(dusk)
 	var glow := ColorRect.new()
 	glow.position = Vector2(0, 390)
 	glow.size     = Vector2(1152, 80)
-	glow.color    = Color(0.98, 0.72, 0.35)
+	glow.color    = glow_col
 	victory_overlay.add_child(glow)
 
-func _add_reunion_scene() -> void:
+	# No tier 3 (lendário), adiciona estrelas brilhando no céu
+	if tier == 3:
+		for i in range(40):
+			var sx: float = 30.0 + (i * 67) % 1100
+			var sy: float = 240.0 + (i * 31) % 70
+			var twk := ColorRect.new()
+			twk.position = Vector2(sx, sy)
+			twk.size     = Vector2(3, 3)
+			twk.color    = Color(1.0, 0.95, 0.70)
+			victory_overlay.add_child(twk)
+			var tw := create_tween().set_loops()
+			tw.tween_property(twk, "modulate:a", 0.3, 0.6 + (i % 5) * 0.15)
+			tw.tween_property(twk, "modulate:a", 1.0, 0.6 + (i % 5) * 0.15)
+
+func _add_reunion_scene(tier: int = 0) -> void:
 	var scene := Control.new()
 	scene.position = Vector2(0, 0)
 	scene.size     = Vector2(1152, 648)
 	scene.modulate.a = 0.0
 	victory_overlay.add_child(scene)
+
+	# Auréola dourada nos finais melhores (tier 2+)
+	if tier >= 2:
+		var halo := ColorRect.new()
+		halo.position = Vector2(388, 380)
+		halo.size     = Vector2(376, 220)
+		halo.color    = Color(1.0, 0.88, 0.30, 0.18 if tier == 2 else 0.30)
+		scene.add_child(halo)
 
 	# Edifícios ao fundo (silhuetas com janelas acesas)
 	for i in range(9):
@@ -921,8 +1000,18 @@ func _add_reunion_scene() -> void:
 	_v_rect(scene, 0.0, 470.0, 1152.0, 4.0,   Color(0.12, 0.09, 0.06))
 	_v_rect(scene, 0.0, 540.0, 1152.0, 2.0, Color(0.35, 0.28, 0.20))
 
-	# Título centralizado acima do céu
-	_v_label(scene, "— REENCONTRO —", 0.0, 255.0, 24, Color(1.0, 0.90, 0.50), true)
+	# Título centralizado acima do céu — varia conforme o tier
+	var title := "— REENCONTRO —"
+	var title_col := Color(1.0, 0.90, 0.50)
+	if tier == 3:
+		title = "★  REENCONTRO LENDÁRIO  ★"
+		title_col = Color(1.0, 0.92, 0.40)
+	elif tier == 2:
+		title = "✦  REENCONTRO BRILHANTE  ✦"
+		title_col = Color(1.0, 0.88, 0.50)
+	elif tier == 1:
+		title = "—  BOM REENCONTRO  —"
+	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
 
 	# Personagens em y=570 (acima dos labels em y=588)
 	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 420.0, 570.0, 1.6)
