@@ -234,7 +234,7 @@ func _build_hero_card(parent: Node, sprite_path: String,
 
 	# Bullets de habilidades
 	var y_start: float = 384
-	for i in bullets.size():
+	for i in range(bullets.size()):
 		_nl(parent, bullets[i], x + 40, y_start + i * 24, 430, 22, 14,
 			Color(0.88, 0.90, 0.95))
 
