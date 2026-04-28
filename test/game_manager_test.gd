@@ -1,12 +1,11 @@
 extends GdUnitTestSuite
 
 ## Testes do GameManager
-## Verifica fluxo de fases, vidas e estados do jogo.
+## Verifica fluxo de fases, contador de mortes e estados do jogo.
 
 var gm: Node
 
 func before_test() -> void:
-	# Cria uma instância limpa do GameManager para cada teste
 	gm = load("res://Scripts/game_manager.gd").new()
 	add_child(gm)
 
@@ -20,9 +19,9 @@ func after_test() -> void:
 func test_estado_inicial_e_menu() -> void:
 	assert_that(gm.current_state).is_equal(gm.GameState.MENU)
 
-func test_inicio_com_4_vidas() -> void:
+func test_inicio_com_zero_mortes() -> void:
 	gm.start_game()
-	assert_that(gm.lives).is_equal(4)
+	assert_that(gm.deaths).is_equal(0)
 
 func test_inicia_na_fase_1() -> void:
 	gm.start_game()
@@ -43,7 +42,7 @@ func test_proximo_nivel_avanca_indice() -> void:
 
 func test_ultima_fase_retorna_false() -> void:
 	gm.start_game()
-	gm.current_level_index = 4   # posiciona na ultima fase
+	gm.current_level_index = 4
 	var avancou := gm.next_level()
 	assert_that(avancou).is_false()
 
@@ -62,27 +61,26 @@ func test_dados_da_fase_1_existem() -> void:
 	assert_that(level.has("platforms")).is_true()
 
 # --------------------------------------------------------
-# Vidas
+# Mortes (sem game over — apenas contador)
 # --------------------------------------------------------
 
-func test_perder_vida_diminui_contador() -> void:
+func test_registrar_morte_incrementa_contador() -> void:
 	gm.start_game()
-	gm.lose_life()
-	assert_that(gm.lives).is_equal(3)
+	gm.register_death()
+	assert_that(gm.deaths).is_equal(1)
 
-func test_perder_todas_as_vidas_retorna_false() -> void:
+func test_morrer_varias_vezes_nao_termina_o_jogo() -> void:
 	gm.start_game()
-	gm.lose_life()
-	gm.lose_life()
-	gm.lose_life()
-	var ainda_vivo := gm.lose_life()
-	assert_that(ainda_vivo).is_false()
+	for i in 10:
+		gm.register_death()
+	assert_that(gm.deaths).is_equal(10)
+	assert_that(gm.current_state).is_equal(gm.GameState.PLAYING)
 
 func test_reset_restaura_estado_inicial() -> void:
 	gm.start_game()
 	gm.next_level()
-	gm.lose_life()
+	gm.register_death()
 	gm.reset_game()
 	assert_that(gm.current_level_index).is_equal(0)
-	assert_that(gm.lives).is_equal(4)
+	assert_that(gm.deaths).is_equal(0)
 	assert_that(gm.current_state).is_equal(gm.GameState.MENU)

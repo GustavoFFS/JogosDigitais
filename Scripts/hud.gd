@@ -15,11 +15,10 @@ var _rob_bg:       ColorRect
 var _bog_bg:       ColorRect
 var _lbl_rob:      Label
 var _lbl_bog:      Label
-var _hearts:       Array = []   # 4 Labels de coracao
+var _lbl_deaths:   Label        # contador de mortes (sem game over)
 var _lbl_stars:    Label        # contador de estrelas
 var _btn_pause:    Button       # botão de pause
 var _help_overlay: Control = null
-var _pulse_tween: Tween = null
 var _rob_was_ready: bool  = false
 var _bog_was_ready: bool  = false
 var _rob_flash_tween: Tween = null
@@ -58,8 +57,6 @@ const COLOR_ROB  := Color(0.40, 0.75, 1.00)
 const COLOR_BOG  := Color(0.35, 1.00, 0.55)
 const COLOR_DIM  := Color(0.25, 0.25, 0.30)
 const COLOR_GOLD := Color(1.00, 0.85, 0.25)
-const COLOR_HEART_ON  := Color(0.95, 0.20, 0.30)
-const COLOR_HEART_OFF := Color(0.22, 0.12, 0.15)
 
 # ============================================================
 
@@ -213,33 +210,30 @@ func _build_top_panel() -> void:
 	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22)
 	add_child(_bog_ability_fill)
 
-	# ---- Vidas: 4 coracoes ----
-	var sep_vidas := ColorRect.new()
-	sep_vidas.size     = Vector2(1, 50)
-	sep_vidas.position = Vector2(908, 9)
-	sep_vidas.color    = Color(0.20, 0.22, 0.35, 0.60)
-	add_child(sep_vidas)
+	# ---- Mortes (sem limite — só contador) ----
+	var sep_deaths := ColorRect.new()
+	sep_deaths.size     = Vector2(1, 50)
+	sep_deaths.position = Vector2(908, 9)
+	sep_deaths.color    = Color(0.20, 0.22, 0.35, 0.60)
+	add_child(sep_deaths)
 
-	var lbl_vidas := Label.new()
-	lbl_vidas.text                 = "V I D A S"
-	lbl_vidas.position             = Vector2(916, 5)
-	lbl_vidas.size                 = Vector2(228, 18)
-	lbl_vidas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_vidas.add_theme_font_size_override("font_size", 9)
-	lbl_vidas.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
-	add_child(lbl_vidas)
+	var lbl_deaths_caption := Label.new()
+	lbl_deaths_caption.text                 = "M O R T E S"
+	lbl_deaths_caption.position             = Vector2(916, 5)
+	lbl_deaths_caption.size                 = Vector2(228, 18)
+	lbl_deaths_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_deaths_caption.add_theme_font_size_override("font_size", 9)
+	lbl_deaths_caption.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
+	add_child(lbl_deaths_caption)
 
-	# 4 coracoes: posicoes 920, 966, 1012, 1058
-	for i in range(4):
-		var heart := Label.new()
-		heart.text                 = "♥"
-		heart.position             = Vector2(920 + i * 46, 18)
-		heart.size                 = Vector2(46, 40)
-		heart.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		heart.add_theme_font_size_override("font_size", 28)
-		heart.add_theme_color_override("font_color", COLOR_HEART_ON)
-		add_child(heart)
-		_hearts.append(heart)
+	_lbl_deaths = Label.new()
+	_lbl_deaths.text                 = "💀  0"
+	_lbl_deaths.position             = Vector2(916, 22)
+	_lbl_deaths.size                 = Vector2(228, 36)
+	_lbl_deaths.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_deaths.add_theme_font_size_override("font_size", 26)
+	_lbl_deaths.add_theme_color_override("font_color", Color(0.92, 0.30, 0.40))
+	add_child(_lbl_deaths)
 
 	# ---- Estrelas coletadas (abaixo do painel, canto esquerdo) ----
 	_lbl_stars = Label.new()
@@ -444,29 +438,16 @@ func update_character(rob_active: bool) -> void:
 		_lbl_rob.add_theme_color_override("font_color", Color(0.28, 0.38, 0.55))
 		_lbl_bog.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 
-func update_lives(lives: int) -> void:
-	# Para pulse anterior
-	if _pulse_tween:
-		_pulse_tween.kill()
-		_pulse_tween = null
-
-	for i in range(_hearts.size()):
-		var heart: Label = _hearts[i]
-		heart.pivot_offset = Vector2(23, 20)  # centro do coração
-		heart.scale = Vector2.ONE             # reseta escala
-		if i < lives:
-			heart.add_theme_color_override("font_color", COLOR_HEART_ON)
-		else:
-			heart.add_theme_color_override("font_color", COLOR_HEART_OFF)
-
-	# Pulsa o último coração restante quando lives == 1
-	if lives == 1:
-		var last_heart: Label = _hearts[0]
-		_pulse_tween = create_tween().set_loops()
-		_pulse_tween.tween_property(last_heart, "scale", Vector2(1.28, 1.28), 0.38)\
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		_pulse_tween.tween_property(last_heart, "scale", Vector2.ONE, 0.38)\
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+func update_deaths(total: int) -> void:
+	if not _lbl_deaths:
+		return
+	_lbl_deaths.text = "💀  %d" % total
+	# Pulso vermelho quando morre
+	_lbl_deaths.pivot_offset = Vector2(114, 18)
+	_lbl_deaths.scale = Vector2(1.4, 1.4)
+	var tw := create_tween()
+	tw.tween_property(_lbl_deaths, "scale", Vector2.ONE, 0.30)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 # ============================================================
 # CHECKPOINT NOTIFICATION
 # ============================================================

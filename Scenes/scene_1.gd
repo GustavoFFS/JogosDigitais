@@ -246,7 +246,7 @@ func _load_level() -> void:
 	camera.global_position = current_character.global_position
 	hud.update_level_info(level, idx, GameManager.get_level_count())
 	hud.update_character(current_character == rob)
-	hud.update_lives(GameManager.lives)
+	hud.update_deaths(GameManager.deaths)
 	hud.show_intro(level, idx)
 	hud.start_fade(-1, Callable())
 
@@ -779,11 +779,9 @@ func _check_death() -> void:
 		other.velocity        = Vector2.ZERO
 
 func _on_player_died() -> void:
-	if GameManager.lose_life():
-		hud.update_lives(GameManager.lives)
-		hud.start_fade(1, _reload_current_level)
-	else:
-		hud.start_fade(1, _go_to_menu)
+	GameManager.register_death()
+	hud.update_deaths(GameManager.deaths)
+	hud.start_fade(1, _reload_current_level)
 
 func _reload_current_level() -> void:
 	_load_level()
