@@ -232,7 +232,7 @@ func _load_level() -> void:
 	var stars: Array = level.get("stars", [])
 	GameManager.stars_in_level = stars.size()
 	_stars_left_in_level = stars.size()
-	for i in stars.size():
+	for i in range(stars.size()):
 		if GameManager.is_star_collected(idx, i):
 			_stars_left_in_level -= 1
 			continue

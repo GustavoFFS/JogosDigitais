@@ -71,7 +71,7 @@ func test_registrar_morte_incrementa_contador() -> void:
 
 func test_morrer_varias_vezes_nao_termina_o_jogo() -> void:
 	gm.start_game()
-	for i in 10:
+	for i in range(10):
 		gm.register_death()
 	assert_that(gm.deaths).is_equal(10)
 	assert_that(gm.current_state).is_equal(gm.GameState.PLAYING)
