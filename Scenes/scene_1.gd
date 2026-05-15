@@ -581,7 +581,7 @@ func _update_pushable_hints() -> void:
 		var hint: Label = block.get_node_or_null("Hint")
 		if hint == null:
 			continue
-		var dist := block.global_position.distance_to(current_character.global_position)
+		var dist : float = block.global_position.distance_to(current_character.global_position)
 		if dist > 160.0:
 			hint.modulate.a = lerp(hint.modulate.a, 0.0, 0.15)
 			continue
