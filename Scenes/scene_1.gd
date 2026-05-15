@@ -296,8 +296,7 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var w: float = mp["w"]
 	var h: float = mp["h"]
 
-	var body := AnimatableBody2D.new()
-	body.sync_to_physics = true
+	var body := StaticBody2D.new()
 	body.position = Vector2(mp["x_min"] + w / 2.0, mp["y"])
 
 	var shape := CollisionShape2D.new()
@@ -325,21 +324,36 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 		"x_min": mp["x_min"] + w / 2.0,
 		"x_max": mp["x_max"] + w / 2.0,
 		"speed": mp["speed"],
-		"dir":   1.0
+		"dir":   1.0,
+		"prev_x": mp["x_min"] + w / 2.0
 	})
+
 
 func _update_moving_platforms(delta: float) -> void:
 	for mp in _moving_platforms:
 		if not is_instance_valid(mp["node"]):
 			continue
-		var movement :float= mp["speed"] * mp["dir"] * delta
-		mp["node"].move_and_collide(Vector2(movement, 0))
-		
-		var px :float = mp["node"].position.x
-		if px >= mp["x_max"]:
+
+		var prev_x: float = mp["node"].position.x
+		mp["node"].position.x += mp["speed"] * mp["dir"] * delta
+
+		if mp["node"].position.x >= mp["x_max"]:
+			mp["node"].position.x = mp["x_max"]
 			mp["dir"] = -1.0
-		elif px <= mp["x_min"]:
-			mp["dir"] = 1.0			
+		elif mp["node"].position.x <= mp["x_min"]:
+			mp["node"].position.x = mp["x_min"]
+			mp["dir"] = 1.0
+
+		# Empurra o personagem junto se estiver em cima
+		var dx :float= mp["node"].position.x - prev_x
+		for character in [rob, bog]:
+			if character.is_on_floor():
+				var char_x :float= character.global_position.x
+				var plat_x :float= mp["node"].global_position.x
+				var half_w := 55.0  # metade da largura da plataforma
+				if abs(char_x - plat_x) < half_w:
+					character.global_position.x += dx
+		
 # ============================================================
 # CHECKPOINTS
 # ============================================================

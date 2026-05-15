@@ -26,7 +26,6 @@ static func get_data() -> Dictionary:
 			[820,  540, 140, 18],
 			[1030, 460, 110, 18],
 			[1210, 555, 200, 22],   # checkpoint
-			[1490, 465, 120, 18],
 			[1680, 375, 110, 18],
 			[1860, 460, 110, 18],
 			[2050, 545, 140, 18],
@@ -35,7 +34,10 @@ static func get_data() -> Dictionary:
 			[2620, 620, 420, 28],
 		],
 		
-	
+			"moving_platforms": [
+			{ "x_min": 1400.0, "x_max": 1600.0, "y": 470.0, "w": 110.0, "h": 18.0, "speed": 120.0 }
+		],
+
 		# [x, y] - topo da bandeira
 
 		"checkpoints": [
