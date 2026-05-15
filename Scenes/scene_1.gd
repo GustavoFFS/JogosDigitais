@@ -415,7 +415,7 @@ func _update_loopy(delta: float) -> void:
 
 	if loopy_fleeing:
 		var dir := (loopy_end - loopy_body.global_position).normalized()
-		loopy_body.velocity.x = dir.x * LOOPY_SPEED * 1.6
+		loopy_body.velocity.x = dir.x * LOOPY_SPEED * 3.1
 		if not loopy_body.is_on_floor():
 			loopy_body.velocity += loopy_body.get_gravity() * delta
 		loopy_body.move_and_slide()
