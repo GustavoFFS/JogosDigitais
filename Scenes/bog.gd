@@ -9,7 +9,7 @@ func _ready() -> void:
 	base_speed         = 220.0
 	base_jump_velocity = -380.0
 	can_push           = true
-	push_force         = 400.0
+	push_force         = 1200.0
 	anim_suffix        = ""
 	ability_cooldown   = 2.8
 

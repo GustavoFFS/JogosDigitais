@@ -20,30 +20,42 @@ static func get_data() -> Dictionary:
 		},
 		# [x, y, largura, altura]
 		"platforms": [
-			[0,    620, 360, 28],   # Plataforma inicial
-			[440,  540, 130, 18],   # Primeiro salto
-			[650,  460, 100, 18],   # Subida
-			[820,  540, 140, 18],   # Descida suave
-			[1030, 460, 110, 18],   # Salto sobre vazio
-			[1210, 555, 200, 22],   # Plataforma larga (checkpoint)
-			[1490, 465, 120, 18],   # Subida
-			[1680, 375, 110, 18],   # Plataforma alta
-			[1860, 460, 110, 18],   # Descida
-			[2050, 545, 140, 18],   # Penúltimo
-			[2260, 460, 100, 18],   # Salto curto
-			[2430, 555, 160, 18],   # Perto da saída
-			[2620, 620, 420, 28],   # Plataforma final
+			[0,    620, 360, 28],
+			[440,  540, 130, 18],
+			[650,  460, 100, 18],
+			[820,  540, 140, 18],
+			[1030, 460, 110, 18],
+			[1210, 555, 200, 22],   # checkpoint
+			[1490, 465, 120, 18],
+			[1680, 375, 110, 18],
+			[1860, 460, 110, 18],
+			[2050, 545, 140, 18],
+			[2260, 460, 100, 18],
+			[2430, 555, 160, 18],
+			[2620, 620, 420, 28],
 		],
 		
 	
 		# [x, y] - topo da bandeira
+
 		"checkpoints": [
 			[1260, 530],
 		],
-		# [x, y, largura, altura] - zonas de espinhos
 		"hazards": [
-			[930, 590, 80, 22],
-			[2180, 530, 60, 22],
+			[ 380, 600,  50, 22],   # gap inicial
+			[ 770, 510,  40, 22],   # gap entre plataformas baixas
+			[1160, 540,  40, 22],   # antes do checkpoint
+			[1820, 440,  30, 22],   # após plataforma alta
+			[2380, 530,  40, 22],   # antes do salto final
+		],
+		"pushable_blocks": [
+			[200, 580, 40, 40],
+		],
+		"stars": [
+			[970, 400],   # Sobre o gap, requer pulo preciso entre plataformas
+			[1705, 290],  # Bem acima da plataforma alta — exige pulo no limite
+			[2370, 410],  # No gap antes da saída
+			[300, 460],   # Estrela do Bog — empurre o bloco para baixo dela
 		],
 		"exit_pos":    [2940, 580],
 		"spawn_rob":   [60,   560],

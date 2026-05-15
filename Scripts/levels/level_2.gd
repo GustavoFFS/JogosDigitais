@@ -15,20 +15,20 @@ static func get_data() -> Dictionary:
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,
 			"gravity_mult": 1.0,
-			"friction":     0.12,
-			"air_control":  0.80,
+			"friction":     0.10,
+			"air_control":  0.78,
 		},
 		"platforms": [
-			[0,    620, 320, 28],   # Início
-			[400,  550, 130, 18],   # Primeiro gap (gelo dificulta parar)
-			[600,  465, 90,  18],   # Plataforma estreita
-			[760,  545, 160, 18],   # Mais larga
-			[990,  455, 100, 18],   # Salto
+			[0,    620, 320, 28],
+			[400,  550, 130, 18],
+			[600,  465,  90, 18],
+			[760,  545, 160, 18],
+			[990,  455, 100, 18],
 			[1160, 560, 220, 22],   # CHECKPOINT
-			[1460, 475, 130, 18],   # Subida
-			[1660, 385, 100, 18],   # Alta
-			[1830, 480, 110, 18],   # Descida
-			[2020, 560, 140, 18],   # Perto do fim
+			[1460, 475, 130, 18],
+			[1660, 385, 100, 18],
+			[1830, 480, 110, 18],
+			[2020, 560, 140, 18],
 			[2230, 620, 380, 28],   # Final
 		],
 
@@ -48,9 +48,21 @@ static func get_data() -> Dictionary:
 			[1220, 535],
 		],
 		"hazards": [
-			[710, 590, 30, 22],
-			[880, 590, 90, 22],
-			[1740, 460, 70, 22],
+			[ 340, 600,  50, 22],
+			[ 710, 590,  30, 22],
+			[ 920, 590,  60, 22],
+			[1380, 540,  60, 22],
+			[1740, 460,  60, 22],
+			[2160, 540,  50, 22],
+		],
+		"pushable_blocks": [
+			[180, 580, 40, 40],
+		],
+		"stars": [
+			[510, 460],   # No gap deslizante após o início — escorregar e cair = morte
+			[1700, 290],  # Bem acima da plataforma 1640/380
+			[2160, 470],  # No gap final — desliza demais e cai no espinho
+			[280, 460],   # Estrela do Bog
 		],
 		"exit_pos":    [2520, 580],
 		"spawn_rob":   [60,   560],
