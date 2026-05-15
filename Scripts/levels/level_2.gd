@@ -55,6 +55,11 @@ static func get_data() -> Dictionary:
 			[1740, 460,  60, 22],
 			[2160, 540,  50, 22],
 		],
+
+		"gravity_zones": [
+			[620,   0, 480, 620],   # Zona 1 — cobre plataformas de teto 1-3
+		],
+
 		"pushable_blocks": [
 			[180, 580, 40, 40],
 		],

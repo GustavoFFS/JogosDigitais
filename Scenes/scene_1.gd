@@ -181,6 +181,39 @@ func _setup_characters() -> void:
 	rob.add_collision_exception_with(bog)
 	bog.add_collision_exception_with(rob)
 
+func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
+	var area := GravityZone.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+
+	var shape := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size   = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+
+	# Visual da zona — roxo semitransparente
+	var visual := ColorRect.new()
+	visual.size     = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color    = Color(0.6, 0.2, 1.0, 0.18)
+	area.add_child(visual)
+
+	# Borda superior com setas indicando inversão
+	var n_arrows := int(w / 24)
+	for i in range(n_arrows):
+		var arrow := Label.new()
+		arrow.text     = "▼"
+		arrow.position = Vector2(-w / 2.0 + i * 24, -h / 2.0 + 2)
+		arrow.add_theme_font_size_override("font_size", 13)
+		arrow.add_theme_color_override("font_color", Color(0.8, 0.4, 1.0, 0.7))
+		area.add_child(arrow)
+
+	area.collision_layer = 0
+	area.collision_mask  = 1
+
+	add_child(area)
+	level_nodes.append(area)
+
 func _load_level() -> void:
 	_clear_level()
 
@@ -215,12 +248,14 @@ func _load_level() -> void:
 	# Plataformas moveis — adicione estas duas linhas abaixo
 	for mp in level.get("moving_platforms", []):
 		_spawn_moving_platform(mp, level["platform_color"])
-		
+				
 	# Checkpoints e hazards
 	for cp in level.get("checkpoints", []):
 		_create_checkpoint(cp[0], cp[1])
 	for h in level.get("hazards", []):
 		_create_hazard(h[0], h[1], h[2], h[3])
+	for gz in level.get("gravity_zones", []):
+		_create_gravity_zone(gz[0], gz[1], gz[2], gz[3])
 
 	_create_level_exit(Vector2(level["exit_pos"][0], level["exit_pos"][1]))
 
