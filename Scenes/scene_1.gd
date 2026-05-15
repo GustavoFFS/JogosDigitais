@@ -953,7 +953,6 @@ func _tier_title(tier: int) -> String:
 		2: return "✦  Final Brilhante  ·  Um resgate cheio de glória"
 		1: return "Bom resgate!  Os três amigos estão juntos novamente"
 		_: return "Resgate concluído  ·  Loopy está em casa"
-	return ""
 
 func _tier_color(tier: int) -> Color:
 	match tier:
@@ -961,7 +960,6 @@ func _tier_color(tier: int) -> Color:
 		2: return Color(1.0, 0.92, 0.55)   # dourado claro
 		1: return Color(0.85, 0.92, 1.0)   # prateado/azul claro
 		_: return Color(0.85, 0.85, 0.95)
-	return Color.WHITE
 
 # ============================================================
 # CENA VISUAL DO REENCONTRO (os 3 amigos juntos)
