@@ -25,6 +25,7 @@ var has_checkpoint: bool    = false
 
 # Background dinamico
 var bg_rect: ColorRect
+var bg_texture: TextureRect      # NOVO: Onde a imagem vai ficar
 
 # Tela de vitoria
 var victory_overlay: ColorRect = null
@@ -62,11 +63,12 @@ func _remove_old_static_bodies() -> void:
 			child.queue_free()
 
 func _process(delta: float) -> void:
-	_update_camera(delta)
-	_update_loopy(delta)
-	_check_death()
-	_update_moving_platforms(delta)
-	_update_pushable_hints()
+	_update_camera(delta) 
+	_update_loopy(delta) 
+	_check_death() 
+	_update_moving_platforms(delta) 
+	_update_pushable_hints() 
+	_check_pushable_blocks_bounds() # <--- ADICIONE ESTA LINHA AQUI!
 	hud.update_ability(rob.get_ability_ratio(), bog.get_ability_ratio())
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -195,14 +197,14 @@ func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
 	var visual := ColorRect.new()
 	visual.size     = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = Color(0.6, 0.2, 1.0, 0.18)
+	visual.color    = Color(0.6, 0.2, 1.0, 0.314)
 	area.add_child(visual)
 
 	# Borda superior com setas indicando inversão
 	var n_arrows := int(w / 24)
 	for i in range(n_arrows):
 		var arrow := Label.new()
-		arrow.text     = "▼"
+		arrow.text     = "▲"
 		arrow.position = Vector2(-w / 2.0 + i * 24, -h / 2.0 + 2)
 		arrow.add_theme_font_size_override("font_size", 13)
 		arrow.add_theme_color_override("font_color", Color(0.8, 0.4, 1.0, 0.7))
@@ -239,11 +241,38 @@ func _load_level() -> void:
 	rob.velocity = Vector2.ZERO
 	bog.velocity = Vector2.ZERO
 
-	# Geometria
+	# ==========================================
+	# Geometria e Fundo
+	# ==========================================
 	bg_rect.color = level["bg_color"]
-	_create_scenery(idx)
-	for p in level["platforms"]:
+	
+	# Checa se o dicionário da fase possui uma imagem de fundo configurada
+	if level.has("bg_image") and level["bg_image"] != "":
+		bg_texture.texture = load(level["bg_image"])
+		bg_texture.visible = true
+		bg_rect.visible = false # Esconde a cor sólida
+		
+		# AQUI É O SEGREDO: Se tem imagem, nós NÃO chamamos _create_scenery()!
+		
+	else:
+		bg_texture.visible = false
+		bg_rect.visible = true  # Volta para a cor sólida
+		
+		# Só gera os prédios e nuvens antigos se NÃO houver imagem
+		_create_scenery(idx)
+	
+	# ==========================================
+	# GERAÇÃO DAS PLATAFORMAS (NÃO APAGUE!)
+	# ==========================================
+	# Plataformas normais
+	for p in level.get("platforms", []):
 		_create_platform(p[0], p[1], p[2], p[3], level["platform_color"])
+	
+	# Plataformas móveis
+	for mp in level.get("moving_platforms", []):
+		_spawn_moving_platform(mp, level["platform_color"])
+				
+	# Checkpoints e hazards (deixe o restante do código que já existia abaixo disso intacto)
 	
 	# Plataformas moveis — adicione estas duas linhas abaixo
 	for mp in level.get("moving_platforms", []):
@@ -328,11 +357,12 @@ func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> v
 	level_nodes.append(body)
 
 func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
-	var w: float = mp["w"]
-	var h: float = mp["h"]
+	var w: float = mp.get("w", 110.0)
+	var h: float = mp.get("h", 18.0)
 
 	var body := StaticBody2D.new()
-	body.position = Vector2(mp["x_min"] + w / 2.0, mp["y"])
+	# Define a posição inicial diretamente pelo vetor do dicionário
+	body.global_position = mp["start_pos"]
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
@@ -354,41 +384,56 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 
 	add_child(body)
 	level_nodes.append(body)
+	
+	# Salva no array interno com o novo formato (sem x_min ou x_max)
 	_moving_platforms.append({
-		"node":  body,
-		"x_min": mp["x_min"] + w / 2.0,
-		"x_max": mp["x_max"] + w / 2.0,
-		"speed": mp["speed"],
-		"dir":   1.0,
-		"prev_x": mp["x_min"] + w / 2.0
+		"node":      body,
+		"start_pos": mp["start_pos"],
+		"end_pos":   mp["end_pos"],
+		"speed":     mp["speed"],
+		"w":         w,
+		"h":         h,
+		"to_end":    true
 	})
-
 
 func _update_moving_platforms(delta: float) -> void:
 	for mp in _moving_platforms:
-		if not is_instance_valid(mp["node"]):
+		var platform_node = mp.get("node")
+		if not is_instance_valid(platform_node):
 			continue
 
-		var prev_x: float = mp["node"].position.x
-		mp["node"].position.x += mp["speed"] * mp["dir"] * delta
-
-		if mp["node"].position.x >= mp["x_max"]:
-			mp["node"].position.x = mp["x_max"]
-			mp["dir"] = -1.0
-		elif mp["node"].position.x <= mp["x_min"]:
-			mp["node"].position.x = mp["x_min"]
-			mp["dir"] = 1.0
-
-		# Empurra o personagem junto se estiver em cima
-		var dx :float= mp["node"].position.x - prev_x
-		for character in [rob, bog]:
-			if character.is_on_floor():
-				var char_x :float= character.global_position.x
-				var plat_x :float= mp["node"].global_position.x
-				var half_w := 55.0  # metade da largura da plataforma
-				if abs(char_x - plat_x) < half_w:
-					character.global_position.x += dx
+		var prev_pos: Vector2 = platform_node.global_position
 		
+		# Determina o destino usando variáveis locais limpas
+		var is_to_end: bool = mp.get("to_end", true)
+		var target_pos: Vector2 = mp.get("end_pos") if is_to_end else mp.get("start_pos")
+
+		# Move a plataforma na direção do alvo
+		platform_node.global_position = prev_pos.move_toward(target_pos, mp.get("speed", 100.0) * delta)
+
+		# Se a plataforma chegou muito perto do alvo, inverte a direção
+		if platform_node.global_position.distance_to(target_pos) < 0.1:
+			mp["to_end"] = not is_to_end
+
+		# Calcula a velocidade real da plataforma neste frame
+		var platform_velocity: Vector2 = (platform_node.global_position - prev_pos) / delta
+
+		# Sincroniza os personagens
+		for character in [rob, bog]:
+			if is_instance_valid(character):
+				# Inicializa o meta se não existir para evitar erros
+				if not character.has_meta("platform_velocity"):
+					character.set_meta("platform_velocity", Vector2.ZERO)
+				
+				if character.is_on_floor():
+					var char_pos: Vector2 = character.global_position
+					var plat_pos: Vector2 = platform_node.global_position
+					var half_w: float = mp.get("w", 110.0) / 2.0
+					
+					# Se o personagem estiver na área de contato da plataforma
+					if abs(char_pos.x - plat_pos.x) < half_w and char_pos.y <= plat_pos.y + 8.0:
+						character.set_meta("platform_velocity", platform_velocity)
+
 # ============================================================
 # CHECKPOINTS
 # ============================================================
@@ -458,41 +503,60 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 # ============================================================
 
 func _create_hazard(x: float, y: float, w: float, h: float) -> void:
-	var area := Area2D.new()
-	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	# 1. CRIAMOS O CORPO SÓLIDO (Hitbox física que bloqueia o jogador)
+	var static_body := StaticBody2D.new()
+	static_body.position = Vector2(x + w / 2.0, y + h / 2.0)
+	static_body.collision_layer = 1 # Mesma camada de colisão do chão padrão
+	static_body.collision_mask = 1
 
-	var shape := CollisionShape2D.new()
-	var rect  := RectangleShape2D.new()
-	rect.size   = Vector2(w, h)
-	shape.shape = rect
-	area.add_child(shape)
+	# Formato da colisão sólida
+	var solid_shape := CollisionShape2D.new()
+	var solid_rect  := RectangleShape2D.new()
+	solid_rect.size  = Vector2(w, h)
+	solid_shape.shape = solid_rect
+	static_body.add_child(solid_shape)
 
+	# 2. CRIAMOS A ÁREA DE DETECÇÃO DE MORTE (Acoplada ao corpo sólido)
+	var death_area := Area2D.new()
+	# Criamos uma hitbox ligeiramente maior (1 pixel para cada lado) 
+	# para garantir que o jogador morra assim que encostar na parede/chão do hazard
+	var detector_shape := CollisionShape2D.new()
+	var detector_rect  := RectangleShape2D.new()
+	detector_rect.size  = Vector2(w + 2.0, h + 2.0) 
+	detector_shape.shape = detector_rect
+	death_area.add_child(detector_shape)
+	
+	# Conectamos o sinal de morte na Área
+	death_area.collision_layer = 0
+	death_area.collision_mask  = 1
+	death_area.body_entered.connect(_on_hazard_entered)
+	static_body.add_child(death_area)
+
+	# 3. PARTE VISUAL (Mantendo o seu design original intacto)
 	# Fundo vermelho
 	var visual := ColorRect.new()
 	visual.size     = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = Color(0.75, 0.10, 0.10, 0.82)
-	area.add_child(visual)
+	visual.color    = Color(0.75, 0.10, 0.10, 0.82) 
+	static_body.add_child(visual)
 
 	# Espinhos visuais (triângulos simulados com labels)
-	var n_spikes := int(w / 16)
+	var n_spikes := int(w / 16) 
 	for i in range(n_spikes):
 		var sp := Label.new()
-		sp.text     = "▲"
-		sp.position = Vector2(-w / 2.0 + i * 16, -h / 2.0 - 4)
-		sp.add_theme_font_size_override("font_size", 13)
-		sp.add_theme_color_override("font_color", Color(1.0, 0.30, 0.30))
-		area.add_child(sp)
+		sp.text     = "▲" 
+		sp.position = Vector2(-w / 2.0 + i * 16, -h / 2.0 - 4) 
+		sp.add_theme_font_size_override("font_size", 13) 
+		sp.add_theme_color_override("font_color", Color(1.0, 0.30, 0.30)) 
+		static_body.add_child(sp)
 
-	area.collision_layer = 0
-	area.collision_mask  = 1
-	area.body_entered.connect(_on_hazard_entered)
-
-	add_child(area)
-	level_nodes.append(area)
+	# Adiciona o bloco sólido completo à cena principal
+	add_child(static_body)
+	level_nodes.append(static_body)
 
 func _on_hazard_entered(body: Node) -> void:
-	if body == current_character and not hud.fading and not hud.showing_intro:
+	# Se o corpo que colidiu for o Rob ou o Bog, o time perde
+	if (body == rob or body == bog) and not hud.fading and not hud.showing_intro:
 		_on_player_died()
 
 # ============================================================
@@ -620,6 +684,23 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 	add_child(body)
 	level_nodes.append(body)
 	_pushable_blocks.append(body)
+	body.set_meta("start_position", body.position)
+
+func _check_pushable_blocks_bounds() -> void:
+	for block in _pushable_blocks:
+		if is_instance_valid(block) and block is RigidBody2D:
+			# Se a caixa passou do limite Y de morte do mapa
+			if block.global_position.y > DEATH_Y:
+				# Recupera a posição inicial dela
+				var start_pos: Vector2 = block.get_meta("start_position", block.global_position)
+				
+				# Reseta a posição física
+				block.global_position = start_pos
+				
+				# CRUCIAL para RigidBody2D: Zera as forças acumuladas 
+				# para ela não reaparecer voando ou girando loucamente
+				block.linear_velocity = Vector2.ZERO
+				block.angular_velocity = 0.0
 
 func _update_pushable_hints() -> void:
 	if not current_character or victory_overlay != null:
@@ -818,14 +899,19 @@ func _check_death() -> void:
 	if hud.fading or hud.showing_intro:
 		return
 
+	# Verifica se o personagem ATIVO caiu no precipício
 	if current_character.global_position.y > DEATH_Y:
 		_on_player_died()
 		return
 
+	# Identifica quem é o personagem SECUNDÁRIO (não controlado)
 	var other := bog if current_character == rob else rob
+	
+	# REGRA NOVA: Se o personagem não controlado cair no precipício,
+	# ele morre e engatilha a derrota de ambos
 	if other.global_position.y > DEATH_Y and not other.is_dead:
-		other.global_position = current_character.global_position + Vector2(-40, -20)
-		other.velocity        = Vector2.ZERO
+		_on_player_died()
+		return
 
 func _on_player_died() -> void:
 	GameManager.register_death()
@@ -1441,6 +1527,8 @@ func _create_lamppost(x: float, gy: float) -> void:
 # BACKGROUND
 # ============================================================
 
+# Background dinamico
+
 func _create_background() -> void:
 	bg_rect          = ColorRect.new()
 	bg_rect.size     = Vector2(6000, 2000)
@@ -1448,3 +1536,22 @@ func _create_background() -> void:
 	bg_rect.color    = Color(0.15, 0.18, 0.28)
 	bg_rect.z_index  = -100
 	add_child(bg_rect)
+
+	bg_texture = TextureRect.new()
+	bg_texture.z_index = -90 
+	
+	bg_texture.position = Vector2(-1200, 0)
+	bg_texture.size     = Vector2(3000, 1000)
+	
+	# --- NOVO CÓDIGO PARA REPETIÇÃO (LOOP) ---
+	
+	# Habilita a repetição da textura na engine
+	bg_texture.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	
+	# Muda o modo para TILE (Ladrilho). Ele vai desenhar a imagem 
+	# repetidas vezes até preencher todo o tamanho (size) do retângulo.
+	bg_texture.stretch_mode = TextureRect.STRETCH_TILE
+	
+	# -----------------------------------------
+	
+	add_child(bg_texture)

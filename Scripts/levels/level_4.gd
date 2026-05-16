@@ -10,7 +10,9 @@ static func get_data() -> Dictionary:
 		"description": "Pelos becos... o controle no ar é limitado.\nPense antes de pular!",
 		"modifier_hint": "Controle Aéreo Reduzido  ·  Planeje seus pulos!",
 		"bg_color":       Color(0.09, 0.09, 0.11),
-		"platform_color": Color(0.42, 0.42, 0.36),
+		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
+		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
 		"modifiers": {
 			"speed_mult":   0.90,
 			"jump_mult":    1.10,

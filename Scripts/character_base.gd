@@ -20,7 +20,10 @@ var jump_mult:    float = 1.0
 var gravity_mult: float = 1.0
 var friction:     float = 1.0
 var air_control:  float = 1.0
-var is_locked: bool = false # Nova variável para travar o movimento normal
+
+# Sistema de controle de inatividade (trava de input)
+var is_locked:  bool  = false 
+var lock_timer: float = 0.0 
 
 # Coyote time
 var coyote_timer: float = 0.0
@@ -70,8 +73,31 @@ func _physics_process(delta: float) -> void:
 			_use_ability()
 			ability_timer = ability_cooldown
 
+	# 1. Calcula o movimento horizontal do jogador (aplica o lerp/atrito normal)
 	_apply_horizontal_movement(direction, delta)
+
+	# 2. Resgata a velocidade da plataforma calculada pela cena principal
+	var plat_vel: Vector2 = get_meta("platform_velocity", Vector2.ZERO)
+	
+	# 3. INTERCEPTAÇÃO DA FÍSICA:
+	# Somamos a velocidade da plataforma logo antes do move_and_slide().
+	# Isso diz à engine de física do Godot: "Este personagem está se movendo nativamente a X km/h"
+	velocity.x += plat_vel.x
+	if abs(plat_vel.y) > 0.1:
+		velocity.y = plat_vel.y
+
+	# 4. Executa a física oficial do Godot com os vetores unidos
 	move_and_slide()
+
+	# 5. ISOLAMENTO DO ATRITO:
+	# Subtraímos a velocidade da plataforma imediatamente após o movimento.
+	# Isso impede que o 'lerp' do próximo frame ache que essa velocidade pertence 
+	# ao esforço de caminhada do jogador, mantendo a velocidade relativa nula!
+	velocity.x -= plat_vel.x
+	
+	# Limpa o meta para que o personagem pare de se mover se sair da plataforma
+	set_meta("platform_velocity", Vector2.ZERO)
+
 	_handle_push()
 	_update_animation(direction)
 
@@ -80,10 +106,18 @@ func _update_timers(delta: float) -> void:
 		coyote_timer = COYOTE_TIME
 	else:
 		coyote_timer = max(coyote_timer - delta, 0.0)
+		
 	if jump_buffer_timer > 0:
 		jump_buffer_timer = max(jump_buffer_timer - delta, 0.0)
+		
 	if ability_timer > 0:
 		ability_timer = max(ability_timer - delta, 0.0)
+		
+	# Gerenciador de tempo para estados travados (stun, dash, empurrões)
+	if lock_timer > 0:
+		lock_timer -= delta
+		if lock_timer <= 0:
+			is_locked = false
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
@@ -104,8 +138,9 @@ func _handle_jump() -> void:
 func _use_ability() -> void:
 	pass  # sobrescrito pelas subclasses
 
-func _apply_horizontal_movement(direction: float, _delta: float) -> void:
-	if is_locked: return # Se estiver travado, ignora o lerp e o input normal
+func _apply_horizontal_movement(direction: float, delta: float) -> void:
+	if is_locked: return # Se estiver travado, ignora o atrito e mantém o voo
+	
 	if direction != 0:
 		var target := direction * get_speed()
 		if is_on_floor():
@@ -115,19 +150,27 @@ func _apply_horizontal_movement(direction: float, _delta: float) -> void:
 		if sprite:
 			sprite.flip_h = direction < 0
 	else:
+		# --- DIREÇÃO = 0 (Nenhum botão pressionado) ---
 		if is_active:
+			# JOGADOR ATIVO: Controle preciso. Soltou o botão, freia rápido mesmo no ar.
 			if is_on_floor():
 				velocity.x = lerp(velocity.x, 0.0, friction)
 			else:
 				velocity.x = lerp(velocity.x, 0.0, clamp(air_control * 0.5, 0.01, 1.0))
 		else:
-			velocity.x = move_toward(velocity.x, 0, base_speed * 0.05)
+			# PERSONAGEM INATIVO: Física realista.
+			if is_on_floor():
+				# No chão, raspa e para.
+				velocity.x = lerp(velocity.x, 0.0, friction)
+			else:
+				# NO AR: Comportamento Parabólico (mantém a inércia do arremesso do Bog)
+				velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)
 
 func _handle_push() -> void:
 	if not can_push or not is_active:
 		return
 	for i in get_slide_collision_count():
-		var col     := get_slide_collision(i)
+		var col      := get_slide_collision(i)
 		var collider := col.get_collider()
 		if collider is RigidBody2D and collider.is_in_group("pushable"):
 			var push_dir := col.get_normal() * -1

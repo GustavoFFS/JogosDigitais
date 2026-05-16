@@ -10,7 +10,9 @@ static func get_data() -> Dictionary:
 		"description": "Ele está nos telhados! Pule alto e cuidado com a queda rápida!",
 		"modifier_hint": "Gravidade Elevada  +  Pulo Forte",
 		"bg_color":       Color(0.07, 0.06, 0.14),
-		"platform_color": Color(0.56, 0.30, 0.24),
+		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
+		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
 		"modifiers": {
 			"speed_mult":   1.0,
 			"jump_mult":    1.25,

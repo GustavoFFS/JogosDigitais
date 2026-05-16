@@ -10,8 +10,9 @@ static func get_data() -> Dictionary:
 		"description": "Loopy foi avistado deslizando pela praça...\no chão gelado dificulta cada passo!",
 		"modifier_hint": "Baixa Fricção  ·  Cuidado com o deslize!",
 		"bg_color":       Color(0.10, 0.18, 0.30),
-		"platform_color": Color(0.52, 0.78, 0.88),
-		"modifiers": {
+		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
+		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.0, 0.835, 0.208, 1.0),		"modifiers": {
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,
 			"gravity_mult": 1.0,
@@ -21,9 +22,9 @@ static func get_data() -> Dictionary:
 		"platforms": [
 			[0,    620, 320, 28],
 			[400,  550, 130, 18],
-			[600,  465,  90, 18],
-			[760,  545, 160, 18],
-			[990,  455, 100, 18],
+			#[600,  465,  90, 18],
+			#[760,  545, 160, 18],
+			#[990,  455, 100, 18],
 			[1160, 560, 220, 22],   # CHECKPOINT
 			[1460, 475, 130, 18],
 			[1660, 385, 100, 18],
@@ -49,15 +50,15 @@ static func get_data() -> Dictionary:
 		],
 		"hazards": [
 			[ 340, 600,  50, 22],
-			[ 710, 590,  30, 22],
-			[ 920, 590,  60, 22],
+			#[ 710, 590,  30, 22],
+			#[ 920, 590,  60, 22],
 			[1380, 540,  60, 22],
 			[1740, 460,  60, 22],
 			[2160, 540,  50, 22],
 		],
 
 		"gravity_zones": [
-			[620,   0, 480, 620],   # Zona 1 — cobre plataformas de teto 1-3
+			[750, 450, 250, 100],   # Zona 1 — cobre plataformas de teto 1-3
 		],
 
 		"pushable_blocks": [

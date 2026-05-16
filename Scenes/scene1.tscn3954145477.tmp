@@ -1,0 +1,393 @@
+[gd_scene format=3 uid="uid://tm2rooajcouf"]
+
+[ext_resource type="Script" uid="uid://djh1ow0pa8mbc" path="res://Scenes/rob.gd" id="1_iqsqo"]
+[ext_resource type="Texture2D" uid="uid://daod6kkihve7b" path="res://Assets/Characters/Main_1/Walk.png" id="2_1mf5u"]
+[ext_resource type="Script" uid="uid://cmucqn38ewhlh" path="res://Scenes/bog.gd" id="3_2xbvg"]
+[ext_resource type="Script" uid="uid://cdvkf2urban0a" path="res://Scenes/scene_1.gd" id="4_scene"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_iqsqo"]
+load_path = "res://.godot/imported/Jump.png-b834c1aab43a080b47de20bde37b0374.ctex"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2xbvg"]
+size = Vector2(31, 67)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_sdcb8"]
+load_path = "res://.godot/imported/Idle.png-1ac4e5cf63e42e932339161250e2c042.ctex"
+
+[sub_resource type="Animation" id="Animation_2nq82"]
+resource_name = "Idle"
+length = 1.0000143
+step = 0.14285715
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.14285715, 0.2857143, 0.42857146, 0.5714286, 0.71428573, 0.8571429),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_sdcb8")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [6]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_2ni1t"]
+load_path = "res://.godot/imported/Idle.png-241fd9b39294418d9379e0e18ac13e81.ctex"
+
+[sub_resource type="Animation" id="Animation_cx2iu"]
+resource_name = "Idle"
+length = 1.0000143
+step = 0.14285715
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.14285715, 0.2857143, 0.42857146, 0.5714286, 0.71428573, 0.8571429),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_2ni1t")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [7]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_1mf5u"]
+load_path = "res://.godot/imported/Jump.png-b834c1aab43a080b47de20bde37b0374.ctex"
+
+[sub_resource type="Animation" id="Animation_2xbvg"]
+resource_name = "Jump"
+length = 1.0000125
+step = 0.125
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_1mf5u")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [16]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_2nq82"]
+load_path = "res://.godot/imported/Jump.png-c2ea550c02ab733735caddbc1c1a289e.ctex"
+
+[sub_resource type="Animation" id="Animation_o5784"]
+resource_name = "Jump"
+length = 1.0000125
+step = 0.083333336
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.33333334, 0.4166667, 0.5, 0.5833334, 0.6666667, 0.75, 0.8333334, 0.9166667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_2nq82")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [12]
+}
+
+[sub_resource type="Animation" id="Animation_sdcb8"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_iqsqo")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [16]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_2xbvg"]
+load_path = "res://.godot/imported/Idle.png-1ac4e5cf63e42e932339161250e2c042.ctex"
+
+[sub_resource type="Animation" id="Animation_2ni1t"]
+resource_name = "Walk"
+length = 1.0000125
+step = 0.125
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [ExtResource("2_1mf5u"), SubResource("CompressedTexture2D_2xbvg")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [8]
+}
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cx2iu"]
+load_path = "res://.godot/imported/Walk.png-5b2cab7ecfe36c52391d5f8a5a19e934.ctex"
+
+[sub_resource type="Animation" id="Animation_2w676"]
+resource_name = "Walk"
+length = 1.0000125
+step = 0.125
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [SubResource("CompressedTexture2D_cx2iu"), SubResource("CompressedTexture2D_2xbvg")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [8]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_2nq82"]
+_data = {
+&"Idle": SubResource("Animation_2nq82"),
+&"Idle_2": SubResource("Animation_cx2iu"),
+&"Jump": SubResource("Animation_2xbvg"),
+&"Jump_2": SubResource("Animation_o5784"),
+&"RESET": SubResource("Animation_sdcb8"),
+&"Walk": SubResource("Animation_2ni1t"),
+&"Walk_2": SubResource("Animation_2w676")
+}
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_cx2iu"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_2xbvg"]
+normal = Vector2(-1, 0)
+distance = -13.0
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_sdcb8"]
+normal = Vector2(1, 0)
+distance = -13.0
+
+[sub_resource type="TileSet" id="TileSet_2xbvg"]
+
+[node name="Node2D" type="Node2D" unique_id=1656276022]
+process_mode = 3
+script = ExtResource("4_scene")
+
+[node name="Rob" type="CharacterBody2D" parent="." unique_id=933595460]
+position = Vector2(532, 506)
+script = ExtResource("1_iqsqo")
+
+[node name="Sprite2D" type="Sprite2D" parent="Rob" unique_id=1118994603]
+texture = SubResource("CompressedTexture2D_iqsqo")
+hframes = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rob" unique_id=1696025372]
+position = Vector2(-4.5, 30.5)
+shape = SubResource("RectangleShape2D_2xbvg")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Rob" unique_id=2125676309]
+libraries/ = SubResource("AnimationLibrary_2nq82")
+
+[node name="Bog" type="CharacterBody2D" parent="." unique_id=1578068675]
+position = Vector2(258, 511)
+script = ExtResource("3_2xbvg")
+
+[node name="Sprite2D" type="Sprite2D" parent="Bog" unique_id=1425840893]
+texture = SubResource("CompressedTexture2D_iqsqo")
+hframes = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bog" unique_id=1485368446]
+position = Vector2(-4.5, 30.5)
+shape = SubResource("RectangleShape2D_2xbvg")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Bog" unique_id=1825419180]
+libraries/ = SubResource("AnimationLibrary_2nq82")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=647787033]
+position = Vector2(640, 650)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=411673067]
+shape = SubResource("WorldBoundaryShape2D_cx2iu")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D" unique_id=111162785]
+position = Vector2(501, -91)
+shape = SubResource("WorldBoundaryShape2D_2xbvg")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="StaticBody2D" unique_id=215910090]
+position = Vector2(-629, -73)
+shape = SubResource("WorldBoundaryShape2D_sdcb8")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=369163046]
+position = Vector2(576, 324)
+
+[node name="TileMap" type="TileMap" parent="." unique_id=909928869]
+tile_set = SubResource("TileSet_2xbvg")
+format = 2

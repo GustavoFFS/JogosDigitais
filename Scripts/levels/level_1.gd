@@ -10,7 +10,9 @@ static func get_data() -> Dictionary:
 		"description": "Rob e Bog viram Loopy sair do Café Loop com olhar distante...\na busca começa aqui nas ruas!",
 		"modifier_hint": "Controles Normais  ·  Aprenda o básico!",
 		"bg_color":       Color(0.13, 0.16, 0.26),
-		"platform_color": Color(0.38, 0.40, 0.45),
+		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
+		"bg_size": [80000.0, 10800.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
 		"modifiers": {
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,
@@ -21,13 +23,13 @@ static func get_data() -> Dictionary:
 		# [x, y, largura, altura]
 		"platforms": [
 			[0,    620, 360, 28],
-			[440,  540, 130, 18],
+			[440,  500, 130, 18],
 			[650,  460, 100, 18],
 			[820,  540, 140, 18],
 			[1030, 460, 110, 18],
 			[1210, 555, 200, 22],   # checkpoint
 			[1680, 375, 110, 18],
-			[1860, 460, 110, 18],
+			#[1860, 460, 110, 18],
 			[2050, 545, 140, 18],
 			[2260, 460, 100, 18],
 			[2430, 555, 160, 18],
@@ -35,7 +37,23 @@ static func get_data() -> Dictionary:
 		],
 		
 			"moving_platforms": [
-			{ "x_min": 1400.0, "x_max": 1600.0, "y": 470.0, "w": 110.0, "h": 18.0, "speed": 120.0 }
+			{ 
+				"start_pos": Vector2(1400.0, 470.0), # Antigos x_min e y
+				"end_pos": Vector2(1600.0, 470.0),   # Antigos x_max e y
+				"w": 110.0, 
+				"h": 18.0, 
+				"speed": 120.0,
+				"to_end": true 
+			},
+			{ 
+				"start_pos": Vector2(1860.0, 465.0), # Antigos x_min e y
+				"end_pos": Vector2(1860.0, 400.0),   # Antigos x_max e y
+				"w": 110.0, 
+				"h": 18.0, 
+				"speed": 120.0,
+				"to_end": true 
+			},
+			#{ "x_min": 1860.0, "x_max": 1860.0, "y": 465.0, "w": 110.0, "h": 18.0, "speed": 120.0 }
 		],
 
 		# [x, y] - topo da bandeira

@@ -3,7 +3,7 @@ class_name GravityZone
 
 ## Zona que inverte a gravidade do personagem ao entrar.
 
-@export var gravity_scale: float = -1.0  # negativo = invertido
+@export var gravity_scale: float = -0.4  # negativo = invertido
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)

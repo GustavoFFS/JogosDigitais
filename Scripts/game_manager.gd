@@ -25,9 +25,9 @@ func _ready() -> void:
 	levels = [
 		Level1Data.get_data(),
 		Level2Data.get_data(),
-		Level3Data.get_data(),
-		Level4Data.get_data(),
-		Level5Data.get_data(),
+		#Level3Data.get_data(),
+		#Level4Data.get_data(),
+		#Level5Data.get_data(),
 	]
 	for lv in levels:
 		stars_total_game += (lv.get("stars", []) as Array).size()

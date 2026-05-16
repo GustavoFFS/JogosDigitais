@@ -10,7 +10,9 @@ static func get_data() -> Dictionary:
 		"description": "Ali está o Loopy! Ele parou...\nAlcance-o e traga seu amigo de volta!",
 		"modifier_hint": "Velocidade  +  Gelo  +  Gravidade  ·  Tudo junto!",
 		"bg_color":       Color(0.16, 0.10, 0.07),
-		"platform_color": Color(0.70, 0.54, 0.28),
+		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
+		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
 		"modifiers": {
 			"speed_mult":   1.20,
 			"jump_mult":    1.20,

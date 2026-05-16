@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://djh1ow0pa8mbc" path="res://Scenes/rob.gd" id="1_iqsqo"]
 [ext_resource type="Texture2D" uid="uid://daod6kkihve7b" path="res://Assets/Characters/Main_1/Walk.png" id="2_1mf5u"]
 [ext_resource type="Script" uid="uid://cmucqn38ewhlh" path="res://Scenes/bog.gd" id="3_2xbvg"]
-[ext_resource type="Script" path="res://Scenes/scene_1.gd" id="4_scene"]
+[ext_resource type="Script" uid="uid://cdvkf2urban0a" path="res://Scenes/scene_1.gd" id="4_scene"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_iqsqo"]
 load_path = "res://.godot/imported/Jump.png-b834c1aab43a080b47de20bde37b0374.ctex"
