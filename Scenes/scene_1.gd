@@ -181,6 +181,39 @@ func _setup_characters() -> void:
 	rob.add_collision_exception_with(bog)
 	bog.add_collision_exception_with(rob)
 
+func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
+	var area := GravityZone.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+
+	var shape := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size   = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+
+	# Visual da zona — roxo semitransparente
+	var visual := ColorRect.new()
+	visual.size     = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color    = Color(0.6, 0.2, 1.0, 0.18)
+	area.add_child(visual)
+
+	# Borda superior com setas indicando inversão
+	var n_arrows := int(w / 24)
+	for i in range(n_arrows):
+		var arrow := Label.new()
+		arrow.text     = "▼"
+		arrow.position = Vector2(-w / 2.0 + i * 24, -h / 2.0 + 2)
+		arrow.add_theme_font_size_override("font_size", 13)
+		arrow.add_theme_color_override("font_color", Color(0.8, 0.4, 1.0, 0.7))
+		area.add_child(arrow)
+
+	area.collision_layer = 0
+	area.collision_mask  = 1
+
+	add_child(area)
+	level_nodes.append(area)
+
 func _load_level() -> void:
 	_clear_level()
 
@@ -215,12 +248,14 @@ func _load_level() -> void:
 	# Plataformas moveis — adicione estas duas linhas abaixo
 	for mp in level.get("moving_platforms", []):
 		_spawn_moving_platform(mp, level["platform_color"])
-		
+				
 	# Checkpoints e hazards
 	for cp in level.get("checkpoints", []):
 		_create_checkpoint(cp[0], cp[1])
 	for h in level.get("hazards", []):
 		_create_hazard(h[0], h[1], h[2], h[3])
+	for gz in level.get("gravity_zones", []):
+		_create_gravity_zone(gz[0], gz[1], gz[2], gz[3])
 
 	_create_level_exit(Vector2(level["exit_pos"][0], level["exit_pos"][1]))
 
@@ -296,8 +331,7 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var w: float = mp["w"]
 	var h: float = mp["h"]
 
-	var body := AnimatableBody2D.new()
-	body.sync_to_physics = true
+	var body := StaticBody2D.new()
 	body.position = Vector2(mp["x_min"] + w / 2.0, mp["y"])
 
 	var shape := CollisionShape2D.new()
@@ -325,21 +359,36 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 		"x_min": mp["x_min"] + w / 2.0,
 		"x_max": mp["x_max"] + w / 2.0,
 		"speed": mp["speed"],
-		"dir":   1.0
+		"dir":   1.0,
+		"prev_x": mp["x_min"] + w / 2.0
 	})
+
 
 func _update_moving_platforms(delta: float) -> void:
 	for mp in _moving_platforms:
 		if not is_instance_valid(mp["node"]):
 			continue
-		var movement :float= mp["speed"] * mp["dir"] * delta
-		mp["node"].move_and_collide(Vector2(movement, 0))
-		
-		var px :float = mp["node"].position.x
-		if px >= mp["x_max"]:
+
+		var prev_x: float = mp["node"].position.x
+		mp["node"].position.x += mp["speed"] * mp["dir"] * delta
+
+		if mp["node"].position.x >= mp["x_max"]:
+			mp["node"].position.x = mp["x_max"]
 			mp["dir"] = -1.0
-		elif px <= mp["x_min"]:
-			mp["dir"] = 1.0			
+		elif mp["node"].position.x <= mp["x_min"]:
+			mp["node"].position.x = mp["x_min"]
+			mp["dir"] = 1.0
+
+		# Empurra o personagem junto se estiver em cima
+		var dx :float= mp["node"].position.x - prev_x
+		for character in [rob, bog]:
+			if character.is_on_floor():
+				var char_x :float= character.global_position.x
+				var plat_x :float= mp["node"].global_position.x
+				var half_w := 55.0  # metade da largura da plataforma
+				if abs(char_x - plat_x) < half_w:
+					character.global_position.x += dx
+		
 # ============================================================
 # CHECKPOINTS
 # ============================================================
@@ -581,7 +630,7 @@ func _update_pushable_hints() -> void:
 		var hint: Label = block.get_node_or_null("Hint")
 		if hint == null:
 			continue
-		var dist := block.global_position.distance_to(current_character.global_position)
+		var dist : float = block.global_position.distance_to(current_character.global_position)
 		if dist > 160.0:
 			hint.modulate.a = lerp(hint.modulate.a, 0.0, 0.15)
 			continue
@@ -722,7 +771,7 @@ func _update_loopy(delta: float) -> void:
 
 	if loopy_fleeing:
 		var dir := (loopy_end - loopy_body.global_position).normalized()
-		loopy_body.velocity.x = dir.x * LOOPY_SPEED * 1.6
+		loopy_body.velocity.x = dir.x * LOOPY_SPEED * 3.1
 		if not loopy_body.is_on_floor():
 			loopy_body.velocity += loopy_body.get_gravity() * delta
 		loopy_body.move_and_slide()
@@ -904,7 +953,6 @@ func _tier_title(tier: int) -> String:
 		2: return "✦  Final Brilhante  ·  Um resgate cheio de glória"
 		1: return "Bom resgate!  Os três amigos estão juntos novamente"
 		_: return "Resgate concluído  ·  Loopy está em casa"
-	return ""
 
 func _tier_color(tier: int) -> Color:
 	match tier:
@@ -912,7 +960,6 @@ func _tier_color(tier: int) -> Color:
 		2: return Color(1.0, 0.92, 0.55)   # dourado claro
 		1: return Color(0.85, 0.92, 1.0)   # prateado/azul claro
 		_: return Color(0.85, 0.85, 0.95)
-	return Color.WHITE
 
 # ============================================================
 # CENA VISUAL DO REENCONTRO (os 3 amigos juntos)
