@@ -6,12 +6,12 @@ extends Node
 
 enum GameState { MENU, PLAYING, PAUSED, GAME_COMPLETE }
 
-var current_state:       GameState = GameState.MENU
-var current_level_index: int       = 0
-var deaths:              int       = 0   # contador de mortes (sem game over)
-var stars_collected:     int       = 0   # total ao longo do jogo
-var stars_in_level:      int       = 0   # da fase atual
-var stars_total_game:    int       = 0   # soma de todas as fases
+var current_state:        GameState = GameState.MENU
+var current_level_index: int        = 0
+var deaths:              int        = 0   # contador de mortes (sem game over)
+var stars_collected:     int        = 0   # total ao longo do jogo
+var stars_in_level:      int        = 0   # da fase atual
+var stars_total_game:    int        = 0   # soma de todas as fases
 var collected_ids:       Dictionary = {}  # chave "idx:starIdx" -> true
 
 signal level_changed(level_index: int)
@@ -20,6 +20,10 @@ signal deaths_changed(total: int)
 signal stars_changed(collected: int, total_in_level: int)
 
 var levels: Array[Dictionary] = []
+
+# ============================================================
+# INICIALIZACAO
+# ============================================================
 
 func _ready() -> void:
 	levels = [
@@ -33,12 +37,47 @@ func _ready() -> void:
 		stars_total_game += (lv.get("stars", []) as Array).size()
 
 # ============================================================
+# GAME LOOP (INPUT -> UPDATE -> RENDER)
+# ============================================================
+
+func _process(delta: float) -> void:
+	_game_loop_input()
+	_game_loop_update(delta)
+	_game_loop_render()
+
+## 1. ETAPA DE INPUT
+func _game_loop_input() -> void:
+	# Gerenciamento de inputs globais contínuos ou polleados
+	# (ex: atalhos globais de debug, toggle de console, etc)
+	pass
+
+## 2. ETAPA DE UPDATE
+func _game_loop_update(_delta: float) -> void:
+	# Lógicas de estado globais ativas
+	# (ex: timers globais de speedrun, verificação de background)
+	pass
+
+## 3. ETAPA DE RENDER
+func _game_loop_render() -> void:
+	# Efeitos ou sobreposições de UI 100% independentes da cena atual
+	pass
+
+# ============================================================
+# ACESSO A DADOS (GETTERS)
+# ============================================================
 
 func get_current_level() -> Dictionary:
 	return levels[current_level_index]
 
 func get_level_count() -> int:
 	return levels.size()
+
+func is_star_collected(level_idx: int, star_idx: int) -> bool:
+	return collected_ids.has("%d:%d" % [level_idx, star_idx])
+
+# ============================================================
+# GERENCIAMENTO DE ESTADO E FLUXO
+# ============================================================
 
 func next_level() -> bool:
 	current_level_index += 1
@@ -71,9 +110,6 @@ func reset_game() -> void:
 	stars_collected     = 0
 	collected_ids.clear()
 	current_state       = GameState.MENU
-
-func is_star_collected(level_idx: int, star_idx: int) -> bool:
-	return collected_ids.has("%d:%d" % [level_idx, star_idx])
 
 func collect_star(level_idx: int, star_idx: int) -> void:
 	var key := "%d:%d" % [level_idx, star_idx]

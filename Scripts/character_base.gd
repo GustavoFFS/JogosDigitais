@@ -42,6 +42,13 @@ var ability_timer:    float = 0.0
 @onready var sprite: Sprite2D        = $Sprite2D
 var anim_suffix: String = ""
 
+# Variáveis de cache do Game Loop (Input)
+var _input_direction: float = 0.0
+var _input_jump: bool = false
+var _input_ability: bool = false
+
+# ============================================================
+# GETTERS
 # ============================================================
 
 func get_speed() -> float:
@@ -56,32 +63,47 @@ func get_ability_ratio() -> float:
 	return 1.0 - clamp(ability_timer / ability_cooldown, 0.0, 1.0)
 
 # ============================================================
+# GAME LOOP (INPUT -> UPDATE -> RENDER)
+# ============================================================
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	_game_loop_input()
+	_game_loop_update(delta)
+	_game_loop_render()
+
+## 1. ETAPA DE INPUT
+func _game_loop_input() -> void:
+	_input_direction = 0.0
+	_input_jump = false
+	_input_ability = false
+
+	if is_active:
+		_input_direction = Input.get_axis("move_left", "move_right")
+		_input_jump = Input.is_action_just_pressed("jump")
+		_input_ability = Input.is_action_just_pressed("ability")
+
+## 2. ETAPA DE UPDATE (Física, Timers e Movimentação)
+func _game_loop_update(delta: float) -> void:
 	_update_timers(delta)
 	_apply_gravity(delta)
 
-	var direction := 0.0
-
 	if is_active:
-		direction = _get_movement_input()
 		_handle_jump()
-		if Input.is_action_just_pressed("ability") and ability_timer <= 0.0:
+		if _input_ability and ability_timer <= 0.0:
 			_use_ability()
 			ability_timer = ability_cooldown
 
 	# 1. Calcula o movimento horizontal do jogador (aplica o lerp/atrito normal)
-	_apply_horizontal_movement(direction, delta)
+	_apply_horizontal_movement(_input_direction, delta)
 
 	# 2. Resgata a velocidade da plataforma calculada pela cena principal
 	var plat_vel: Vector2 = get_meta("platform_velocity", Vector2.ZERO)
 	
 	# 3. INTERCEPTAÇÃO DA FÍSICA:
 	# Somamos a velocidade da plataforma logo antes do move_and_slide().
-	# Isso diz à engine de física do Godot: "Este personagem está se movendo nativamente a X km/h"
 	velocity.x += plat_vel.x
 	if abs(plat_vel.y) > 0.1:
 		velocity.y = plat_vel.y
@@ -91,15 +113,22 @@ func _physics_process(delta: float) -> void:
 
 	# 5. ISOLAMENTO DO ATRITO:
 	# Subtraímos a velocidade da plataforma imediatamente após o movimento.
-	# Isso impede que o 'lerp' do próximo frame ache que essa velocidade pertence 
-	# ao esforço de caminhada do jogador, mantendo a velocidade relativa nula!
 	velocity.x -= plat_vel.x
 	
 	# Limpa o meta para que o personagem pare de se mover se sair da plataforma
 	set_meta("platform_velocity", Vector2.ZERO)
 
 	_handle_push()
-	_update_animation(direction)
+
+## 3. ETAPA DE RENDER (Animações e Efeitos Visuais)
+func _game_loop_render() -> void:
+	_update_animation(_input_direction)
+	# Nota: A modulação de cor (dano, inatividade) é tratada via eventos (set_active/die/revive)
+	# ou interpolada nas próprias habilidades (Rob/Bog), então não precisa ser forçada aqui.
+
+# ============================================================
+# LÓGICA DE FÍSICA E TIMERS
+# ============================================================
 
 func _update_timers(delta: float) -> void:
 	if is_on_floor():
@@ -123,16 +152,15 @@ func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * gravity_mult * delta
 
-func _get_movement_input() -> float:
-	return Input.get_axis("move_left", "move_right")
-
 func _handle_jump() -> void:
-	if Input.is_action_just_pressed("jump"):
+	if _input_jump:
 		jump_buffer_timer = JUMP_BUFFER_TIME
+		
 	var can_jump := is_on_floor() or coyote_timer > 0
+	
 	if jump_buffer_timer > 0 and can_jump:
-		velocity.y      = get_jump()
-		coyote_timer    = 0.0
+		velocity.y        = get_jump()
+		coyote_timer      = 0.0
 		jump_buffer_timer = 0.0
 
 func _use_ability() -> void:
@@ -175,6 +203,10 @@ func _handle_push() -> void:
 		if collider is RigidBody2D and collider.is_in_group("pushable"):
 			var push_dir := col.get_normal() * -1
 			collider.apply_central_force(push_dir * push_force)
+
+# ============================================================
+# ANIMAÇÃO E EVENTOS
+# ============================================================
 
 func _update_animation(direction: float) -> void:
 	if not anim:

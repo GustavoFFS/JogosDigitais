@@ -62,16 +62,22 @@ func _remove_old_static_bodies() -> void:
 		if child is StaticBody2D or child.get_class() == "TileMap" or child is TileMapLayer:
 			child.queue_free()
 
+# ============================================================
+# GAME LOOP (INPUT -> UPDATE -> RENDER)
+# ============================================================
+
 func _process(delta: float) -> void:
-	_update_camera(delta) 
-	_update_loopy(delta) 
-	_check_death() 
-	_update_moving_platforms(delta) 
-	_update_pushable_hints() 
-	_check_pushable_blocks_bounds() # <--- ADICIONE ESTA LINHA AQUI!
-	hud.update_ability(rob.get_ability_ratio(), bog.get_ability_ratio())
+	_game_loop_input()
+	_game_loop_update(delta)
+	_game_loop_render()
+
+## 1. ETAPA DE INPUT
+func _game_loop_input() -> void:
+	# Verificação de Inputs contínuos ou baseados em polling por frame (se houver no futuro)
+	pass
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Captura de Inputs discretos por eventos do SO
 	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading:
 		_switch_character()
 	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null:
@@ -79,6 +85,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			hud._close_help()
 		else:
 			_toggle_pause()
+
+## 2. ETAPA DE UPDATE (Física, Movimentação e Regras de Jogo)
+func _game_loop_update(delta: float) -> void:
+	_update_camera(delta) 
+	_update_loopy(delta) 
+	_check_death() 
+	_update_moving_platforms(delta) 
+	_check_pushable_blocks_bounds()
+	_update_pushable_hints_logic()
+
+## 3. ETAPA DE RENDER (Atualização de HUD, Modulates e Elementos Visuais)
+func _game_loop_render() -> void:
+	hud.update_ability(rob.get_ability_ratio(), bog.get_ability_ratio())
+	_render_pushable_hints_visuals()
 
 # ============================================================
 # PAUSE
@@ -179,7 +199,6 @@ func _setup_characters() -> void:
 	current_character = rob
 	rob.set_active(true)
 	bog.set_active(false)
-	# Rob e Bog não colidem entre si (atravessam um ao outro)
 	rob.add_collision_exception_with(bog)
 	bog.add_collision_exception_with(rob)
 
@@ -193,14 +212,12 @@ func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 
-	# Visual da zona — roxo semitransparente
 	var visual := ColorRect.new()
 	visual.size     = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
 	visual.color    = Color(0.6, 0.2, 1.0, 0.314)
 	area.add_child(visual)
 
-	# Borda superior com setas indicando inversão
 	var n_arrows := int(w / 24)
 	for i in range(n_arrows):
 		var arrow := Label.new()
@@ -227,7 +244,6 @@ func _load_level() -> void:
 	rob.revive()
 	bog.revive()
 
-	# Posicionar nos spawns (sobrescreve com checkpoint se existir)
 	var spawn_r := Vector2(level["spawn_rob"][0], level["spawn_rob"][1])
 	var spawn_b := Vector2(level["spawn_bog"][0], level["spawn_bog"][1])
 
@@ -241,44 +257,22 @@ func _load_level() -> void:
 	rob.velocity = Vector2.ZERO
 	bog.velocity = Vector2.ZERO
 
-	# ==========================================
-	# Geometria e Fundo
-	# ==========================================
 	bg_rect.color = level["bg_color"]
 	
-	# Checa se o dicionário da fase possui uma imagem de fundo configurada
 	if level.has("bg_image") and level["bg_image"] != "":
 		bg_texture.texture = load(level["bg_image"])
 		bg_texture.visible = true
-		bg_rect.visible = false # Esconde a cor sólida
-		
-		# AQUI É O SEGREDO: Se tem imagem, nós NÃO chamamos _create_scenery()!
-		
+		bg_rect.visible = false 
 	else:
 		bg_texture.visible = false
-		bg_rect.visible = true  # Volta para a cor sólida
-		
-		# Só gera os prédios e nuvens antigos se NÃO houver imagem
-		_create_scenery(idx)
+		bg_rect.visible = true  
 	
-	# ==========================================
-	# GERAÇÃO DAS PLATAFORMAS (NÃO APAGUE!)
-	# ==========================================
-	# Plataformas normais
 	for p in level.get("platforms", []):
 		_create_platform(p[0], p[1], p[2], p[3], level["platform_color"])
 	
-	# Plataformas móveis
 	for mp in level.get("moving_platforms", []):
 		_spawn_moving_platform(mp, level["platform_color"])
 				
-	# Checkpoints e hazards (deixe o restante do código que já existia abaixo disso intacto)
-	
-	# Plataformas moveis — adicione estas duas linhas abaixo
-	for mp in level.get("moving_platforms", []):
-		_spawn_moving_platform(mp, level["platform_color"])
-				
-	# Checkpoints e hazards
 	for cp in level.get("checkpoints", []):
 		_create_checkpoint(cp[0], cp[1])
 	for h in level.get("hazards", []):
@@ -288,11 +282,9 @@ func _load_level() -> void:
 
 	_create_level_exit(Vector2(level["exit_pos"][0], level["exit_pos"][1]))
 
-	# Blocos empurráveis (só Bog consegue mover — can_push=true)
 	for pb in level.get("pushable_blocks", []):
 		_create_pushable_block(pb[0], pb[1], pb[2], pb[3])
 
-	# Estrelas coletáveis da fase (pula as já coletadas nesta partida)
 	var stars: Array = level.get("stars", [])
 	GameManager.stars_in_level = stars.size()
 	_stars_left_in_level = stars.size()
@@ -361,7 +353,6 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var h: float = mp.get("h", 18.0)
 
 	var body := StaticBody2D.new()
-	# Define a posição inicial diretamente pelo vetor do dicionário
 	body.global_position = mp["start_pos"]
 
 	var shape := CollisionShape2D.new()
@@ -385,7 +376,6 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	add_child(body)
 	level_nodes.append(body)
 	
-	# Salva no array interno com o novo formato (sem x_min ou x_max)
 	_moving_platforms.append({
 		"node":      body,
 		"start_pos": mp["start_pos"],
@@ -403,25 +393,18 @@ func _update_moving_platforms(delta: float) -> void:
 			continue
 
 		var prev_pos: Vector2 = platform_node.global_position
-		
-		# Determina o destino usando variáveis locais limpas
 		var is_to_end: bool = mp.get("to_end", true)
 		var target_pos: Vector2 = mp.get("end_pos") if is_to_end else mp.get("start_pos")
 
-		# Move a plataforma na direção do alvo
 		platform_node.global_position = prev_pos.move_toward(target_pos, mp.get("speed", 100.0) * delta)
 
-		# Se a plataforma chegou muito perto do alvo, inverte a direção
 		if platform_node.global_position.distance_to(target_pos) < 0.1:
 			mp["to_end"] = not is_to_end
 
-		# Calcula a velocidade real da plataforma neste frame
 		var platform_velocity: Vector2 = (platform_node.global_position - prev_pos) / delta
 
-		# Sincroniza os personagens
 		for character in [rob, bog]:
 			if is_instance_valid(character):
-				# Inicializa o meta se não existir para evitar erros
 				if not character.has_meta("platform_velocity"):
 					character.set_meta("platform_velocity", Vector2.ZERO)
 				
@@ -430,7 +413,6 @@ func _update_moving_platforms(delta: float) -> void:
 					var plat_pos: Vector2 = platform_node.global_position
 					var half_w: float = mp.get("w", 110.0) / 2.0
 					
-					# Se o personagem estiver na área de contato da plataforma
 					if abs(char_pos.x - plat_pos.x) < half_w and char_pos.y <= plat_pos.y + 8.0:
 						character.set_meta("platform_velocity", platform_velocity)
 
@@ -449,28 +431,18 @@ func _create_checkpoint(x: float, y: float) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 
-	# Haste da bandeira
 	var pole := ColorRect.new()
 	pole.size     = Vector2(4, 58)
 	pole.position = Vector2(-2, -62)
 	pole.color    = Color(0.75, 0.75, 0.78)
 	area.add_child(pole)
 
-	# Bandeira (amarela = inativa)
 	var flag := ColorRect.new()
 	flag.size     = Vector2(22, 14)
 	flag.position = Vector2(2, -62)
 	flag.color    = Color(0.92, 0.82, 0.12)
 	flag.name     = "Flag"
 	area.add_child(flag)
-
-	# "CP"
-	var lbl := Label.new()
-	lbl.text     = "CP"
-	lbl.position = Vector2(-11, -80)
-	lbl.add_theme_font_size_override("font_size", 11)
-	lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.12, 0.85))
-	area.add_child(lbl)
 
 	area.collision_layer = 0
 	area.collision_mask  = 1
@@ -486,12 +458,10 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 		return
 	area.set_meta("activated", true)
 
-	# Salvar posicoes
 	checkpoint_rob = rob.global_position
 	checkpoint_bog = bog.global_position
 	has_checkpoint = true
 
-	# Bandeira vira verde
 	var flag := area.get_node_or_null("Flag")
 	if flag:
 		flag.color = Color(0.20, 0.90, 0.35)
@@ -503,44 +473,35 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 # ============================================================
 
 func _create_hazard(x: float, y: float, w: float, h: float) -> void:
-	# 1. CRIAMOS O CORPO SÓLIDO (Hitbox física que bloqueia o jogador)
 	var static_body := StaticBody2D.new()
 	static_body.position = Vector2(x + w / 2.0, y + h / 2.0)
-	static_body.collision_layer = 1 # Mesma camada de colisão do chão padrão
+	static_body.collision_layer = 1 
 	static_body.collision_mask = 1
 
-	# Formato da colisão sólida
 	var solid_shape := CollisionShape2D.new()
 	var solid_rect  := RectangleShape2D.new()
 	solid_rect.size  = Vector2(w, h)
 	solid_shape.shape = solid_rect
 	static_body.add_child(solid_shape)
 
-	# 2. CRIAMOS A ÁREA DE DETECÇÃO DE MORTE (Acoplada ao corpo sólido)
 	var death_area := Area2D.new()
-	# Criamos uma hitbox ligeiramente maior (1 pixel para cada lado) 
-	# para garantir que o jogador morra assim que encostar na parede/chão do hazard
 	var detector_shape := CollisionShape2D.new()
 	var detector_rect  := RectangleShape2D.new()
 	detector_rect.size  = Vector2(w + 2.0, h + 2.0) 
 	detector_shape.shape = detector_rect
 	death_area.add_child(detector_shape)
 	
-	# Conectamos o sinal de morte na Área
 	death_area.collision_layer = 0
 	death_area.collision_mask  = 1
 	death_area.body_entered.connect(_on_hazard_entered)
 	static_body.add_child(death_area)
 
-	# 3. PARTE VISUAL (Mantendo o seu design original intacto)
-	# Fundo vermelho
 	var visual := ColorRect.new()
 	visual.size     = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
 	visual.color    = Color(0.75, 0.10, 0.10, 0.82) 
 	static_body.add_child(visual)
 
-	# Espinhos visuais (triângulos simulados com labels)
 	var n_spikes := int(w / 16) 
 	for i in range(n_spikes):
 		var sp := Label.new()
@@ -550,12 +511,10 @@ func _create_hazard(x: float, y: float, w: float, h: float) -> void:
 		sp.add_theme_color_override("font_color", Color(1.0, 0.30, 0.30)) 
 		static_body.add_child(sp)
 
-	# Adiciona o bloco sólido completo à cena principal
 	add_child(static_body)
 	level_nodes.append(static_body)
 
 func _on_hazard_entered(body: Node) -> void:
-	# Se o corpo que colidiu for o Rob ou o Bog, o time perde
 	if (body == rob or body == bog) and not hud.fading and not hud.showing_intro:
 		_on_player_died()
 
@@ -620,7 +579,6 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 	body.collision_layer = 1
 	body.collision_mask  = 1
 
-	# Sem atrito com o chão para o empurrão funcionar
 	var pmat := PhysicsMaterial.new()
 	pmat.friction = 0.0
 	pmat.bounce   = 0.0
@@ -632,14 +590,12 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 	shape.shape = rect
 	body.add_child(shape)
 
-	# Caixa de madeira (tons quentes)
 	var visual := ColorRect.new()
 	visual.size     = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
 	visual.color    = Color(0.58, 0.38, 0.22)
 	body.add_child(visual)
 
-	# Borda clara em cima e escura em baixo (efeito de madeira)
 	var top := ColorRect.new()
 	top.size     = Vector2(w, 4)
 	top.position = Vector2(-w / 2.0, -h / 2.0)
@@ -652,14 +608,12 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 	bot.color    = Color(0.30, 0.18, 0.10)
 	body.add_child(bot)
 
-	# Tira diagonal (madeira)
 	var stripe := ColorRect.new()
 	stripe.size     = Vector2(w, 2)
 	stripe.position = Vector2(-w / 2.0, 0)
 	stripe.color    = Color(0.42, 0.26, 0.14)
 	body.add_child(stripe)
 
-	# Ícone permanente "BOG" sobre a caixa (sempre visível)
 	var tag := Label.new()
 	tag.text     = "BOG"
 	tag.position = Vector2(-w / 2.0, -h / 2.0 - 20)
@@ -669,7 +623,6 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 	tag.add_theme_color_override("font_color", Color(1.0, 0.62, 0.26))
 	body.add_child(tag)
 
-	# Dica dinâmica (mostrada quando algum personagem está perto)
 	var hint := Label.new()
 	hint.text     = ""
 	hint.name     = "Hint"
@@ -689,40 +642,52 @@ func _create_pushable_block(x: float, y: float, w: float, h: float) -> void:
 func _check_pushable_blocks_bounds() -> void:
 	for block in _pushable_blocks:
 		if is_instance_valid(block) and block is RigidBody2D:
-			# Se a caixa passou do limite Y de morte do mapa
 			if block.global_position.y > DEATH_Y:
-				# Recupera a posição inicial dela
 				var start_pos: Vector2 = block.get_meta("start_position", block.global_position)
-				
-				# Reseta a posição física
 				block.global_position = start_pos
-				
-				# CRUCIAL para RigidBody2D: Zera as forças acumuladas 
-				# para ela não reaparecer voando ou girando loucamente
 				block.linear_velocity = Vector2.ZERO
 				block.angular_velocity = 0.0
 
-func _update_pushable_hints() -> void:
+## Atualiza a lógica/texto da dica de proximidade (Etapa de Update)
+func _update_pushable_hints_logic() -> void:
 	if not current_character or victory_overlay != null:
 		return
+		
 	for block in _pushable_blocks:
 		if not is_instance_valid(block):
 			continue
 		var hint: Label = block.get_node_or_null("Hint")
 		if hint == null:
 			continue
-		var dist : float = block.global_position.distance_to(current_character.global_position)
+			
+		var dist: float = block.global_position.distance_to(current_character.global_position)
+		block.set_meta("player_distance", dist) # Guarda a distância calculada para a etapa de Render
+		
+		if dist <= 160.0:
+			if current_character == bog:
+				hint.text = "↔  Caminhe contra a caixa para empurrar"
+				hint.add_theme_color_override("font_color", Color(0.55, 1.0, 0.55))
+			else:
+				hint.text = "Troque para o BOG  [TAB]  para empurrar"
+				hint.add_theme_color_override("font_color", Color(1.0, 0.78, 0.30))
+
+## Renderiza as mudanças de opacidade baseadas na distância (Etapa de Render)
+func _render_pushable_hints_visuals() -> void:
+	if victory_overlay != null:
+		return
+		
+	for block in _pushable_blocks:
+		if not is_instance_valid(block):
+			continue
+		var hint: Label = block.get_node_or_null("Hint")
+		if hint == null:
+			continue
+			
+		var dist: float = block.get_meta("player_distance", 9999.0)
 		if dist > 160.0:
 			hint.modulate.a = lerp(hint.modulate.a, 0.0, 0.15)
-			continue
-
-		if current_character == bog:
-			hint.text = "↔  Caminhe contra a caixa para empurrar"
-			hint.add_theme_color_override("font_color", Color(0.55, 1.0, 0.55))
 		else:
-			hint.text = "Troque para o BOG  [TAB]  para empurrar"
-			hint.add_theme_color_override("font_color", Color(1.0, 0.78, 0.30))
-		hint.modulate.a = lerp(hint.modulate.a, 1.0, 0.20)
+			hint.modulate.a = lerp(hint.modulate.a, 1.0, 0.20)
 
 # ============================================================
 # ESTRELAS COLETÁVEIS
@@ -741,11 +706,10 @@ func _create_star(x: float, y: float, level_idx: int, star_idx: int) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 
-	# Visual: estrela dourada feita de ColorRects (losango + centro)
 	var star_visual := Node2D.new()
 	area.add_child(star_visual)
-	var gold    := Color(1.0, 0.88, 0.30)
-	var gold_hi := Color(1.0, 0.96, 0.55)
+	var gold     := Color(1.0, 0.88, 0.30)
+	var gold_hi  := Color(1.0, 0.96, 0.55)
 	for v in [Vector2(-3, -12), Vector2(-3, 6), Vector2(-12, -3), Vector2(6, -3)]:
 		var arm := ColorRect.new()
 		arm.size     = Vector2(6, 6)
@@ -763,7 +727,6 @@ func _create_star(x: float, y: float, level_idx: int, star_idx: int) -> void:
 	inner.color    = Color(1.0, 1.0, 0.85)
 	star_visual.add_child(inner)
 
-	# Brilho ao redor
 	var glow := ColorRect.new()
 	glow.size     = Vector2(36, 36)
 	glow.position = Vector2(-18, -18)
@@ -771,7 +734,6 @@ func _create_star(x: float, y: float, level_idx: int, star_idx: int) -> void:
 	star_visual.add_child(glow)
 	star_visual.move_child(glow, 0)
 
-	# Flutuação suave
 	var tw := create_tween().set_loops()
 	tw.tween_property(star_visual, "position:y", -6.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(star_visual, "position:y",  0.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -797,7 +759,6 @@ func _on_star_body_entered(body: Node, area: Area2D) -> void:
 	hud.update_stars(GameManager.stars_collected, GameManager.stars_total_game)
 	hud.flash_star()
 
-	# Animação de coleta: escala/fade antes de remover
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(area, "scale", Vector2(2.0, 2.0), 0.25)
 	tw.tween_property(area, "modulate:a", 0.0, 0.25)
@@ -814,8 +775,8 @@ func _create_loopy(pos: Vector2) -> void:
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
-	rect.size      = Vector2(24, 50)
-	shape.shape    = rect
+	rect.size       = Vector2(24, 50)
+	shape.shape     = rect
 	shape.position = Vector2(0, 25)
 	loopy_body.add_child(shape)
 
@@ -899,16 +860,12 @@ func _check_death() -> void:
 	if hud.fading or hud.showing_intro:
 		return
 
-	# Verifica se o personagem ATIVO caiu no precipício
 	if current_character.global_position.y > DEATH_Y:
 		_on_player_died()
 		return
 
-	# Identifica quem é o personagem SECUNDÁRIO (não controlado)
 	var other := bog if current_character == rob else rob
 	
-	# REGRA NOVA: Se o personagem não controlado cair no precipício,
-	# ele morre e engatilha a derrota de ambos
 	if other.global_position.y > DEATH_Y and not other.is_dead:
 		_on_player_died()
 		return
@@ -969,8 +926,6 @@ func _add_victory_label(txt: String, y: float, fs: int, col: Color) -> void:
 	tw.tween_property(lbl, "modulate:a", 1.0, 0.55)
 
 func _run_victory_sequence() -> void:
-	# Calcula o "rank" do final com base nas estrelas coletadas.
-	# tier: 0=básico, 1=bom, 2=brilhante, 3=lendário (100%).
 	var total: int = GameManager.stars_total_game
 	var got:   int = GameManager.stars_collected
 	var pct:   float = 0.0 if total == 0 else float(got) / total
@@ -997,7 +952,6 @@ func _run_victory_sequence() -> void:
 					   166, 20, Color(1.0, 0.92, 0.38))
 	await get_tree().create_timer(1.5).timeout
 
-	# Frase específica do tier (só nos finais melhores Loopy reage diferente)
 	match tier:
 		3:
 			_add_victory_label("— Vocês me trouxeram TODAS as estrelas?! Que jornada lendária! —",
@@ -1016,7 +970,6 @@ func _run_victory_sequence() -> void:
 	_add_reunion_scene(tier)
 	await get_tree().create_timer(0.8).timeout
 
-	# Estatísticas e título do final
 	var stats_msg := "★  %d / %d   ·   💀  %d morte%s" % [
 		got, total, GameManager.deaths,
 		"" if GameManager.deaths == 1 else "s"
@@ -1042,9 +995,9 @@ func _tier_title(tier: int) -> String:
 
 func _tier_color(tier: int) -> Color:
 	match tier:
-		3: return Color(1.0, 0.85, 0.25)   # dourado
-		2: return Color(1.0, 0.92, 0.55)   # dourado claro
-		1: return Color(0.85, 0.92, 1.0)   # prateado/azul claro
+		3: return Color(1.0, 0.85, 0.25)   
+		2: return Color(1.0, 0.92, 0.55)   
+		1: return Color(0.85, 0.92, 1.0)   
 		_: return Color(0.85, 0.85, 0.95)
 
 # ============================================================
@@ -1052,7 +1005,6 @@ func _tier_color(tier: int) -> Color:
 # ============================================================
 
 func _add_victory_sky(tier: int = 0) -> void:
-	# Cores do céu mudam conforme o tier (mais brilho/dourado nos finais melhores)
 	var sky_col   := Color(0.18, 0.12, 0.28)
 	var dusk_col  := Color(0.85, 0.45, 0.30)
 	var glow_col  := Color(0.98, 0.72, 0.35)
@@ -1084,7 +1036,6 @@ func _add_victory_sky(tier: int = 0) -> void:
 	glow.color    = glow_col
 	victory_overlay.add_child(glow)
 
-	# No tier 3 (lendário), adiciona estrelas brilhando no céu
 	if tier == 3:
 		for i in range(40):
 			var sx: float = 30.0 + (i * 67) % 1100
@@ -1105,7 +1056,6 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	scene.modulate.a = 0.0
 	victory_overlay.add_child(scene)
 
-	# Auréola dourada nos finais melhores (tier 2+)
 	if tier >= 2:
 		var halo := ColorRect.new()
 		halo.position = Vector2(388, 380)
@@ -1113,7 +1063,6 @@ func _add_reunion_scene(tier: int = 0) -> void:
 		halo.color    = Color(1.0, 0.88, 0.30, 0.18 if tier == 2 else 0.30)
 		scene.add_child(halo)
 
-	# Edifícios ao fundo (silhuetas com janelas acesas)
 	for i in range(9):
 		var bx: float = 40.0 + i * 130.0
 		var bh: float = 60.0 + ((i * 37) % 50)
@@ -1124,16 +1073,13 @@ func _add_reunion_scene(tier: int = 0) -> void:
 					_v_rect(scene, bx + 12.0 + jx * 30, 430.0 - bh + 10.0 + jy * 16,
 							10.0, 8.0, Color(1.0, 0.85, 0.45, 0.9))
 
-	# Sol pôr-do-sol
 	_v_rect(scene, 540.0, 345.0, 72.0, 72.0, Color(1.0, 0.78, 0.35))
 	_v_rect(scene, 510.0, 395.0, 132.0, 26.0, Color(1.0, 0.58, 0.28, 0.55))
 
-	# Chão
 	_v_rect(scene, 0.0, 470.0, 1152.0, 115.0, Color(0.22, 0.16, 0.14))
 	_v_rect(scene, 0.0, 470.0, 1152.0, 4.0,   Color(0.12, 0.09, 0.06))
 	_v_rect(scene, 0.0, 540.0, 1152.0, 2.0, Color(0.35, 0.28, 0.20))
 
-	# Título centralizado acima do céu — varia conforme o tier
 	var title := "— REENCONTRO —"
 	var title_col := Color(1.0, 0.90, 0.50)
 	if tier == 3:
@@ -1146,12 +1092,10 @@ func _add_reunion_scene(tier: int = 0) -> void:
 		title = "—  BOM REENCONTRO  —"
 	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
 
-	# Personagens em y=570 (acima dos labels em y=588)
 	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 420.0, 570.0, 1.6)
 	_draw_loopy_full(scene, 576.0, 570.0, 1.3)
 	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 730.0, 570.0, 1.6)
 
-	# Corações acima das cabeças (entre y=300 e y=420)
 	_add_heart(scene, 400.0, 340.0)
 	_add_heart(scene, 750.0, 345.0)
 	_v_label(scene, "♪", 485.0, 335.0, 30, Color(1.0, 0.85, 0.45))
@@ -1160,7 +1104,6 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
 
-## Carrega spritesheet 16-frames e mostra o frame 0 como sprite estático.
 func _add_character_sprite(parent: Node, path: String, feet_x: float, feet_y: float, scl: float) -> void:
 	var sprite := Sprite2D.new()
 	var tex: Texture2D = load(path)
@@ -1200,11 +1143,6 @@ func _add_heart(parent: Node, x: float, y: float) -> void:
 	_v_rect(parent, x + 2,  y + 12, 18, 8,  red)
 	_v_rect(parent, x + 6,  y + 18, 10, 6,  red)
 
-# ---- Personagens ----
-#
-# Coord system: cx = centro horizontal, cy = pés. `dy` = distância do
-# TOPO do retângulo acima dos pés (maior = mais alto na tela).
-
 func _pr(parent: Node, cx: float, cy: float, s: float,
 		 dx: float, dy: float, w: float, h: float, col: Color) -> void:
 	var r := ColorRect.new()
@@ -1231,10 +1169,10 @@ func _draw_loopy_full(parent: Node, cx: float, cy: float, s: float) -> void:
 	var dark   := Color(0.10, 0.08, 0.06)
 
 	_pr(parent, cx, cy, s, -30,  95, 60, 75, cape)
-	_pr(parent, cx, cy, s, -14,  9, 12, 9, shoe)
-	_pr(parent, cx, cy, s,   2,  9, 12, 9, shoe)
-	_pr(parent, cx, cy, s, -14,  2, 12, 2, dark)
-	_pr(parent, cx, cy, s,   2,  2, 12, 2, dark)
+	_pr(parent, cx, cy, s, -14,   9, 12, 9, shoe)
+	_pr(parent, cx, cy, s,   2,   9, 12, 9, shoe)
+	_pr(parent, cx, cy, s, -14,   2, 12, 2, dark)
+	_pr(parent, cx, cy, s,   2,   2, 12, 2, dark)
 	_pr(parent, cx, cy, s, -12, 38, 10, 29, jeans)
 	_pr(parent, cx, cy, s,   2, 38, 10, 29, jeans)
 	_pr(parent, cx, cy, s, -18, 72, 36, 34, hood)
@@ -1252,13 +1190,13 @@ func _draw_loopy_full(parent: Node, cx: float, cy: float, s: float) -> void:
 	_pr(parent, cx, cy, s, -14, 98, 4, 12, hair)
 	_pr(parent, cx, cy, s,  10, 98, 4, 12, hair)
 	_pr(parent, cx, cy, s, -7, 93, 3, 3, dark)
-	_pr(parent, cx, cy, s,  3, 93, 3, 3, dark)
+	_pr(parent, cx, cy, s,   3, 93, 3, 3, dark)
 	_pr(parent, cx, cy, s, -2, 88, 4, 4, Color(skin.r * 0.85, skin.g * 0.72, skin.b * 0.60))
 	_pr(parent, cx, cy, s, -4, 82, 8, 1.5, dark)
 	_pr(parent, cx, cy, s, -15, 118, 30, 14, beanie)
 	_pr(parent, cx, cy, s, -14, 106, 28, 3, Color(beanie.r * 0.65, beanie.g * 0.65, beanie.b * 0.60))
-	_pr(parent, cx, cy, s,  2, 125, 7, 6, leaf)
-	_pr(parent, cx, cy, s,  6, 130, 4, 4, leaf)
+	_pr(parent, cx, cy, s,   2, 125, 7, 6, leaf)
+	_pr(parent, cx, cy, s,   6, 130, 4, 4, leaf)
 	_pr(parent, cx, cy, s, 22, 122, 4, 70, staff)
 	_pr(parent, cx, cy, s, 18, 134, 14, 11, cup)
 	_pr(parent, cx, cy, s, 20, 132,  9,  4, tea)
@@ -1271,25 +1209,17 @@ func _draw_rob_sil(parent: Node, cx: float, cy: float, s: float) -> void:
 	var shoe  := Color(0.14, 0.14, 0.18)
 	var hair  := Color(0.22, 0.16, 0.10)
 	var dark  := Color(0.05, 0.05, 0.05)
-	# Pés
 	_pr(parent, cx, cy, s, -12,  8,  10, 8, shoe)
 	_pr(parent, cx, cy, s,   2,  8,  10, 8, shoe)
-	# Calça
 	_pr(parent, cx, cy, s, -10, 32, 9, 24, pants)
 	_pr(parent, cx, cy, s,   1, 32, 9, 24, pants)
-	# Camisa
 	_pr(parent, cx, cy, s, -14, 60, 28, 28, shirt)
-	# Braços
 	_pr(parent, cx, cy, s, -18, 55, 4, 22, skin)
 	_pr(parent, cx, cy, s,  14, 55, 4, 22, skin)
-	# Cabeça
 	_pr(parent, cx, cy, s,  -9, 80, 18, 20, skin)
-	# Cabelo
 	_pr(parent, cx, cy, s, -10, 84, 20, 7, hair)
-	# Olhos
 	_pr(parent, cx, cy, s, -5, 74, 2, 2, dark)
-	_pr(parent, cx, cy, s,  3, 74, 2, 2, dark)
-	# Sorriso
+	_pr(parent, cx, cy, s,   3, 74, 2, 2, dark)
 	_pr(parent, cx, cy, s, -3, 68, 6, 1.5, Color(0.6, 0.2, 0.2))
 	_v_label(parent, "Rob", cx - 24.0, cy + 14.0, 14, Color(0.55, 0.88, 1.0))
 
@@ -1300,22 +1230,17 @@ func _draw_bog_sil(parent: Node, cx: float, cy: float, s: float) -> void:
 	var shoe  := Color(0.18, 0.14, 0.10)
 	var hair  := Color(0.10, 0.08, 0.06)
 	var dark  := Color(0.05, 0.05, 0.05)
-	# Pés (mais largos)
 	_pr(parent, cx, cy, s, -14,  8,  12, 8, shoe)
 	_pr(parent, cx, cy, s,   2,  8,  12, 8, shoe)
-	# Calça
 	_pr(parent, cx, cy, s, -12, 34, 11, 26, pants)
 	_pr(parent, cx, cy, s,   1, 34, 11, 26, pants)
-	# Camisa (mais largo)
 	_pr(parent, cx, cy, s, -18, 64, 36, 30, shirt)
-	# Braços
 	_pr(parent, cx, cy, s, -22, 58, 4, 22, skin)
 	_pr(parent, cx, cy, s,  18, 58, 4, 22, skin)
-	# Cabeça
 	_pr(parent, cx, cy, s, -11, 86, 22, 22, skin)
 	_pr(parent, cx, cy, s, -12, 90, 24, 7, hair)
 	_pr(parent, cx, cy, s, -6, 80, 2, 2, dark)
-	_pr(parent, cx, cy, s,  4, 80, 2, 2, dark)
+	_pr(parent, cx, cy, s,   4, 80, 2, 2, dark)
 	_pr(parent, cx, cy, s, -3, 72, 6, 1.5, Color(0.5, 0.2, 0.2))
 	_v_label(parent, "Bog", cx - 24.0, cy + 14.0, 14, Color(1.0, 0.65, 0.30))
 
@@ -1327,207 +1252,8 @@ func _wait_for_menu_input() -> void:
 			return
 
 # ============================================================
-# CENARIO URBANO DE FUNDO
-# ============================================================
-
-func _create_scenery(idx: int) -> void:
-	const LEVEL_W := 3600.0
-
-	# Paletas de edificios por fase
-	var palettes: Array = [
-		[Color(0.52, 0.60, 0.72), Color(0.76, 0.46, 0.30), Color(0.82, 0.74, 0.58)],  # ruas - dia
-		[Color(0.48, 0.62, 0.80), Color(0.60, 0.78, 0.90), Color(0.44, 0.60, 0.74)],  # praca - gelo
-		[Color(0.30, 0.24, 0.20), Color(0.24, 0.18, 0.14), Color(0.38, 0.28, 0.22)],  # telhados - noite
-		[Color(0.20, 0.20, 0.18), Color(0.16, 0.16, 0.14), Color(0.24, 0.24, 0.20)],  # becos - escuro
-		[Color(0.62, 0.40, 0.22), Color(0.50, 0.32, 0.18), Color(0.70, 0.48, 0.26)],  # final - por do sol
-	]
-	var palette: Array = palettes[clamp(idx, 0, palettes.size() - 1)]
-
-	# Cor do ceu por fase
-	var sky_colors: Array = [
-		Color(0.52, 0.76, 0.94),  # azul dia
-		Color(0.44, 0.68, 0.88),  # azul frio
-		Color(0.10, 0.08, 0.18),  # noite
-		Color(0.07, 0.07, 0.10),  # beco escuro
-		Color(0.68, 0.38, 0.14),  # laranja poente
-	]
-	var sky_col: Color = sky_colors[clamp(idx, 0, sky_colors.size() - 1)]
-
-	# Ceu
-	var sky := ColorRect.new()
-	sky.position = Vector2(-600, -500)
-	sky.size     = Vector2(LEVEL_W + 1200, 1200)
-	sky.color    = sky_col
-	sky.z_index  = -80
-	add_child(sky)
-	level_nodes.append(sky)
-
-	# Nuvens (fases ao ar livre)
-	if idx <= 1:
-		var cx_arr := [-200.0, 380.0, 820.0, 1320.0, 1900.0, 2480.0, 3060.0]
-		var cy_arr := [60.0, 90.0, 45.0, 110.0, 70.0, 95.0, 55.0]
-		for ci in range(cx_arr.size()):
-			var cloud := ColorRect.new()
-			cloud.position = Vector2(cx_arr[ci], cy_arr[ci])
-			cloud.size     = Vector2(110 + (ci % 3) * 38, 28 + (ci % 2) * 14)
-			cloud.color    = Color(1.0, 1.0, 1.0, 0.82)
-			cloud.z_index  = -72
-			add_child(cloud)
-			level_nodes.append(cloud)
-
-	# Edificios de fundo
-	var bx       := -400.0
-	var b_idx    := 0
-	var win_col  := Color(0.96, 0.88, 0.52, 0.70)
-	if idx == 3:
-		win_col = Color(0.32, 0.28, 0.10, 0.45)
-	elif idx == 4:
-		win_col = Color(1.0, 0.62, 0.18, 0.60)
-
-	while bx < LEVEL_W + 200:
-		var bw := 110.0 + (b_idx % 5) * 20.0
-		var bh := 190.0 + (b_idx % 7) * 26.0
-		var bc = palette[b_idx % palette.size()]
-
-		var bld := ColorRect.new()
-		bld.position = Vector2(bx, 620 - bh)
-		bld.size     = Vector2(bw, bh)
-		bld.color    = bc
-		bld.z_index  = -52
-		add_child(bld)
-		level_nodes.append(bld)
-
-		# Janelas (2 colunas x 3 linhas)
-		for wr in range(3):
-			for wc in range(2):
-				var wx := bx + 14 + wc * (bw * 0.55)
-				var wy := 620 - bh + 18 + wr * 52
-				var win := ColorRect.new()
-				win.position = Vector2(wx, wy)
-				win.size     = Vector2(15, 18)
-				win.color    = win_col
-				win.z_index  = -51
-				add_child(win)
-				level_nodes.append(win)
-
-		bx    += bw + 10 + (b_idx % 3) * 18
-		b_idx += 1
-
-	# Arvores (fases ao ar livre)
-	if idx <= 1:
-		for tx in [200.0, 580.0, 980.0, 1440.0, 1820.0, 2260.0, 2700.0]:
-			_create_tree(tx, 620)
-
-	# Props: placa "Café Loop" na fase 1
-	if idx == 0:
-		var awning := ColorRect.new()
-		awning.position = Vector2(-240, 420)
-		awning.size     = Vector2(180, 16)
-		awning.color    = Color(0.82, 0.14, 0.10)
-		awning.z_index  = -42
-		add_child(awning)
-		level_nodes.append(awning)
-
-		var sign_bg := ColorRect.new()
-		sign_bg.position = Vector2(-240, 436)
-		sign_bg.size     = Vector2(180, 52)
-		sign_bg.color    = Color(0.94, 0.88, 0.78)
-		sign_bg.z_index  = -42
-		add_child(sign_bg)
-		level_nodes.append(sign_bg)
-
-		var sign_lbl := Label.new()
-		sign_lbl.text     = "Café Loop"
-		sign_lbl.position = Vector2(-238, 448)
-		sign_lbl.size     = Vector2(176, 30)
-		sign_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sign_lbl.add_theme_font_size_override("font_size", 18)
-		sign_lbl.add_theme_color_override("font_color", Color(0.18, 0.10, 0.05))
-		sign_lbl.z_index = -41
-		add_child(sign_lbl)
-		level_nodes.append(sign_lbl)
-
-		# Hidrante e lixeiras
-		_create_hydrant(340.0, 608.0)
-		_create_trash(760.0, 606.0)
-		_create_trash(1900.0, 606.0)
-
-	# Postes de luz nas ruas
-	if idx <= 1:
-		for px in [500.0, 1100.0, 1700.0, 2300.0, 2900.0]:
-			_create_lamppost(px, 620)
-
-func _create_tree(x: float, gy: float) -> void:
-	var trunk := ColorRect.new()
-	trunk.position = Vector2(x - 6, gy - 46)
-	trunk.size     = Vector2(12, 46)
-	trunk.color    = Color(0.42, 0.26, 0.10)
-	trunk.z_index  = -48
-	add_child(trunk)
-	level_nodes.append(trunk)
-	for layer in range(3):
-		var cw  := 50.0 - layer * 7
-		var cap := ColorRect.new()
-		cap.position = Vector2(x - cw / 2, gy - 46 - 28 - layer * 20)
-		cap.size     = Vector2(cw, 34)
-		cap.color    = Color(0.20 + layer * 0.05, 0.60 - layer * 0.04, 0.20)
-		cap.z_index  = -47
-		add_child(cap)
-		level_nodes.append(cap)
-
-func _create_hydrant(x: float, y: float) -> void:
-	var body := ColorRect.new()
-	body.position = Vector2(x, y)
-	body.size     = Vector2(14, 22)
-	body.color    = Color(0.88, 0.14, 0.10)
-	body.z_index  = -42
-	add_child(body)
-	level_nodes.append(body)
-	var top := ColorRect.new()
-	top.position = Vector2(x - 2, y - 6)
-	top.size     = Vector2(18, 7)
-	top.color    = Color(0.78, 0.10, 0.08)
-	top.z_index  = -41
-	add_child(top)
-	level_nodes.append(top)
-
-func _create_trash(x: float, y: float) -> void:
-	var body := ColorRect.new()
-	body.position = Vector2(x, y)
-	body.size     = Vector2(20, 28)
-	body.color    = Color(0.30, 0.34, 0.30)
-	body.z_index  = -42
-	add_child(body)
-	level_nodes.append(body)
-	var lid := ColorRect.new()
-	lid.position = Vector2(x - 2, y - 6)
-	lid.size     = Vector2(24, 7)
-	lid.color    = Color(0.38, 0.40, 0.36)
-	lid.z_index  = -41
-	add_child(lid)
-	level_nodes.append(lid)
-
-func _create_lamppost(x: float, gy: float) -> void:
-	var pole := ColorRect.new()
-	pole.position = Vector2(x - 2, gy - 120)
-	pole.size     = Vector2(4, 120)
-	pole.color    = Color(0.55, 0.52, 0.50)
-	pole.z_index  = -44
-	add_child(pole)
-	level_nodes.append(pole)
-	var lamp := ColorRect.new()
-	lamp.position = Vector2(x - 10, gy - 128)
-	lamp.size     = Vector2(20, 10)
-	lamp.color    = Color(0.95, 0.90, 0.55, 0.90)
-	lamp.z_index  = -43
-	add_child(lamp)
-	level_nodes.append(lamp)
-
-# ============================================================
 # BACKGROUND
 # ============================================================
-
-# Background dinamico
 
 func _create_background() -> void:
 	bg_rect          = ColorRect.new()
@@ -1539,19 +1265,8 @@ func _create_background() -> void:
 
 	bg_texture = TextureRect.new()
 	bg_texture.z_index = -90 
-	
 	bg_texture.position = Vector2(-1200, 0)
 	bg_texture.size     = Vector2(3000, 1000)
-	
-	# --- NOVO CÓDIGO PARA REPETIÇÃO (LOOP) ---
-	
-	# Habilita a repetição da textura na engine
 	bg_texture.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	
-	# Muda o modo para TILE (Ladrilho). Ele vai desenhar a imagem 
-	# repetidas vezes até preencher todo o tamanho (size) do retângulo.
 	bg_texture.stretch_mode = TextureRect.STRETCH_TILE
-	
-	# -----------------------------------------
-	
 	add_child(bg_texture)

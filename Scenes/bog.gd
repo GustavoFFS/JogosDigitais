@@ -8,6 +8,10 @@ var is_ground_pounding := false
 var impact_radius := 150.0  # Área de efeito do estrondo
 var impact_power := 600.0   # Força do arremesso
 
+# ============================================================
+# INICIALIZACAO
+# ============================================================
+
 func _ready() -> void:
 	character_name     = "Bog"
 	base_speed         = 220.0
@@ -16,6 +20,40 @@ func _ready() -> void:
 	push_force         = 120.0
 	anim_suffix        = ""
 	ability_cooldown   = 0.1
+
+# ============================================================
+# GAME LOOP (INPUT -> UPDATE -> RENDER)
+# ============================================================
+
+func _physics_process(delta: float) -> void:
+	_game_loop_input()
+	_game_loop_update(delta)
+	_game_loop_render()
+
+## 1. ETAPA DE INPUT
+func _game_loop_input() -> void:
+	# Processamento de inputs específicos do Bog que não estejam na CharacterBase
+	pass
+
+## 2. ETAPA DE UPDATE (Física e Lógica)
+func _game_loop_update(delta: float) -> void:
+	# Agora chamamos o Update da classe pai diretamente!
+	super._game_loop_update(delta) 
+	
+	# Se estava caindo no impacto e finalmente bateu no chão
+	if is_ground_pounding and is_on_floor():
+		_apply_ground_impact()
+		is_ground_pounding = false
+		is_locked = false # Destrava o movimento para o jogador voltar a andar
+
+## 3. ETAPA DE RENDER (Efeitos e Visuais)
+func _game_loop_render() -> void:
+	# Atualizações visuais contínuas por frame
+	pass
+
+# ============================================================
+# HABILIDADE E EFEITOS
+# ============================================================
 
 func _use_ability() -> void:
 	# Não faz nada se estiver no chão ou se já estiver executando o golpe
@@ -33,17 +71,6 @@ func _use_ability() -> void:
 	var tw := create_tween()
 	tw.tween_property(sprite, "modulate", Color(1.0, 0.60, 0.22, 1.0), 0.04)
 	tw.tween_property(sprite, "modulate", Color(1.0, 1.0,  1.0,  1.0), 0.28)
-
-func _physics_process(delta: float) -> void:
-	# O super(delta) vai rodar o _physics_process do CharacterBase, 
-	# que aplica a gravidade e roda o move_and_slide()
-	super(delta) 
-	
-	# Se estava caindo no impacto e finalmente bateu no chão
-	if is_ground_pounding and is_on_floor():
-		_apply_ground_impact()
-		is_ground_pounding = false
-		is_locked = false # Destrava o movimento para o jogador voltar a andar
 
 func _apply_ground_impact() -> void:
 	var pushables = get_tree().get_nodes_in_group("pushable")
