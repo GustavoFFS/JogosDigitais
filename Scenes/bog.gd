@@ -25,19 +25,14 @@ func _ready() -> void:
 # GAME LOOP (INPUT -> UPDATE -> RENDER)
 # ============================================================
 
-func _physics_process(delta: float) -> void:
-	_game_loop_input()
-	_game_loop_update(delta)
-	_game_loop_render()
-
 ## 1. ETAPA DE INPUT
 func _game_loop_input() -> void:
-	# Processamento de inputs específicos do Bog que não estejam na CharacterBase
-	pass
+	# Essencial para herdar a leitura de botões (andar, pular) da CharacterBase
+	super._game_loop_input()
 
 ## 2. ETAPA DE UPDATE (Física e Lógica)
 func _game_loop_update(delta: float) -> void:
-	# Agora chamamos o Update da classe pai diretamente!
+	# Essencial para aplicar gravidade e o move_and_slide base
 	super._game_loop_update(delta) 
 	
 	# Se estava caindo no impacto e finalmente bateu no chão
@@ -48,8 +43,8 @@ func _game_loop_update(delta: float) -> void:
 
 ## 3. ETAPA DE RENDER (Efeitos e Visuais)
 func _game_loop_render() -> void:
-	# Atualizações visuais contínuas por frame
-	pass
+	# Essencial para rodar as animações herdadas
+	super._game_loop_render()
 
 # ============================================================
 # HABILIDADE E EFEITOS
@@ -85,7 +80,7 @@ func _apply_ground_impact() -> void:
 			# Proporção da distância: 0.0 (colado) até 1.0 (no limite)
 			var distance_ratio = clamp(distance / impact_radius, 0.0, 1.0)
 			
-			# --- NOVA LÓGICA DE DIREÇÃO E ÂNGULO ---
+			# --- LÓGICA DE DIREÇÃO E ÂNGULO ---
 			var dir_to_obj = global_position.direction_to(obj.global_position)
 			var dir_x_sign = sign(dir_to_obj.x)
 			
@@ -101,9 +96,8 @@ func _apply_ground_impact() -> void:
 			
 			# Cria a nova direção com base nos valores e normaliza para manter a força consistente
 			var dir = Vector2(x_val, y_val).normalized()
-			# --------------------------------------
 			
-			# Lógica de força que já havíamos feito
+			# Lógica de força
 			var power_multiplier = lerp(1.0, 0.2, distance_ratio)
 			var applied_power = impact_power * power_multiplier
 			
