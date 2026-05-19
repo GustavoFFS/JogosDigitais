@@ -254,15 +254,8 @@ func _build_top_panel() -> void:
 	_btn_pause.pressed.connect(_on_pause_pressed)
 	add_child(_btn_pause)
 
-	# ---- Botão de Ajuda/Dicas ----
-	var btn_help := Button.new()
-	btn_help.text     = "?  Dicas"
-	btn_help.position = Vector2(970, 76)
-	btn_help.size     = Vector2(82, 28)
-	btn_help.add_theme_font_size_override("font_size", 14)
-	btn_help.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	btn_help.pressed.connect(_show_help)
-	add_child(btn_help)
+	# (Botão de Dicas removido daqui — agora acessível pelo menu inicial
+	# e pelo overlay de pausa via scene_1.)
 
 func _on_pause_pressed() -> void:
 	pause_requested.emit()
@@ -274,9 +267,12 @@ func _on_pause_pressed() -> void:
 func is_help_visible() -> bool:
 	return _help_overlay != null and is_instance_valid(_help_overlay)
 
+var _help_was_paused: bool = false
+
 func _show_help() -> void:
 	if _help_overlay and is_instance_valid(_help_overlay):
 		return
+	_help_was_paused = get_tree().paused
 	get_tree().paused = true
 
 	_help_overlay = Control.new()
@@ -361,7 +357,9 @@ func _close_help() -> void:
 	if _help_overlay and is_instance_valid(_help_overlay):
 		_help_overlay.queue_free()
 	_help_overlay = null
-	get_tree().paused = false
+	# Mantém o jogo pausado se já estava (overlay de pausa/morte por cima)
+	get_tree().paused = _help_was_paused
+	_help_was_paused = false
 
 func update_stars(collected: int, total: int) -> void:
 	if _lbl_stars:
