@@ -135,20 +135,20 @@ func _open_pause() -> void:
 	_pause_overlay.add_child(dim)
 
 	var box := ColorRect.new()
-	box.size     = Vector2(440, 300)
-	box.position = Vector2(356, 174)
+	box.size     = Vector2(440, 370)
+	box.position = Vector2(356, 144)
 	box.color    = Color(0.10, 0.12, 0.20, 0.98)
 	_pause_overlay.add_child(box)
 
 	var border := ColorRect.new()
 	border.size     = Vector2(440, 4)
-	border.position = Vector2(356, 174)
+	border.position = Vector2(356, 144)
 	border.color    = Color(0.30, 0.75, 1.0, 0.9)
 	_pause_overlay.add_child(border)
 
 	var title := Label.new()
 	title.text     = "— PAUSA —"
-	title.position = Vector2(356, 196)
+	title.position = Vector2(356, 166)
 	title.size     = Vector2(440, 44)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
@@ -157,7 +157,7 @@ func _open_pause() -> void:
 
 	var info := Label.new()
 	info.text     = "★  Estrelas: %d / %d" % [GameManager.stars_collected, GameManager.stars_total_game]
-	info.position = Vector2(356, 244)
+	info.position = Vector2(356, 214)
 	info.size     = Vector2(440, 24)
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.add_theme_font_size_override("font_size", 16)
@@ -166,17 +166,26 @@ func _open_pause() -> void:
 
 	var btn_resume := Button.new()
 	btn_resume.text = "Continuar"
-	btn_resume.position = Vector2(416, 288)
-	btn_resume.size     = Vector2(320, 46)
+	btn_resume.position = Vector2(416, 256)
+	btn_resume.size     = Vector2(320, 44)
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_resume.pressed.connect(_close_pause)
 	_pause_overlay.add_child(btn_resume)
 
+	var btn_help := Button.new()
+	btn_help.text = "?  Dicas"
+	btn_help.position = Vector2(416, 310)
+	btn_help.size     = Vector2(320, 44)
+	btn_help.add_theme_font_size_override("font_size", 19)
+	btn_help.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_help.pressed.connect(hud._show_help)
+	_pause_overlay.add_child(btn_help)
+
 	var btn_menu := Button.new()
 	btn_menu.text = "Voltar ao Menu"
-	btn_menu.position = Vector2(416, 346)
-	btn_menu.size     = Vector2(320, 46)
+	btn_menu.position = Vector2(416, 364)
+	btn_menu.size     = Vector2(320, 44)
 	btn_menu.add_theme_font_size_override("font_size", 20)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_menu.pressed.connect(_quit_to_menu)
@@ -184,7 +193,7 @@ func _open_pause() -> void:
 
 	var hint := Label.new()
 	hint.text     = "ESC  para continuar"
-	hint.position = Vector2(356, 414)
+	hint.position = Vector2(356, 430)
 	hint.size     = Vector2(440, 24)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 12)

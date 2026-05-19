@@ -85,6 +85,13 @@ func _build_ui() -> void:
 	start_button.pressed.connect(_on_start)
 	btn_box.add_child(start_button)
 
+	var tips_button := Button.new()
+	tips_button.text = "?  Dicas"
+	tips_button.custom_minimum_size = Vector2(300, 45)
+	tips_button.add_theme_font_size_override("font_size", 20)
+	tips_button.pressed.connect(_show_menu_help)
+	btn_box.add_child(tips_button)
+
 	quit_button = Button.new()
 	quit_button.text = "Sair"
 	quit_button.custom_minimum_size = Vector2(300, 45)
@@ -121,6 +128,89 @@ func _on_start() -> void:
 
 func _on_quit() -> void:
 	get_tree().quit()
+
+# ============================================================
+# DICAS (acessível pelo botão do menu)
+# ============================================================
+
+var _menu_help_overlay: Control = null
+
+func _show_menu_help() -> void:
+	if _menu_help_overlay and is_instance_valid(_menu_help_overlay):
+		return
+
+	_menu_help_overlay = Control.new()
+	_menu_help_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_menu_help_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.82)
+	_menu_help_overlay.add_child(dim)
+
+	var box := ColorRect.new()
+	box.position = Vector2(116, 70)
+	box.size     = Vector2(920, 508)
+	box.color    = Color(0.08, 0.10, 0.16, 0.98)
+	_menu_help_overlay.add_child(box)
+
+	var top := ColorRect.new()
+	top.position = Vector2(116, 70)
+	top.size     = Vector2(920, 4)
+	top.color    = Color(0.85, 0.65, 0.25, 0.9)
+	_menu_help_overlay.add_child(top)
+
+	_menu_help_lbl("DICAS", 0, 82, 1152, 38, 28, Color(1.0, 0.85, 0.30), true)
+	_menu_help_lbl("Tudo o que você precisa saber para resgatar o Loopy",
+				   0, 120, 1152, 22, 13, Color(0.60, 0.65, 0.78), true)
+
+	# Colunas Rob / Bog
+	_menu_help_lbl("ROB   — Ágil", 160, 160, 380, 28, 20, Color(0.40, 0.75, 1.00), true)
+	_menu_help_lbl("• Mais rápido e pulo maior\n• [Z] DASH — surto horizontal\n• NÃO empurra caixas",
+				   180, 196, 360, 110, 14, Color(0.88, 0.90, 0.98))
+
+	_menu_help_lbl("BOG   — Forte", 612, 160, 380, 28, 20, Color(1.00, 0.60, 0.25), true)
+	_menu_help_lbl("• Mais lento, pulo menor\n• [Z] IMPACTO — chão: empurrão  ·  ar: queda\n• Empurra caixas de madeira\n   (basta caminhar contra elas — sem botão)",
+				   632, 196, 360, 110, 14, Color(0.88, 0.90, 0.98))
+
+	var sep := ColorRect.new()
+	sep.position = Vector2(576, 160)
+	sep.size     = Vector2(2, 150)
+	sep.color    = Color(0.25, 0.30, 0.45, 0.45)
+	_menu_help_overlay.add_child(sep)
+
+	_menu_help_lbl("CONTROLES", 0, 330, 1152, 24, 16, Color(0.50, 0.88, 0.55), true)
+	_menu_help_lbl("A/D ou ←/→  mover   ·   ESPAÇO  pular   ·   TAB  trocar personagem   ·   Z  habilidade   ·   ESC  pausa",
+				   0, 358, 1152, 22, 14, Color(0.88, 0.90, 0.98), true)
+
+	_menu_help_lbl("★ ESTRELAS", 0, 400, 1152, 24, 16, Color(1.0, 0.85, 0.30), true)
+	_menu_help_lbl("3 estrelas normais + 1 estrela do Bog (alta — empurre a caixa de madeira para usar como degrau)",
+				   0, 428, 1152, 22, 13, Color(0.95, 0.85, 0.40), true)
+
+	var btn_close := Button.new()
+	btn_close.text     = "Voltar"
+	btn_close.position = Vector2(436, 508)
+	btn_close.size     = Vector2(280, 42)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.pressed.connect(_close_menu_help)
+	_menu_help_overlay.add_child(btn_close)
+
+func _menu_help_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int,
+					col: Color, center: bool = false) -> void:
+	var l := Label.new()
+	l.text     = txt
+	l.position = Vector2(x, y)
+	l.size     = Vector2(w, h)
+	if center:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", fs)
+	l.add_theme_color_override("font_color", col)
+	_menu_help_overlay.add_child(l)
+
+func _close_menu_help() -> void:
+	if _menu_help_overlay and is_instance_valid(_menu_help_overlay):
+		_menu_help_overlay.queue_free()
+	_menu_help_overlay = null
 
 func _start_game() -> void:
 	_newspaper_visible = false
