@@ -897,6 +897,11 @@ func _check_death() -> void:
 		return
 
 func _on_player_died() -> void:
+	# Evita contar a morte várias vezes enquanto a tela de morte está
+	# subindo (o personagem continua abaixo do DEATH_Y por alguns frames
+	# antes do pause efetivar).
+	if _death_overlay and is_instance_valid(_death_overlay):
+		return
 	GameManager.register_death()
 	hud.update_deaths(GameManager.deaths)
 	_show_death_screen()
