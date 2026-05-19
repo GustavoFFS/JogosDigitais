@@ -94,12 +94,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 2. ETAPA DE UPDATE (Física, Movimentação e Regras de Jogo)
 func _game_loop_update(delta: float) -> void:
-	_update_camera(delta) 
-	_update_loopy(delta) 
-	_check_death() 
-	_update_moving_platforms(delta) 
+	_update_camera(delta)
+	_update_loopy(delta)
+	_check_death()
 	_check_pushable_blocks_bounds()
 	_update_pushable_hints_logic()
+
+## Plataformas móveis precisam rodar no mesmo passo da física para que
+## o personagem em cima receba o platform_velocity sincronizado com seu
+## próprio _physics_process (caso contrário trava/treme na vertical).
+func _physics_process(delta: float) -> void:
+	_update_moving_platforms(delta)
 
 ## 3. ETAPA DE RENDER (Atualização de HUD, Modulates e Elementos Visuais)
 func _game_loop_render() -> void:
@@ -387,7 +392,11 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var w: float = mp.get("w", 110.0)
 	var h: float = mp.get("h", 18.0)
 
-	var body := StaticBody2D.new()
+	# AnimatableBody2D + sync_to_physics carrega o personagem corretamente
+	# (StaticBody2D movido por global_position causa judder visual e quebra
+	# a detecção de is_on_floor a cada frame em plataformas verticais).
+	var body := AnimatableBody2D.new()
+	body.sync_to_physics = true
 	body.global_position = mp["start_pos"]
 
 	var shape := CollisionShape2D.new()
