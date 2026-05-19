@@ -44,6 +44,9 @@ var _pushable_blocks: Array = []
 # Pause overlay
 var _pause_overlay: Control = null
 
+# Death overlay
+var _death_overlay: Control = null
+
 # ============================================================
 # INICIALIZACAO
 # ============================================================
@@ -81,6 +84,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading:
 		_switch_character()
 	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null:
+		# Bloqueia pause se tela de morte estiver ativa
+		if _death_overlay and is_instance_valid(_death_overlay):
+			return
 		if hud.is_help_visible():
 			hud._close_help()
 		else:
@@ -333,20 +339,49 @@ func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> v
 	shape.shape = rect
 	body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = color
-	body.add_child(visual)
-
-	var top_line := ColorRect.new()
-	top_line.size     = Vector2(w, 3)
-	top_line.position = Vector2(-w / 2.0, -h / 2.0)
-	top_line.color    = color.lightened(0.3)
-	body.add_child(top_line)
+	_draw_platform_surface(body, w, h, color)
 
 	add_child(body)
 	level_nodes.append(body)
+
+## Desenha a textura visual da plataforma: corpo base + faixa de topo
+## clara (relevo) + faixa inferior escura (sombra) + tijolos pintados.
+func _draw_platform_surface(body: Node, w: float, h: float, color: Color) -> void:
+	var base := ColorRect.new()
+	base.size     = Vector2(w, h)
+	base.position = Vector2(-w / 2.0, -h / 2.0)
+	base.color    = color
+	body.add_child(base)
+
+	# Faixa de relevo (topo) — quase branca
+	var top_line := ColorRect.new()
+	top_line.size     = Vector2(w, 4)
+	top_line.position = Vector2(-w / 2.0, -h / 2.0)
+	top_line.color    = color.lightened(0.45)
+	body.add_child(top_line)
+
+	# Faixa de sombra (rodapé)
+	var bot_line := ColorRect.new()
+	bot_line.size     = Vector2(w, 3)
+	bot_line.position = Vector2(-w / 2.0, h / 2.0 - 3)
+	bot_line.color    = color.darkened(0.45)
+	body.add_child(bot_line)
+
+	# Tijolos verticais (linhas escuras a cada 32 px, alternando offset)
+	var brick_w := 32.0
+	var row_h: float = max((h - 4) / 2.0, 6.0)
+	var n_cols := int(ceil(w / brick_w))
+	for row in range(2):
+		var offset: float = 0.0 if row % 2 == 0 else brick_w / 2.0
+		for col in range(n_cols + 1):
+			var bx: float = -w / 2.0 + col * brick_w + offset
+			if bx <= -w / 2.0 or bx >= w / 2.0:
+				continue
+			var line := ColorRect.new()
+			line.size     = Vector2(1.5, row_h - 1)
+			line.position = Vector2(bx, -h / 2.0 + 4 + row * row_h)
+			line.color    = color.darkened(0.35)
+			body.add_child(line)
 
 func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var w: float = mp.get("w", 110.0)
@@ -361,21 +396,11 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	shape.shape = rect
 	body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = color
-	body.add_child(visual)
-
-	var top_line := ColorRect.new()
-	top_line.size     = Vector2(w, 3)
-	top_line.position = Vector2(-w / 2.0, -h / 2.0)
-	top_line.color    = color.lightened(0.3)
-	body.add_child(top_line)
+	_draw_platform_surface(body, w, h, color)
 
 	add_child(body)
 	level_nodes.append(body)
-	
+
 	_moving_platforms.append({
 		"node":      body,
 		"start_pos": mp["start_pos"],
@@ -458,8 +483,9 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 		return
 	area.set_meta("activated", true)
 
-	checkpoint_rob = rob.global_position
-	checkpoint_bog = bog.global_position
+	# Ambos os personagens ressurgem ao lado da bandeira (não onde estavam ao tocar)
+	checkpoint_rob = Vector2(area.global_position.x - 28, body.global_position.y)
+	checkpoint_bog = Vector2(area.global_position.x + 28, body.global_position.y)
 	has_checkpoint = true
 
 	var flag := area.get_node_or_null("Flag")
@@ -873,10 +899,112 @@ func _check_death() -> void:
 func _on_player_died() -> void:
 	GameManager.register_death()
 	hud.update_deaths(GameManager.deaths)
-	hud.start_fade(1, _reload_current_level)
+	_show_death_screen()
 
 func _reload_current_level() -> void:
 	_load_level()
+
+# ============================================================
+# TELA DE MORTE (pausa o jogo até o jogador escolher)
+# ============================================================
+
+func _show_death_screen() -> void:
+	if _death_overlay and is_instance_valid(_death_overlay):
+		return
+	get_tree().paused = true
+
+	_death_overlay = Control.new()
+	_death_overlay.size = Vector2(1152, 648)
+	_death_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	hud.add_child(_death_overlay)
+
+	var dim := ColorRect.new()
+	dim.size  = Vector2(1152, 648)
+	dim.color = Color(0.18, 0.02, 0.05, 0.86)
+	_death_overlay.add_child(dim)
+
+	var box := ColorRect.new()
+	box.position = Vector2(266, 134)
+	box.size     = Vector2(620, 380)
+	box.color    = Color(0.08, 0.05, 0.07, 0.97)
+	_death_overlay.add_child(box)
+
+	var border_top := ColorRect.new()
+	border_top.position = Vector2(266, 134)
+	border_top.size     = Vector2(620, 6)
+	border_top.color    = Color(0.95, 0.25, 0.35)
+	_death_overlay.add_child(border_top)
+
+	var border_bot := ColorRect.new()
+	border_bot.position = Vector2(266, 508)
+	border_bot.size     = Vector2(620, 6)
+	border_bot.color    = Color(0.50, 0.15, 0.20)
+	_death_overlay.add_child(border_bot)
+
+	var title := Label.new()
+	title.text     = "💀  VOCÊ MORREU  💀"
+	title.position = Vector2(266, 172)
+	title.size     = Vector2(620, 70)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_color_override("font_color", Color(1.0, 0.32, 0.42))
+	_death_overlay.add_child(title)
+
+	var sub_msg := Label.new()
+	sub_msg.text = "Sem limite de vidas — tente quantas vezes precisar."
+	sub_msg.position = Vector2(266, 252)
+	sub_msg.size     = Vector2(620, 24)
+	sub_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_msg.add_theme_font_size_override("font_size", 14)
+	sub_msg.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
+	_death_overlay.add_child(sub_msg)
+
+	var stats := Label.new()
+	stats.text = "★  %d / %d        💀  %d morte%s" % [
+		GameManager.stars_collected, GameManager.stars_total_game,
+		GameManager.deaths, "" if GameManager.deaths == 1 else "s"
+	]
+	stats.position = Vector2(266, 286)
+	stats.size     = Vector2(620, 30)
+	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stats.add_theme_font_size_override("font_size", 18)
+	stats.add_theme_color_override("font_color", Color(0.95, 0.85, 0.40))
+	_death_overlay.add_child(stats)
+
+	var btn_retry := Button.new()
+	btn_retry.text = "Tentar Novamente"
+	btn_retry.position = Vector2(326, 348)
+	btn_retry.size     = Vector2(500, 54)
+	btn_retry.add_theme_font_size_override("font_size", 24)
+	btn_retry.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_retry.pressed.connect(_retry_from_death)
+	_death_overlay.add_child(btn_retry)
+
+	var btn_menu := Button.new()
+	btn_menu.text = "Voltar ao Menu"
+	btn_menu.position = Vector2(326, 414)
+	btn_menu.size     = Vector2(500, 48)
+	btn_menu.add_theme_font_size_override("font_size", 20)
+	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_menu.pressed.connect(_quit_to_menu_from_death)
+	_death_overlay.add_child(btn_menu)
+
+	# (Sem tween de fade-in para evitar problemas com o tree pausado.)
+
+func _retry_from_death() -> void:
+	if _death_overlay and is_instance_valid(_death_overlay):
+		_death_overlay.queue_free()
+	_death_overlay = null
+	get_tree().paused = false
+	hud.start_fade(1, _reload_current_level)
+
+func _quit_to_menu_from_death() -> void:
+	if _death_overlay and is_instance_valid(_death_overlay):
+		_death_overlay.queue_free()
+	_death_overlay = null
+	get_tree().paused = false
+	GameManager.reset_game()
+	get_tree().change_scene_to_file("res://Scenes/main_menu.tscn")
 
 func _go_to_menu() -> void:
 	GameManager.reset_game()
@@ -1256,17 +1384,21 @@ func _wait_for_menu_input() -> void:
 # ============================================================
 
 func _create_background() -> void:
+	# Cor de fundo sólida (predomina, para o cenário ficar legível)
 	bg_rect          = ColorRect.new()
-	bg_rect.size     = Vector2(6000, 2000)
-	bg_rect.position = Vector2(-1000, -500)
-	bg_rect.color    = Color(0.15, 0.18, 0.28)
+	bg_rect.size     = Vector2(12000, 2400)
+	bg_rect.position = Vector2(-2000, -600)
+	bg_rect.color    = Color(0.13, 0.16, 0.24)
 	bg_rect.z_index  = -100
 	add_child(bg_rect)
 
+	# Imagem da cidade — fica esmaecida e tileada horizontalmente
+	# para que as plataformas e personagens fiquem nítidos.
 	bg_texture = TextureRect.new()
-	bg_texture.z_index = -90 
-	bg_texture.position = Vector2(-1200, 0)
-	bg_texture.size     = Vector2(3000, 1000)
+	bg_texture.z_index  = -90
+	bg_texture.position = Vector2(-2000, -100)
+	bg_texture.size     = Vector2(12000, 900)
 	bg_texture.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	bg_texture.stretch_mode = TextureRect.STRETCH_TILE
+	bg_texture.stretch_mode   = TextureRect.STRETCH_TILE
+	bg_texture.modulate       = Color(1, 1, 1, 0.32)  # mais clean / menos poluído
 	add_child(bg_texture)
