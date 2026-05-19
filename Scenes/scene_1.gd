@@ -339,20 +339,49 @@ func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> v
 	shape.shape = rect
 	body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = color
-	body.add_child(visual)
-
-	var top_line := ColorRect.new()
-	top_line.size     = Vector2(w, 3)
-	top_line.position = Vector2(-w / 2.0, -h / 2.0)
-	top_line.color    = color.lightened(0.3)
-	body.add_child(top_line)
+	_draw_platform_surface(body, w, h, color)
 
 	add_child(body)
 	level_nodes.append(body)
+
+## Desenha a textura visual da plataforma: corpo base + faixa de topo
+## clara (relevo) + faixa inferior escura (sombra) + tijolos pintados.
+func _draw_platform_surface(body: Node, w: float, h: float, color: Color) -> void:
+	var base := ColorRect.new()
+	base.size     = Vector2(w, h)
+	base.position = Vector2(-w / 2.0, -h / 2.0)
+	base.color    = color
+	body.add_child(base)
+
+	# Faixa de relevo (topo) — quase branca
+	var top_line := ColorRect.new()
+	top_line.size     = Vector2(w, 4)
+	top_line.position = Vector2(-w / 2.0, -h / 2.0)
+	top_line.color    = color.lightened(0.45)
+	body.add_child(top_line)
+
+	# Faixa de sombra (rodapé)
+	var bot_line := ColorRect.new()
+	bot_line.size     = Vector2(w, 3)
+	bot_line.position = Vector2(-w / 2.0, h / 2.0 - 3)
+	bot_line.color    = color.darkened(0.45)
+	body.add_child(bot_line)
+
+	# Tijolos verticais (linhas escuras a cada 32 px, alternando offset)
+	var brick_w := 32.0
+	var row_h: float = max((h - 4) / 2.0, 6.0)
+	var n_cols := int(ceil(w / brick_w))
+	for row in range(2):
+		var offset: float = 0.0 if row % 2 == 0 else brick_w / 2.0
+		for col in range(n_cols + 1):
+			var bx: float = -w / 2.0 + col * brick_w + offset
+			if bx <= -w / 2.0 or bx >= w / 2.0:
+				continue
+			var line := ColorRect.new()
+			line.size     = Vector2(1.5, row_h - 1)
+			line.position = Vector2(bx, -h / 2.0 + 4 + row * row_h)
+			line.color    = color.darkened(0.35)
+			body.add_child(line)
 
 func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var w: float = mp.get("w", 110.0)
@@ -367,17 +396,7 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	shape.shape = rect
 	body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = color
-	body.add_child(visual)
-
-	var top_line := ColorRect.new()
-	top_line.size     = Vector2(w, 3)
-	top_line.position = Vector2(-w / 2.0, -h / 2.0)
-	top_line.color    = color.lightened(0.3)
-	body.add_child(top_line)
+	_draw_platform_surface(body, w, h, color)
 
 	add_child(body)
 	level_nodes.append(body)
@@ -1365,17 +1384,21 @@ func _wait_for_menu_input() -> void:
 # ============================================================
 
 func _create_background() -> void:
+	# Cor de fundo sólida (predomina, para o cenário ficar legível)
 	bg_rect          = ColorRect.new()
-	bg_rect.size     = Vector2(6000, 2000)
-	bg_rect.position = Vector2(-1000, -500)
-	bg_rect.color    = Color(0.15, 0.18, 0.28)
+	bg_rect.size     = Vector2(12000, 2400)
+	bg_rect.position = Vector2(-2000, -600)
+	bg_rect.color    = Color(0.13, 0.16, 0.24)
 	bg_rect.z_index  = -100
 	add_child(bg_rect)
 
+	# Imagem da cidade — fica esmaecida e tileada horizontalmente
+	# para que as plataformas e personagens fiquem nítidos.
 	bg_texture = TextureRect.new()
-	bg_texture.z_index = -90
-	bg_texture.position = Vector2(-1200, 0)
-	bg_texture.size     = Vector2(3000, 1000)
+	bg_texture.z_index  = -90
+	bg_texture.position = Vector2(-2000, -100)
+	bg_texture.size     = Vector2(12000, 900)
 	bg_texture.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	bg_texture.stretch_mode = TextureRect.STRETCH_TILE
+	bg_texture.stretch_mode   = TextureRect.STRETCH_TILE
+	bg_texture.modulate       = Color(1, 1, 1, 0.32)  # mais clean / menos poluído
 	add_child(bg_texture)
