@@ -62,6 +62,6 @@ static func get_data() -> Dictionary:
 		"exit_pos":    [3100, 590],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [155,  560],
-		"loopy_start": [3060, 572],
-		"loopy_end":   [3060, 572],
+		"loopy_start": [3000, 572],
+		"loopy_end":   [3120, 572],
 	}

@@ -57,9 +57,9 @@ static func get_data() -> Dictionary:
 			[2330, 260],  # Acima da segunda plataforma alta
 			[200, 445],   # Estrela do Bog
 		],
-		"exit_pos":    [2900, 580],
+		"exit_pos":    [2900, 520],
 		"spawn_rob":   [50,   560],
 		"spawn_bog":   [130,  560],
-		"loopy_start": [2760, 572],
-		"loopy_end":   [3180, 572],
+		"loopy_start": [2820, 510],
+		"loopy_end":   [2910, 510],
 	}
