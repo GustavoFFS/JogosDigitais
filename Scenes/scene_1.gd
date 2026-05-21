@@ -994,26 +994,76 @@ func _show_death_screen() -> void:
 	stats.add_theme_color_override("font_color", Color(0.95, 0.85, 0.40))
 	_death_overlay.add_child(stats)
 
+	# --- BOTÃO DE TENTAR NOVAMENTE ---
 	var btn_retry := Button.new()
-	btn_retry.text = "Tentar Novamente"
-	btn_retry.position = Vector2(326, 348)
-	btn_retry.size     = Vector2(500, 54)
-	btn_retry.add_theme_font_size_override("font_size", 24)
+	btn_retry.position = Vector2(326, 338)
+	btn_retry.size     = Vector2(500, 58) # Altura levemente maior para os 2 textos
 	btn_retry.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_retry.pressed.connect(_retry_from_death)
 	_death_overlay.add_child(btn_retry)
+	
+	# Texto Principal do Botão Retry
+	var lbl_retry_main := Label.new()
+	lbl_retry_main.text = "Tentar Novamente"
+	lbl_retry_main.position = Vector2(0, 6)
+	lbl_retry_main.size = Vector2(500, 26)
+	lbl_retry_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_retry_main.add_theme_font_size_override("font_size", 20)
+	btn_retry.add_child(lbl_retry_main)
 
+	# Subtítulo do Botão Retry
+	var lbl_retry_sub := Label.new()
+	lbl_retry_sub.text = "[ ESPAÇO ]"
+	lbl_retry_sub.position = Vector2(0, 32)
+	lbl_retry_sub.size = Vector2(500, 20)
+	lbl_retry_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_retry_sub.add_theme_font_size_override("font_size", 14)
+	lbl_retry_sub.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
+	btn_retry.add_child(lbl_retry_sub)
+
+	# Atalho Retry
+	var retry_key = InputEventKey.new()
+	retry_key.keycode = KEY_SPACE
+	var retry_shortcut = Shortcut.new()
+	retry_shortcut.events = [retry_key]
+	btn_retry.shortcut = retry_shortcut
+
+
+	# --- BOTÃO DE VOLTAR AO MENU ---
 	var btn_menu := Button.new()
-	btn_menu.text = "Voltar ao Menu"
-	btn_menu.position = Vector2(326, 414)
-	btn_menu.size     = Vector2(500, 48)
-	btn_menu.add_theme_font_size_override("font_size", 20)
+	btn_menu.position = Vector2(326, 408)
+	btn_menu.size     = Vector2(500, 58) # Mesma altura do botão anterior para padrão
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_menu.pressed.connect(_quit_to_menu_from_death)
 	_death_overlay.add_child(btn_menu)
+	
+	# Texto Principal do Botão Menu
+	var lbl_menu_main := Label.new()
+	lbl_menu_main.text = "Voltar ao Menu"
+	lbl_menu_main.position = Vector2(0, 6)
+	lbl_menu_main.size = Vector2(500, 26)
+	lbl_menu_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_menu_main.add_theme_font_size_override("font_size", 20)
+	btn_menu.add_child(lbl_menu_main)
+
+	# Subtítulo do Botão Menu
+	var lbl_menu_sub := Label.new()
+	lbl_menu_sub.text = "[ ESC ]"
+	lbl_menu_sub.position = Vector2(0, 32)
+	lbl_menu_sub.size = Vector2(500, 20)
+	lbl_menu_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_menu_sub.add_theme_font_size_override("font_size", 14)
+	lbl_menu_sub.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
+	btn_menu.add_child(lbl_menu_sub)
+
+	# Atalho Menu
+	var menu_key = InputEventKey.new()
+	menu_key.keycode = KEY_ESCAPE
+	var menu_shortcut = Shortcut.new()
+	menu_shortcut.events = [menu_key]
+	btn_menu.shortcut = menu_shortcut
 
 	# (Sem tween de fade-in para evitar problemas com o tree pausado.)
-
 func _retry_from_death() -> void:
 	if _death_overlay and is_instance_valid(_death_overlay):
 		_death_overlay.queue_free()

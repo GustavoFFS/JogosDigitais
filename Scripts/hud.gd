@@ -244,19 +244,6 @@ func _build_top_panel() -> void:
 	_lbl_stars.add_theme_color_override("font_color", COLOR_GOLD)
 	add_child(_lbl_stars)
 
-	# ---- Botão de pause (canto superior direito, acima do painel) ----
-	_btn_pause = Button.new()
-	_btn_pause.text     = "II  Pausa"
-	_btn_pause.position = Vector2(1060, 76)
-	_btn_pause.size     = Vector2(82, 28)
-	_btn_pause.add_theme_font_size_override("font_size", 14)
-	_btn_pause.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	_btn_pause.pressed.connect(_on_pause_pressed)
-	add_child(_btn_pause)
-
-	# (Botão de Dicas removido daqui — agora acessível pelo menu inicial
-	# e pelo overlay de pausa via scene_1.)
-
 func _on_pause_pressed() -> void:
 	pause_requested.emit()
 
@@ -329,13 +316,37 @@ func _show_help() -> void:
 
 	# Fechar
 	var btn_close := Button.new()
-	btn_close.text     = "Fechar (ESC ou clique)"
 	btn_close.position = Vector2(436, 508)
-	btn_close.size     = Vector2(280, 42)
-	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.size     = Vector2(280, 54) # Altura aumentada de 42 para 54
 	btn_close.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_close.pressed.connect(_close_help)
 	_help_overlay.add_child(btn_close)
+
+	# Texto Principal do Botão Fechar
+	var lbl_close_main := Label.new()
+	lbl_close_main.text = "Fechar"
+	lbl_close_main.position = Vector2(0, 6)
+	lbl_close_main.size = Vector2(280, 24)
+	lbl_close_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_close_main.add_theme_font_size_override("font_size", 18)
+	btn_close.add_child(lbl_close_main)
+
+	# Subtítulo do Botão Fechar
+	var lbl_close_sub := Label.new()
+	lbl_close_sub.text = "[ ESC ]"
+	lbl_close_sub.position = Vector2(0, 30)
+	lbl_close_sub.size = Vector2(280, 20)
+	lbl_close_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_close_sub.add_theme_font_size_override("font_size", 13)
+	lbl_close_sub.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
+	btn_close.add_child(lbl_close_sub)
+
+	# Atalho Fechar (ESC)
+	var close_key = InputEventKey.new()
+	close_key.keycode = KEY_ESCAPE
+	var close_shortcut = Shortcut.new()
+	close_shortcut.events = [close_key]
+	btn_close.shortcut = close_shortcut
 
 	_help_overlay.modulate.a = 0.0
 	var tw := create_tween()
