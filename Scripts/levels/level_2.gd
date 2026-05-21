@@ -74,5 +74,5 @@ static func get_data() -> Dictionary:
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [160,  560],
 		"loopy_start": [2360, 572],
-		"loopy_end":   [2780, 572],
+		"loopy_end":   [2540, 572],
 	}
