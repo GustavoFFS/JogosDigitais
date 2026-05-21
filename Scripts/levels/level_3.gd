@@ -53,9 +53,9 @@ static func get_data() -> Dictionary:
 			[2125, 415],
 			[220, 410],   # Estrela do Bog
 		],
-		"exit_pos":    [2510, 580],
+		"exit_pos":    [2510, 572],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [150,  560],
 		"loopy_start": [2360, 572],
-		"loopy_end":   [2780, 572],
+		"loopy_end":   [2520, 572],
 	}
