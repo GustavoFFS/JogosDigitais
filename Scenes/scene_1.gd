@@ -174,7 +174,7 @@ func _open_pause() -> void:
 	_pause_overlay.add_child(btn_resume)
 
 	var btn_help := Button.new()
-	btn_help.text = "?  Dicas"
+	btn_help.text = "Dicas"
 	btn_help.position = Vector2(416, 310)
 	btn_help.size     = Vector2(320, 44)
 	btn_help.add_theme_font_size_override("font_size", 19)

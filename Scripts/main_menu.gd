@@ -3,10 +3,12 @@ extends Control
 ## Main Menu - Tela de titulo do Lost & Loopy
 ## Exibe jornal narrativo antes de iniciar o jogo.
 
+@export var background_image: Texture2D
+
 var title_label: Label
 var start_button: Button
 var quit_button: Button
-var bg: ColorRect
+var bg: Control # <-- Alterado de ColorRect para Control genérico
 var time: float = 0.0
 var _newspaper_visible: bool = false
 var _intro_visible: bool = false
@@ -31,49 +33,38 @@ func _process(delta: float) -> void:
 # CONSTRUCAO DO MENU
 # ============================================================
 
+# ============================================================
+# CONSTRUCAO DO MENU
+# ============================================================
+
 func _build_ui() -> void:
-	bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.08, 0.10, 0.18)
-	add_child(bg)
+	# 1. Checa se você colocou uma imagem no Inspector
+	if background_image != null:
+		var bg_tex = TextureRect.new()
+		bg_tex.texture = background_image
+		bg_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		bg_tex.stretch_mode = TextureRect.STRETCH_SCALE
+		bg = bg_tex
+		add_child(bg)
+	else:
+		# 2. Fallback: Se não houver imagem, desenha o fundo original com estrelas
+		var bg_color = ColorRect.new()
+		bg_color.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg_color.color = Color(0.08, 0.10, 0.18)
+		bg = bg_color
+		add_child(bg)
 
-	for i in range(30):
-		var star := ColorRect.new()
-		star.size     = Vector2(2, 2)
-		star.position = Vector2(randf() * 1152, randf() * 648)
-		star.color    = Color(1, 1, 1, randf() * 0.5 + 0.1)
-		add_child(star)
-
-	title_label = Label.new()
-	title_label.text     = "Lost & Loopy"
-	title_label.position = Vector2(280, 100)
-	title_label.size     = Vector2(600, 80)
-	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 64)
-	title_label.add_theme_color_override("font_color", Color(0.3, 0.85, 0.45))
-	title_label.pivot_offset = Vector2(300, 40)
-	add_child(title_label)
-
-	var subtitle := Label.new()
-	subtitle.text     = "Encontre seu amigo perdido!"
-	subtitle.position = Vector2(300, 200)
-	subtitle.size     = Vector2(560, 40)
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 22)
-	subtitle.add_theme_color_override("font_color", Color(0.65, 0.65, 0.75))
-	add_child(subtitle)
-
-	var concept := Label.new()
-	concept.text     = "\"Um jogo onde você nunca controla da mesma forma duas vezes.\""
-	concept.position = Vector2(220, 240)
-	concept.size     = Vector2(720, 30)
-	concept.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	concept.add_theme_font_size_override("font_size", 15)
-	concept.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3, 0.7))
-	add_child(concept)
+		for i in range(30):
+			var star := ColorRect.new()
+			star.size     = Vector2(2, 2)
+			star.position = Vector2(randf() * 1152, randf() * 648)
+			star.color    = Color(1, 1, 1, randf() * 0.5 + 0.1)
+			add_child(star)
 
 	var btn_box := VBoxContainer.new()
-	btn_box.position = Vector2(426, 320)
+	btn_box.position = Vector2(426, 260)
 	btn_box.size     = Vector2(300, 200)
 	btn_box.add_theme_constant_override("separation", 15)
 	add_child(btn_box)
