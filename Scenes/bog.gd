@@ -69,7 +69,11 @@ func _use_ability() -> void:
 
 func _apply_ground_impact() -> void:
 	var pushables = get_tree().get_nodes_in_group("pushable")
+	var main_scene = get_parent()
 	
+	if main_scene and main_scene.has_method("apply_shake"):
+		main_scene.apply_shake(8.0) # Força do tremor
+
 	for obj in pushables:
 		if not is_instance_valid(obj) or obj == self:
 			continue
