@@ -2,6 +2,8 @@ extends Node2D
 
 ## Cena principal - Lost & Loopy
 ## Gerencia plataformas, personagens, camera, Loopy, checkpoints, hazards e transicoes.
+var shake_strength: float = 0.0
+var shake_decay: float = 5.0
 
 @onready var rob:    CharacterBase = $Rob
 @onready var bog:    CharacterBase = $Bog
@@ -60,6 +62,9 @@ func _ready() -> void:
 	_setup_characters()
 	_load_level()
 
+func apply_shake(strength: float) -> void:
+	shake_strength = strength
+
 func _remove_old_static_bodies() -> void:
 	for child in get_children():
 		if child is StaticBody2D or child.get_class() == "TileMap" or child is TileMapLayer:
@@ -73,6 +78,15 @@ func _process(delta: float) -> void:
 	_game_loop_input()
 	_game_loop_update(delta)
 	_game_loop_render()
+
+	if shake_strength > 0:
+		shake_strength = move_toward(shake_strength, 0.0, shake_decay * delta)
+		camera.offset = Vector2(
+			randf_range(-shake_strength, shake_strength),
+			randf_range(-shake_strength, shake_strength)
+		)
+	else:
+		camera.offset = Vector2.ZERO
 
 ## 1. ETAPA DE INPUT
 func _game_loop_input() -> void:
