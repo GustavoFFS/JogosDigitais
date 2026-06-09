@@ -1,67 +1,65 @@
 extends RefCounted
 class_name Level5Data
 
-## Fase 5 - Encontro com Loopy
-## Modificadores combinados em nivel desafiador mas justo. Loopy parado no final.
+## Fase 5 - Becos Estreitos
+## Controle aéreo severamente reduzido. Exige precisão no pulo.
 
 static func get_data() -> Dictionary:
 	return {
-		"name": "Encontro com Loopy",
-		"description": "Ali está o Loopy! Ele parou...\nAlcance-o e traga seu amigo de volta!",
-		"modifier_hint": "Velocidade  +  Gelo  +  Gravidade  ·  Tudo junto!",
-		"bg_color":       Color(0.16, 0.10, 0.07),
-		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
-		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
-		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
+		"name": "Becos Estreitos",
+		"description": "Pelos becos... o controle no ar é limitado.\nPense antes de pular!",
+		"modifier_hint": "Controle Aéreo Reduzido  ·  Planeje seus pulos!",
+		"bg_color":       Color(0.06, 0.07, 0.09),
+		"bg_image": "res://Assets/Backgrounds/BecosEstreitos.png",
+		"bg_size": [8000.0, 1080.0],
+		"platform_color": Color(0.24, 0.26, 0.30),
 		"modifiers": {
-			"speed_mult":   1.20,
-			"jump_mult":    1.20,
-			"gravity_mult": 1.20,
-			"friction":     0.18,
-			"air_control":  0.65,
+			"speed_mult":   0.90,
+			"jump_mult":    1.10,
+			"gravity_mult": 1.0,
+			"friction":     1.0,
+			"air_control":  0.28,
 		},
 		"platforms": [
-			[0,    620, 280, 28],
-			[380,  530, 110, 18],
-			[570,  440,  90, 18],
-			[750,  530, 120, 18],
-			[950,  445,  90, 18],
-			[1130, 560, 200, 22],  # CHECKPOINT 1
-			[1420, 465, 110, 18],
-			[1620, 370, 100, 18],
-			[1820, 465, 110, 18],
-			[2020, 560, 200, 22],  # CHECKPOINT 2
-			[2300, 465, 100, 18],
-			[2490, 375,  90, 18],
-			[2670, 465, 100, 18],
-			[2850, 620, 450, 28],  # Plataforma final — Loopy aqui
+			[0,    620, 240, 28],
+			[320,  535, 100, 18],
+			[490,  455,  90, 18],
+			[650,  535, 110, 18],
+			[830,  455,  90, 18],
+			[990,  560, 200, 22],   # CHECKPOINT 1
+			[1270, 475, 100, 18],
+			[1450, 385,  90, 18],
+			[1620, 475, 100, 18],
+			[1800, 560, 200, 22],   # CHECKPOINT 2
+			[2080, 475, 100, 18],
+			[2260, 385,  90, 18],
+			[2430, 480, 100, 18],
+			[2600, 560, 380, 28],
 		],
 		"checkpoints": [
-			[1190, 535],
-			[2080, 535],
+			[1050, 535],
+			[1860, 535],
 		],
 		"hazards": [
-			[ 320, 590,  60, 22],
-			[ 700, 510,  50, 22],
-			[ 880, 590,  60, 22],
-			[1340, 540,  60, 22],
-			[1740, 440,  60, 22],
-			[2160, 540,  60, 22],
-			[2580, 440,  60, 22],
-			[2750, 590,  80, 22],
+			[ 430, 590,  50, 22],
+			[ 750, 590,  60, 22],
+			[1370, 590,  60, 22],
+			[1700, 540,  70, 22],
+			[2160, 540,  70, 22],
+			[2520, 540,  70, 22],
 		],
 		"pushable_blocks": [
-			[140, 580, 40, 40],
+			[100, 580, 40, 40],
 		],
 		"stars": [
-			[510, 380],
-			[1685, 245],  # Acima da plataforma alta
-			[2560, 245],  # Acima da segunda plataforma alta
-			[220, 425],   # Estrela do Bog
+			[400, 420],
+			[1490, 260],
+			[2330, 260],
+			[200, 445],   # Estrela do Bog
 		],
-		"exit_pos":    [3100, 590],
-		"spawn_rob":   [60,   560],
-		"spawn_bog":   [155,  560],
-		"loopy_start": [3000, 572],
-		"loopy_end":   [3120, 572],
+		"exit_pos":    [2900, 520],
+		"spawn_rob":   [50,   560],
+		"spawn_bog":   [130,  560],
+		"loopy_start": [2820, 510],
+		"loopy_end":   [2900, 510],
 	}

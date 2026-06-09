@@ -13,6 +13,8 @@ var stars_collected:     int        = 0   # total ao longo do jogo
 var stars_in_level:      int        = 0   # da fase atual
 var stars_total_game:    int        = 0   # soma de todas as fases
 var collected_ids:       Dictionary = {}  # chave "idx:starIdx" -> true
+var elapsed_time:        float      = 0.0
+var is_timer_active:     bool       = false
 
 signal level_changed(level_index: int)
 signal state_changed(new_state: GameState)
@@ -32,6 +34,11 @@ func _ready() -> void:
 		Level3Data.get_data(),
 		Level4Data.get_data(),
 		Level5Data.get_data(),
+		Level6Data.get_data(),
+		Level7Data.get_data(),
+		Level8Data.get_data(),
+		Level9Data.get_data(),
+		Level10Data.get_data(),
 	]
 	for lv in levels:
 		stars_total_game += (lv.get("stars", []) as Array).size()
@@ -52,10 +59,9 @@ func _game_loop_input() -> void:
 	pass
 
 ## 2. ETAPA DE UPDATE
-func _game_loop_update(_delta: float) -> void:
-	# Lógicas de estado globais ativas
-	# (ex: timers globais de speedrun, verificação de background)
-	pass
+func _game_loop_update(delta: float) -> void:
+	if is_timer_active:
+		elapsed_time += delta
 
 ## 3. ETAPA DE RENDER
 func _game_loop_render() -> void:
@@ -83,6 +89,7 @@ func next_level() -> bool:
 	current_level_index += 1
 	if current_level_index >= levels.size():
 		current_state = GameState.GAME_COMPLETE
+		is_timer_active = false
 		state_changed.emit(current_state)
 		return false
 	level_changed.emit(current_level_index)
@@ -96,19 +103,25 @@ func register_death() -> void:
 	deaths_changed.emit(deaths)
 
 func start_game() -> void:
+	Engine.time_scale = 1.0
 	current_level_index = 0
 	deaths              = 0
 	stars_collected     = 0
 	collected_ids.clear()
+	elapsed_time        = 0.0
+	is_timer_active     = true
 	current_state       = GameState.PLAYING
 	deaths_changed.emit(deaths)
 	state_changed.emit(current_state)
 
 func reset_game() -> void:
+	Engine.time_scale = 1.0
 	current_level_index = 0
 	deaths              = 0
 	stars_collected     = 0
 	collected_ids.clear()
+	elapsed_time        = 0.0
+	is_timer_active     = false
 	current_state       = GameState.MENU
 
 func collect_star(level_idx: int, star_idx: int) -> void:

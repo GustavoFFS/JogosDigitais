@@ -51,6 +51,15 @@ func _use_ability() -> void:
 	var dir := -1.0 if sprite.flip_h else 1.0
 	velocity.x = dir * base_speed * speed_mult * 2.8
 	
+	SoundManager.play_sfx("dash")
+	
+	var main_scene = get_parent()
+	if main_scene:
+		if main_scene.has_method("apply_shake"):
+			main_scene.apply_shake(3.0)
+		if main_scene.has_method("spawn_dash_ghosts"):
+			main_scene.spawn_dash_ghosts(self, 0.15)
+	
 	var tw := create_tween()
 	tw.tween_property(sprite, "modulate", Color(0.55, 0.88, 1.0, 1.0), 0.04)
 	tw.tween_property(sprite, "modulate", Color(1.0,  1.0,  1.0, 1.0), 0.22)

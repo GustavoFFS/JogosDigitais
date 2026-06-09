@@ -12,6 +12,7 @@ var shake_decay: float = 5.0
 var hud: GameHUD
 var current_character: CharacterBase
 var level_nodes: Array[Node] = []
+var is_exiting: bool = false
 
 # Loopy NPC
 var loopy_body:    CharacterBody2D = null
@@ -26,7 +27,7 @@ var checkpoint_bog: Vector2 = Vector2.ZERO
 var has_checkpoint: bool    = false
 
 # Background dinamico
-var bg_rect: ColorRect
+var bg_rect: TextureRect
 var bg_texture: TextureRect      # NOVO: Onde a imagem vai ficar
 
 # Tela de vitoria
@@ -42,12 +43,17 @@ var _stars_left_in_level: int = 0
 
 # Blocos empurráveis (para mostrar dica de proximidade)
 var _pushable_blocks: Array = []
+var _gates: Array = []
+var _switches: Array = []
 
 # Pause overlay
 var _pause_overlay: Control = null
 
 # Death overlay
 var _death_overlay: Control = null
+var _snow_particles: CPUParticles2D = null
+var _dust_particles: CPUParticles2D = null
+var _insect_particles: CPUParticles2D = null
 
 # ============================================================
 # INICIALIZACAO
@@ -95,9 +101,9 @@ func _game_loop_input() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Captura de Inputs discretos por eventos do SO
-	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading:
+	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading and not is_exiting:
 		_switch_character()
-	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null:
+	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting:
 		# Bloqueia pause se tela de morte estiver ativa
 		if _death_overlay and is_instance_valid(_death_overlay):
 			return
@@ -108,6 +114,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 2. ETAPA DE UPDATE (Física, Movimentação e Regras de Jogo)
 func _game_loop_update(delta: float) -> void:
+	# Controla ativação do cronômetro de speedrun
+	GameManager.is_timer_active = not hud.showing_intro and not hud.fading and victory_overlay == null
+	
 	_update_camera(delta)
 	_update_loopy(delta)
 	_check_death()
@@ -239,27 +248,14 @@ func _setup_characters() -> void:
 func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
 	var area := GravityZone.new()
 	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	area.width = w
+	area.height = h
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
 	rect.size   = Vector2(w, h)
 	shape.shape = rect
 	area.add_child(shape)
-
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = Color(0.6, 0.2, 1.0, 0.314)
-	area.add_child(visual)
-
-	var n_arrows := int(w / 24)
-	for i in range(n_arrows):
-		var arrow := Label.new()
-		arrow.text     = "▲"
-		arrow.position = Vector2(-w / 2.0 + i * 24, -h / 2.0 + 2)
-		arrow.add_theme_font_size_override("font_size", 13)
-		arrow.add_theme_color_override("font_color", Color(0.8, 0.4, 1.0, 0.7))
-		area.add_child(arrow)
 
 	area.collision_layer = 0
 	area.collision_mask  = 1
@@ -268,6 +264,8 @@ func _create_gravity_zone(x: float, y: float, w: float, h: float) -> void:
 	level_nodes.append(area)
 
 func _load_level() -> void:
+	Engine.time_scale = 1.0
+	camera.zoom = Vector2(1.0, 1.0)
 	_clear_level()
 
 	var level := GameManager.get_current_level()
@@ -291,15 +289,41 @@ func _load_level() -> void:
 	rob.velocity = Vector2.ZERO
 	bog.velocity = Vector2.ZERO
 
-	bg_rect.color = level["bg_color"]
+	var bg_color: Color = level.get("bg_color", Color(0.13, 0.16, 0.24))
+	
+	# Cria um gradiente de céu vertical baseado na cor do nível
+	var sky_grad := GradientTexture2D.new()
+	sky_grad.width = 256
+	sky_grad.height = 256
+	sky_grad.fill = GradientTexture2D.FILL_LINEAR
+	sky_grad.fill_from = Vector2(0.5, 0.0) # topo
+	sky_grad.fill_to = Vector2(0.5, 1.0) # base
+	
+	var g := Gradient.new()
+	g.set_color(0, bg_color.lightened(0.15))
+	g.set_color(1, bg_color.darkened(0.35))
+	sky_grad.gradient = g
+	
+	bg_rect.texture = sky_grad
+	bg_rect.visible = true # Sempre visível para mostrar o degradê do céu
 	
 	if level.has("bg_image") and level["bg_image"] != "":
-		bg_texture.texture = load(level["bg_image"])
+		var tex = load(level["bg_image"])
+		bg_texture.texture = tex
 		bg_texture.visible = true
-		bg_rect.visible = false 
+		
+		# Ajusta tamanho e escala do background para evitar repetição vertical
+		var tex_h = float(tex.get_height())
+		var target_h = 928.0
+		var scale_factor = target_h / tex_h
+		bg_texture.scale = Vector2(scale_factor, scale_factor)
+		bg_texture.size = Vector2(24000.0 / scale_factor, tex_h)
+		bg_texture.position = Vector2(-2000, -100)
+		
+		# Modula a silhueta da cidade com um tom do céu mais escuro e atmosférico
+		bg_texture.modulate = Color(bg_color.r * 1.3, bg_color.g * 1.3, bg_color.b * 1.45, 0.35)
 	else:
 		bg_texture.visible = false
-		bg_rect.visible = true  
 	
 	for p in level.get("platforms", []):
 		_create_platform(p[0], p[1], p[2], p[3], level["platform_color"])
@@ -318,6 +342,47 @@ func _load_level() -> void:
 
 	for pb in level.get("pushable_blocks", []):
 		_create_pushable_block(pb[0], pb[1], pb[2], pb[3])
+		
+	for bb in level.get("breakable_blocks", []):
+		_create_breakable_block(bb[0], bb[1], bb[2], bb[3])
+		
+	# Jump Pads (Molas) e Speed Pads (Aceleradores)
+	for jp in level.get("jump_pads", []):
+		_create_jump_pad(jp[0], jp[1], jp[2], jp[3])
+	for sp in level.get("speed_pads", []):
+		_create_speed_pad(sp[0], sp[1], sp[2], sp[3], sp[4])
+
+	# Puzzles: Switches (Botões), Gates (Portões) e Crumbling Platforms (Instáveis)
+	for sw in level.get("switches", []):
+		var is_heavy := false
+		if sw.size() > 5:
+			is_heavy = sw[5]
+		_create_switch(sw[0], sw[1], sw[2], sw[3], sw[4], is_heavy)
+	for gt in level.get("gates", []):
+		_create_gate(gt[0], gt[1], gt[2], gt[3], gt[4])
+	for cp in level.get("crumbling_platforms", []):
+		_create_crumbling_platform(cp[0], cp[1], cp[2], cp[3])
+
+	# Snow effect
+	if _snow_particles and is_instance_valid(_snow_particles):
+		_snow_particles.queue_free()
+		_snow_particles = null
+	if level.get("snow_effect", false):
+		_create_snow_effect()
+
+	# Dust effect
+	if _dust_particles and is_instance_valid(_dust_particles):
+		_dust_particles.queue_free()
+		_dust_particles = null
+	if level.get("dust_effect", false):
+		_create_dust_effect()
+
+	# Insect effect
+	if _insect_particles and is_instance_valid(_insect_particles):
+		_insect_particles.queue_free()
+		_insect_particles = null
+	if level.get("insect_effect", false):
+		_create_insect_effect()
 
 	var stars: Array = level.get("stars", [])
 	GameManager.stars_in_level = stars.size()
@@ -341,8 +406,22 @@ func _load_level() -> void:
 	hud.start_fade(-1, Callable())
 
 func _clear_level() -> void:
+	if _snow_particles and is_instance_valid(_snow_particles):
+		_snow_particles.queue_free()
+		_snow_particles = null
+
+	if _dust_particles and is_instance_valid(_dust_particles):
+		_dust_particles.queue_free()
+		_dust_particles = null
+
+	if _insect_particles and is_instance_valid(_insect_particles):
+		_insect_particles.queue_free()
+		_insect_particles = null
+
 	_moving_platforms.clear()
 	_pushable_blocks.clear()
+	_gates.clear()
+	_switches.clear()
 	for node in level_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -514,6 +593,7 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 	if area.get_meta("activated", false):
 		return
 	area.set_meta("activated", true)
+	SoundManager.play_sfx("collect")
 
 	# Ambos os personagens ressurgem ao lado da bandeira (não onde estavam ao tocar)
 	checkpoint_rob = Vector2(area.global_position.x - 28, body.global_position.y)
@@ -618,8 +698,28 @@ func _create_level_exit(pos: Vector2) -> void:
 	level_nodes.append(area)
 
 func _on_exit_body_entered(body: Node) -> void:
-	if body == current_character and not hud.fading:
-		_complete_level()
+	if body == current_character and not hud.fading and not is_exiting:
+		is_exiting = true
+		SoundManager.play_sfx("collect")
+		
+		# Efeito de câmera lenta e zoom usando Tween (ignora escala de tempo)
+		var tween := create_tween().bind_node(self)
+		tween.set_ignore_time_scale(true)
+		
+		# Suavemente diminui time_scale de 1.0 para 0.2 em 0.25s
+		tween.tween_property(Engine, "time_scale", 0.2, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		# Suavemente aumenta zoom de 1.0 para 1.25 em 0.3s
+		tween.tween_property(camera, "zoom", Vector2(1.25, 1.25), 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+		# Mantém a câmera lenta por 0.8s (tempo real)
+		tween.tween_interval(0.8)
+		
+		# Retorna time_scale para 1.0 e avança de fase
+		tween.tween_callback(func():
+			is_exiting = false
+			Engine.time_scale = 1.0
+			_complete_level()
+		)
 
 # ============================================================
 # BLOCOS EMPURRÁVEIS (apenas Bog move)
@@ -792,7 +892,7 @@ func _create_star(x: float, y: float, level_idx: int, star_idx: int) -> void:
 	star_visual.add_child(glow)
 	star_visual.move_child(glow, 0)
 
-	var tw := create_tween().set_loops()
+	var tw := area.create_tween().set_loops()
 	tw.tween_property(star_visual, "position:y", -6.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(star_visual, "position:y",  0.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
@@ -816,8 +916,11 @@ func _on_star_body_entered(body: Node, area: Area2D) -> void:
 	_stars_left_in_level -= 1
 	hud.update_stars(GameManager.stars_collected, GameManager.stars_total_game)
 	hud.flash_star()
+	SoundManager.play_sfx("collect")
+	apply_shake(2.0)
+	_spawn_star_burst_particles(area.global_position)
 
-	var tw := create_tween().set_parallel(true)
+	var tw := area.create_tween().set_parallel(true)
 	tw.tween_property(area, "scale", Vector2(2.0, 2.0), 0.25)
 	tw.tween_property(area, "modulate:a", 0.0, 0.25)
 	tw.chain().tween_callback(area.queue_free)
@@ -899,6 +1002,7 @@ func _update_camera(delta: float) -> void:
 # ============================================================
 
 func _switch_character() -> void:
+	SoundManager.play_sfx("switch")
 	current_character = bog if current_character == rob else rob
 	rob.set_active(current_character == rob)
 	bog.set_active(current_character == bog)
@@ -915,7 +1019,7 @@ func _switch_character() -> void:
 # ============================================================
 
 func _check_death() -> void:
-	if hud.fading or hud.showing_intro:
+	if hud.fading or hud.showing_intro or is_exiting:
 		return
 
 	if current_character.global_position.y > DEATH_Y:
@@ -934,6 +1038,7 @@ func _on_player_died() -> void:
 	# antes do pause efetivar).
 	if _death_overlay and is_instance_valid(_death_overlay):
 		return
+	SoundManager.play_sfx("death")
 	GameManager.register_death()
 	hud.update_deaths(GameManager.deaths)
 	_show_death_screen()
@@ -1120,6 +1225,7 @@ func _show_victory() -> void:
 	if victory_overlay:
 		return
 
+	SoundManager.play_sfx("victory")
 	victory_overlay       = ColorRect.new()
 	victory_overlay.size  = Vector2(1152, 648)
 	victory_overlay.color = Color(0.02, 0.04, 0.08, 0.94)
@@ -1185,9 +1291,16 @@ func _run_victory_sequence() -> void:
 	_add_reunion_scene(tier)
 	await get_tree().create_timer(0.8).timeout
 
-	var stats_msg := "★  %d / %d   ·   💀  %d morte%s" % [
+	var t := GameManager.elapsed_time
+	var minutes := int(t / 60.0)
+	var seconds := int(fmod(t, 60.0))
+	var msec := int(fmod(t, 1.0) * 1000.0)
+	var time_str := "%02d:%02d.%03d" % [minutes, seconds, msec]
+
+	var stats_msg := "★  %d / %d   ·   💀  %d morte%s   ·   ⏱  %s" % [
 		got, total, GameManager.deaths,
-		"" if GameManager.deaths == 1 else "s"
+		"" if GameManager.deaths == 1 else "s",
+		time_str
 	]
 	_add_victory_label(stats_msg, 588, 18, _tier_color(tier))
 	await get_tree().create_timer(0.8).timeout
@@ -1472,11 +1585,12 @@ func _wait_for_menu_input() -> void:
 
 func _create_background() -> void:
 	# Cor de fundo sólida (predomina, para o cenário ficar legível)
-	bg_rect          = ColorRect.new()
+	bg_rect          = TextureRect.new()
 	bg_rect.size     = Vector2(12000, 2400)
 	bg_rect.position = Vector2(-2000, -600)
-	bg_rect.color    = Color(0.13, 0.16, 0.24)
 	bg_rect.z_index  = -100
+	bg_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	add_child(bg_rect)
 
 	# Imagem da cidade — fica esmaecida e tileada horizontalmente
@@ -1489,3 +1603,571 @@ func _create_background() -> void:
 	bg_texture.stretch_mode   = TextureRect.STRETCH_TILE
 	bg_texture.modulate       = Color(1, 1, 1, 0.32)  # mais clean / menos poluído
 	add_child(bg_texture)
+
+# ============================================================
+# PARTÍCULAS E VISUAIS ADICIONAIS ("JUICE")
+# ============================================================
+
+func spawn_jump_particles(pos: Vector2, character_name: String) -> void:
+	var color := Color(0.40, 0.75, 1.00) if character_name == "Rob" else Color(1.00, 0.60, 0.25)
+	_spawn_dust(pos + Vector2(0, 24), color, 8, -40.0)
+
+func spawn_land_particles(pos: Vector2, character_name: String) -> void:
+	var color := Color(0.40, 0.75, 1.00) if character_name == "Rob" else Color(1.00, 0.60, 0.25)
+	_spawn_dust(pos + Vector2(0, 24), color, 12, -20.0)
+	apply_shake(1.5)
+
+func _spawn_dust(pos: Vector2, color: Color, amount: int, vel_y: float) -> void:
+	var particles := CPUParticles2D.new()
+	particles.global_position = pos
+	particles.amount = amount
+	particles.one_shot = true
+	particles.explosiveness = 0.85
+	particles.lifetime = 0.35
+	particles.spread = 60.0
+	particles.direction = Vector2(0, -1)
+	particles.gravity = Vector2(0, 80)
+	particles.initial_velocity_min = 15.0
+	particles.initial_velocity_max = 35.0
+	particles.color = color
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 4.5
+	add_child(particles)
+	particles.emitting = true
+	particles.finished.connect(particles.queue_free)
+
+func _spawn_star_burst_particles(pos: Vector2) -> void:
+	var particles := CPUParticles2D.new()
+	particles.global_position = pos
+	particles.amount = 20
+	particles.one_shot = true
+	particles.explosiveness = 0.90
+	particles.lifetime = 0.60
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 60)
+	particles.initial_velocity_min = 40.0
+	particles.initial_velocity_max = 90.0
+	particles.color = Color(1.00, 0.85, 0.25)
+	particles.scale_amount_min = 3.0
+	particles.scale_amount_max = 6.0
+	add_child(particles)
+	particles.emitting = true
+	particles.finished.connect(particles.queue_free)
+
+func spawn_dash_ghosts(character: CharacterBase, duration: float) -> void:
+	var sprite_node = character.sprite
+	if not sprite_node:
+		return
+	for i in range(4):
+		var delay = i * 0.035
+		if delay >= duration:
+			break
+		get_tree().create_timer(delay).timeout.connect(func():
+			if is_instance_valid(character) and is_instance_valid(sprite_node):
+				_spawn_single_ghost(character, sprite_node)
+		)
+
+func _spawn_single_ghost(character: CharacterBase, sprite_node: Sprite2D) -> void:
+	var ghost := Sprite2D.new()
+	ghost.texture = sprite_node.texture
+	ghost.hframes = sprite_node.hframes
+	ghost.frame = sprite_node.frame
+	ghost.flip_h = sprite_node.flip_h
+	ghost.scale = character.scale
+	ghost.global_position = character.global_position
+	ghost.modulate = Color(0.40, 0.75, 1.00, 0.65)
+	add_child(ghost)
+	
+	var tw := ghost.create_tween().set_parallel(true)
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.22)
+	tw.tween_property(ghost, "scale", Vector2.ZERO, 0.22)
+	tw.chain().tween_callback(ghost.queue_free)
+
+func spawn_impact_wave(pos: Vector2) -> void:
+	var debris := CPUParticles2D.new()
+	debris.global_position = pos + Vector2(0, 24)
+	debris.amount = 16
+	debris.one_shot = true
+	debris.explosiveness = 0.95
+	debris.lifetime = 0.50
+	debris.spread = 120.0
+	debris.direction = Vector2(0, -1)
+	debris.gravity = Vector2(0, 150)
+	debris.initial_velocity_min = 50.0
+	debris.initial_velocity_max = 120.0
+	debris.color = Color(1.00, 0.60, 0.25)
+	debris.scale_amount_min = 3.0
+	debris.scale_amount_max = 6.0
+	add_child(debris)
+	debris.emitting = true
+	debris.finished.connect(debris.queue_free)
+	
+	var ring := Node2D.new()
+	ring.global_position = pos + Vector2(0, 20)
+	
+	var ring_script = GDScript.new()
+	ring_script.source_code = "extends Node2D\n\nvar radius := 5.0\nvar max_radius := 120.0\nvar color := Color(1.00, 0.70, 0.30, 0.8)\n\nfunc _ready():\n	var tw = create_tween()\n	tw.set_parallel(true)\n	tw.tween_property(self, \"radius\", max_radius, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)\n	tw.tween_property(self, \"color\", Color(1.00, 0.70, 0.30, 0.0), 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)\n	get_tree().create_timer(0.35).timeout.connect(queue_free)\n\nfunc _process(delta):\n	queue_redraw()\n\nfunc _draw():\n	draw_arc(Vector2.ZERO, radius, 0.0, 2.0 * PI, 32, color, 4.0, true)"
+	ring_script.reload()
+	ring.set_script(ring_script)
+	
+	add_child(ring)
+
+# ============================================================
+# NOVOS OBJETOS INTERATIVOS: JUMP PADS E SPEED BOOST PADS
+# ============================================================
+
+func _create_jump_pad(x: float, y: float, w: float, h: float) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+	
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.95, 0.22, 0.45, 0.85)
+	area.add_child(visual)
+	
+	var top := ColorRect.new()
+	top.size = Vector2(w, 4)
+	top.position = Vector2(-w / 2.0, -h / 2.0)
+	top.color = Color(1.0, 0.90, 0.25)
+	area.add_child(top)
+	
+	var arrow := Label.new()
+	arrow.text = "▲"
+	arrow.position = Vector2(-5, -h / 2.0 - 9)
+	arrow.add_theme_font_size_override("font_size", 10)
+	arrow.add_theme_color_override("font_color", Color(1.0, 0.90, 0.25))
+	area.add_child(arrow)
+	
+	area.collision_layer = 0
+	area.collision_mask = 1
+	area.body_entered.connect(func(body):
+		if body is CharacterBase:
+			body.velocity.y = -640.0
+			if "is_ground_pounding" in body:
+				body.is_ground_pounding = false
+			if "is_locked" in body:
+				body.is_locked = false
+				
+			SoundManager.play_sfx("boost")
+			apply_shake(4.5)
+			
+			var tw := area.create_tween()
+			visual.scale = Vector2(1.3, 0.4)
+			visual.pivot_offset = Vector2(w / 2.0, h / 2.0)
+			tw.tween_property(visual, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_ELASTIC)
+	)
+	
+	add_child(area)
+	level_nodes.append(area)
+
+func _create_speed_pad(x: float, y: float, w: float, h: float, dir_x: float) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+	
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.20, 0.85, 0.60, 0.85)
+	area.add_child(visual)
+	
+	var arrow := Label.new()
+	arrow.text = ">>>" if dir_x > 0 else "<<<"
+	arrow.position = Vector2(-12, -h / 2.0 - 8)
+	arrow.add_theme_font_size_override("font_size", 9)
+	arrow.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+	area.add_child(arrow)
+	
+	area.collision_layer = 0
+	area.collision_mask = 1
+	area.body_entered.connect(func(body):
+		if body is CharacterBase:
+			body.is_locked = true
+			body.lock_timer = 0.18
+			body.velocity.x = dir_x * body.base_speed * body.speed_mult * 2.5
+			body.velocity.y = -100.0
+			
+			SoundManager.play_sfx("boost")
+			apply_shake(3.0)
+			_spawn_wind_particles(body.global_position, dir_x)
+	)
+	
+	add_child(area)
+	level_nodes.append(area)
+
+func _spawn_wind_particles(pos: Vector2, dir_x: float) -> void:
+	var particles := CPUParticles2D.new()
+	particles.global_position = pos
+	particles.amount = 8
+	particles.one_shot = true
+	particles.explosiveness = 0.80
+	particles.lifetime = 0.30
+	particles.spread = 15.0
+	particles.direction = Vector2(dir_x, 0)
+	particles.gravity = Vector2.ZERO
+	particles.initial_velocity_min = 200.0
+	particles.initial_velocity_max = 350.0
+	particles.color = Color(0.40, 0.90, 0.80, 0.60)
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 4.0
+	add_child(particles)
+	particles.emitting = true
+	particles.finished.connect(particles.queue_free)
+
+# ============================================================
+# PUZZLES: BOTÕES, PORTÕES E PLATAFORMAS QUE CAEM
+# ============================================================
+
+func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: bool = false) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	area.name = "Switch_" + str(id)
+	area.set_meta("switch_id", id)
+	area.set_meta("active_bodies", 0)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w - 4, h)
+	shape.shape = rect
+	area.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.25, 0.30, 0.45) if not is_heavy else Color(0.55, 0.20, 0.20)
+	visual.name = "Visual"
+	area.add_child(visual)
+
+	var top := ColorRect.new()
+	top.size = Vector2(w - 8, 4)
+	top.position = Vector2(-w / 2.0 + 4, -h / 2.0)
+	top.color = Color(0.4, 0.5, 0.7) if not is_heavy else Color(0.8, 0.3, 0.3)
+	top.name = "TopLine"
+	area.add_child(top)
+
+	if is_heavy:
+		var lbl := Label.new()
+		lbl.text = "HEAVY"
+		lbl.position = Vector2(-w / 2.0, -h / 2.0 - 20)
+		lbl.size = Vector2(w, 18)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 10)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		area.add_child(lbl)
+		
+		var weight_hint := Label.new()
+		weight_hint.text = ""
+		weight_hint.name = "WeightHint"
+		weight_hint.position = Vector2(-80, -h / 2.0 - 40)
+		weight_hint.size = Vector2(160, 20)
+		weight_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		weight_hint.add_theme_font_size_override("font_size", 12)
+		weight_hint.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		weight_hint.modulate.a = 0.0
+		area.add_child(weight_hint)
+
+	area.collision_layer = 0
+	area.collision_mask = 1
+
+	area.body_entered.connect(func(body):
+		if body is CharacterBase or body is RigidBody2D:
+			if is_heavy and body is CharacterBase and body.character_name == "Rob":
+				var hint = area.get_node_or_null("WeightHint")
+				if hint:
+					hint.text = "MUITO LEVE"
+					var tw = area.create_tween()
+					tw.tween_property(hint, "modulate:a", 1.0, 0.15)
+					tw.tween_interval(1.5)
+					tw.tween_property(hint, "modulate:a", 0.0, 0.25)
+				return
+				
+			var count: int = area.get_meta("active_bodies") + 1
+			area.set_meta("active_bodies", count)
+			if count == 1:
+				if area.has_meta("close_tween"):
+					var active_tw = area.get_meta("close_tween")
+					if is_instance_valid(active_tw):
+						active_tw.kill()
+					area.remove_meta("close_tween")
+				else:
+					visual.color = Color(0.25, 0.85, 0.45) if not is_heavy else Color(0.90, 0.60, 0.15)
+					top.color = Color(0.55, 1.0, 0.7) if not is_heavy else Color(1.0, 0.80, 0.40)
+					SoundManager.play_sfx("switch")
+					_set_gates_active(id, true)
+	)
+
+	area.body_exited.connect(func(body):
+		if body is CharacterBase or body is RigidBody2D:
+			if is_heavy and body is CharacterBase and body.character_name == "Rob":
+				return
+				
+			var count: int = max(0, area.get_meta("active_bodies") - 1)
+			area.set_meta("active_bodies", count)
+			if count == 0:
+				var close_tw = area.create_tween()
+				area.set_meta("close_tween", close_tw)
+				close_tw.tween_interval(3.0)
+				close_tw.tween_callback(func():
+					if is_instance_valid(visual) and is_instance_valid(top) and is_instance_valid(area):
+						visual.color = Color(0.25, 0.30, 0.45) if not is_heavy else Color(0.55, 0.20, 0.20)
+						top.color = Color(0.4, 0.5, 0.7) if not is_heavy else Color(0.8, 0.3, 0.3)
+						SoundManager.play_sfx("switch")
+						_set_gates_active(id, false)
+						area.remove_meta("close_tween")
+				)
+	)
+
+	add_child(area)
+	level_nodes.append(area)
+	_switches.append(area)
+
+func _set_gates_active(switch_id: int, active: bool) -> void:
+	for gate in _gates:
+		if is_instance_valid(gate) and gate.get_meta("switch_id") == switch_id:
+			if active:
+				gate.open_gate()
+			else:
+				gate.close_gate()
+
+func _create_gate(switch_id: int, x: float, y: float, w: float, h: float) -> void:
+	var gate := StaticBody2D.new()
+	gate.position = Vector2(x + w / 2.0, y + h / 2.0)
+	gate.name = "Gate_" + str(switch_id)
+	gate.set_meta("switch_id", switch_id)
+	gate.collision_layer = 1
+	gate.collision_mask = 1
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	gate.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.95, 0.20, 0.25, 0.90)
+	visual.name = "Visual"
+	gate.add_child(visual)
+	
+	for i in range(3):
+		var laser := ColorRect.new()
+		laser.size = Vector2(w, 2)
+		laser.position = Vector2(-w / 2.0, -h / 2.0 + 4 + i * (h / 4.0))
+		laser.color = Color(1.0, 0.6, 0.6, 0.95)
+		gate.add_child(laser)
+
+	var gate_script = GDScript.new()
+	gate_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n\nfunc open_gate():\n	collision_layer = 0\n	collision_mask = 0\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 0.15, 0.25)\n\nfunc close_gate():\n	collision_layer = 1\n	collision_mask = 1\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 1.0, 0.25)"
+	gate_script.reload()
+	gate.set_script(gate_script)
+
+	add_child(gate)
+	level_nodes.append(gate)
+	_gates.append(gate)
+
+func _create_crumbling_platform(x: float, y: float, w: float, h: float) -> void:
+	var plat := StaticBody2D.new()
+	plat.position = Vector2(x + w / 2.0, y + h / 2.0)
+	plat.collision_layer = 1
+	plat.collision_mask = 1
+	plat.set_meta("start_pos", plat.position)
+	plat.set_meta("is_crumbling", false)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	plat.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.70, 0.65, 0.55)
+	visual.name = "Visual"
+	plat.add_child(visual)
+
+	for i in range(2):
+		var crack := ColorRect.new()
+		crack.size = Vector2(4, h - 8)
+		crack.position = Vector2(-w / 4.0 + i * (w / 2.0), -h / 2.0 + 4)
+		crack.color = Color(0.45, 0.40, 0.35)
+		plat.add_child(crack)
+
+	var area := Area2D.new()
+	var area_shape := CollisionShape2D.new()
+	var area_rect := RectangleShape2D.new()
+	area_rect.size = Vector2(w - 6, 8)
+	area_shape.shape = area_rect
+	area_shape.position = Vector2(0, -h / 2.0 - 4)
+	area.add_child(area_shape)
+	area.collision_layer = 0
+	area.collision_mask = 1
+	plat.add_child(area)
+
+	var plat_script = GDScript.new()
+	plat_script.source_code = "extends StaticBody2D\n\nvar _start_pos: Vector2\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\nvar _area: Area2D\nvar _is_crumbling := false\n\nfunc _ready():\n	_start_pos = get_meta(\"start_pos\")\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	_area = get_child(4)\n	_area.body_entered.connect(_on_body_entered)\n\nfunc _on_body_entered(body):\n	if _is_crumbling or not (body is CharacterBase):\n		return\n	_is_crumbling = true\n	var shake_tw = create_tween()\n	for i in range(5):\n		var offset = Vector2(randf_range(-3, 3), randf_range(-1, 1))\n		shake_tw.tween_property(self, \"position\", _start_pos + offset, 0.05)\n	shake_tw.tween_property(self, \"position\", _start_pos, 0.05)\n	await get_tree().create_timer(0.6).timeout\n	collision_layer = 0\n	collision_mask = 0\n	var fall_tw = create_tween().set_parallel(true)\n	fall_tw.tween_property(self, \"position:y\", _start_pos.y + 120.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)\n	fall_tw.tween_property(self, \"modulate:a\", 0.0, 0.4)\n	await get_tree().create_timer(2.5).timeout\n	position = _start_pos\n	modulate.a = 1.0\n	collision_layer = 1\n	collision_mask = 1\n	_is_crumbling = false"
+	plat_script.reload()
+	plat.set_script(plat_script)
+
+	add_child(plat)
+	level_nodes.append(plat)
+
+func _create_breakable_block(x: float, y: float, w: float, h: float) -> void:
+	var block := StaticBody2D.new()
+	block.add_to_group("breakable")
+	block.position = Vector2(x + w / 2.0, y + h / 2.0)
+	block.collision_layer = 1
+	block.collision_mask = 1
+	block.set_meta("start_pos", block.position)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	block.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.42, 0.42, 0.46)
+	visual.name = "Visual"
+	block.add_child(visual)
+
+	var border := ColorRect.new()
+	border.size = Vector2(w, 2)
+	border.position = Vector2(-w / 2.0, -h / 2.0)
+	border.color = Color(0.6, 0.6, 0.65)
+	block.add_child(border)
+
+	var crack1 := ColorRect.new()
+	crack1.size = Vector2(2, h)
+	crack1.position = Vector2(-w / 6.0, -h / 2.0)
+	crack1.color = Color(0.2, 0.2, 0.22)
+	block.add_child(crack1)
+
+	var crack2 := ColorRect.new()
+	crack2.size = Vector2(w / 2.0, 2)
+	crack2.position = Vector2(-w / 4.0, 0)
+	crack2.color = Color(0.2, 0.2, 0.22)
+	block.add_child(crack2)
+
+	var crack3 := ColorRect.new()
+	crack3.size = Vector2(2, h / 2.0)
+	crack3.position = Vector2(w / 4.0, 0)
+	crack3.color = Color(0.2, 0.2, 0.22)
+	block.add_child(crack3)
+
+	var label := Label.new()
+	label.text = "CRACKED"
+	label.position = Vector2(-w / 2.0, -8)
+	label.size = Vector2(w, 16)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95, 0.8))
+	block.add_child(label)
+
+	var block_script = GDScript.new()
+	block_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\nvar _broken := false\nvar main_scene: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	main_scene = get_parent()\n\nfunc break_block():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.5, 0.5, 0.55), 18, -30.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
+	block_script.reload()
+	block.set_script(block_script)
+
+	add_child(block)
+	level_nodes.append(block)
+
+func _create_snow_effect() -> void:
+	_snow_particles = CPUParticles2D.new()
+	_snow_particles.name = "SnowParticles"
+	camera.add_child(_snow_particles)
+	_snow_particles.position = Vector2(0, -400)
+	_snow_particles.amount = 120
+	_snow_particles.lifetime = 8.0
+	_snow_particles.preprocess = 6.0
+	_snow_particles.local_coords = false
+	_snow_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_snow_particles.emission_rect_extents = Vector2(800, 10)
+	_snow_particles.direction = Vector2(0.2, 1.0)
+	_snow_particles.spread = 15.0
+	_snow_particles.gravity = Vector2(0, 15)
+	_snow_particles.initial_velocity_min = 40.0
+	_snow_particles.initial_velocity_max = 80.0
+	_snow_particles.color = Color(0.92, 0.96, 1.0, 0.75)
+	_snow_particles.scale_amount_min = 1.5
+	_snow_particles.scale_amount_max = 4.0
+
+func _create_dust_effect() -> void:
+	_dust_particles = CPUParticles2D.new()
+	_dust_particles.name = "DustParticles"
+	camera.add_child(_dust_particles)
+	_dust_particles.position = Vector2(0, 0)
+	_dust_particles.amount = 80
+	_dust_particles.lifetime = 8.0
+	_dust_particles.preprocess = 6.0
+	_dust_particles.local_coords = false
+	_dust_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_dust_particles.emission_rect_extents = Vector2(800, 500)
+	_dust_particles.direction = Vector2(0.4, -0.1)
+	_dust_particles.spread = 30.0
+	_dust_particles.gravity = Vector2(0, -2)
+	_dust_particles.initial_velocity_min = 8.0
+	_dust_particles.initial_velocity_max = 24.0
+	
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([
+		Color(0.80, 0.72, 0.62, 0.0),
+		Color(0.80, 0.72, 0.62, 0.35),
+		Color(0.80, 0.72, 0.62, 0.35),
+		Color(0.80, 0.72, 0.62, 0.0)
+	])
+	grad.offsets = PackedFloat32Array([0.0, 0.2, 0.8, 1.0])
+	_dust_particles.color_ramp = grad
+	
+	_dust_particles.scale_amount_min = 1.0
+	_dust_particles.scale_amount_max = 3.5
+
+func _create_insect_effect() -> void:
+	_insect_particles = CPUParticles2D.new()
+	_insect_particles.name = "InsectParticles"
+	camera.add_child(_insect_particles)
+	_insect_particles.position = Vector2(0, 80)
+	_insect_particles.amount = 45
+	_insect_particles.lifetime = 4.0
+	_insect_particles.preprocess = 4.0
+	_insect_particles.local_coords = false
+	_insect_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_insect_particles.emission_rect_extents = Vector2(800, 400)
+	_insect_particles.direction = Vector2(0, 0)
+	_insect_particles.spread = 180.0
+	_insect_particles.gravity = Vector2(0, -6)
+	_insect_particles.initial_velocity_min = 15.0
+	_insect_particles.initial_velocity_max = 45.0
+	
+	_insect_particles.radial_accel_min = -35.0
+	_insect_particles.radial_accel_max = 35.0
+	_insect_particles.tangential_accel_min = -45.0
+	_insect_particles.tangential_accel_max = 45.0
+	
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([
+		Color(0.18, 0.24, 0.15, 0.0),
+		Color(0.20, 0.26, 0.16, 0.70),
+		Color(0.18, 0.24, 0.15, 0.70),
+		Color(0.18, 0.24, 0.15, 0.0)
+	])
+	grad.offsets = PackedFloat32Array([0.0, 0.15, 0.85, 1.0])
+	_insect_particles.color_ramp = grad
+	
+	_insect_particles.scale_amount_min = 1.0
+	_insect_particles.scale_amount_max = 2.0

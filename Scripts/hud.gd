@@ -23,6 +23,7 @@ var _rob_was_ready: bool  = false
 var _bog_was_ready: bool  = false
 var _rob_flash_tween: Tween = null
 var _bog_flash_tween: Tween = null
+var _lbl_timer:    Label
 
 # --- Intro de fase ---
 var _intro_overlay:   Panel
@@ -71,6 +72,7 @@ func _process(delta: float) -> void:
 	_tick_intro(delta)
 	_tick_fade(delta)
 	_tick_checkpoint(delta)
+	_update_timer_label()
 
 # ============================================================
 # PAINEL SUPERIOR
@@ -118,11 +120,20 @@ func _build_top_panel() -> void:
 	lbl_prog.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
 	add_child(lbl_prog)
 
-	for i in range(5):
+	var total_levels := GameManager.get_level_count()
+	var dots_per_row := 5
+	var spacing := 38.0
+	var offset_x := 576.0 - (spacing * (dots_per_row - 1) / 2.0) - 8.0
+
+	for i in range(total_levels):
+		var row := i / dots_per_row
+		var col := i % dots_per_row
+		var y_pos := 20 + row * 22
+		
 		var dot := Label.new()
 		dot.text                 = "●"
-		dot.position             = Vector2(468 + i * 38, 22)
-		dot.add_theme_font_size_override("font_size", 22)
+		dot.position             = Vector2(offset_x + col * spacing, y_pos)
+		dot.add_theme_font_size_override("font_size", 18)
 		dot.add_theme_color_override("font_color", COLOR_DIM)
 		add_child(dot)
 		_dots.append(dot)
@@ -243,6 +254,16 @@ func _build_top_panel() -> void:
 	_lbl_stars.add_theme_font_size_override("font_size", 18)
 	_lbl_stars.add_theme_color_override("font_color", COLOR_GOLD)
 	add_child(_lbl_stars)
+
+	# ---- Cronômetro (abaixo do painel, canto direito) ----
+	_lbl_timer = Label.new()
+	_lbl_timer.text     = "⏱  00:00.000"
+	_lbl_timer.position = Vector2(938, 76)
+	_lbl_timer.size     = Vector2(200, 26)
+	_lbl_timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_lbl_timer.add_theme_font_size_override("font_size", 18)
+	_lbl_timer.add_theme_color_override("font_color", Color(0.85, 0.88, 1.0))
+	add_child(_lbl_timer)
 
 func _on_pause_pressed() -> void:
 	pause_requested.emit()
@@ -446,6 +467,26 @@ func update_character(rob_active: bool) -> void:
 		_bog_bg.color = Color(0.10, 0.28, 0.16)
 		_lbl_rob.add_theme_color_override("font_color", Color(0.28, 0.38, 0.55))
 		_lbl_bog.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		
+	# Efeito visual de escala (Tween) na troca de personagem
+	_rob_bg.pivot_offset = Vector2(48, 15)
+	_bog_bg.pivot_offset = Vector2(48, 15)
+	var tw := create_tween().set_parallel(true)
+	if rob_active:
+		tw.tween_property(_rob_bg, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_bog_bg, "scale", Vector2.ONE, 0.15)
+	else:
+		tw.tween_property(_bog_bg, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_rob_bg, "scale", Vector2.ONE, 0.15)
+
+func _update_timer_label() -> void:
+	if not _lbl_timer:
+		return
+	var t := GameManager.elapsed_time
+	var minutes := int(t / 60.0)
+	var seconds := int(fmod(t, 60.0))
+	var msec := int(fmod(t, 1.0) * 1000.0)
+	_lbl_timer.text = "⏱  %02d:%02d.%03d" % [minutes, seconds, msec]
 
 func update_deaths(total: int) -> void:
 	if not _lbl_deaths:

@@ -9,10 +9,10 @@ static func get_data() -> Dictionary:
 		"name": "Ruas da Cidade",
 		"description": "Rob e Bog viram Loopy sair do Café Loop com olhar distante...\na busca começa aqui nas ruas!",
 		"modifier_hint": "Controles Normais  ·  Aprenda o básico!",
-		"bg_color":       Color(0.13, 0.16, 0.26),
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
-		"bg_size": [80000.0, 10800.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
-		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
+		"bg_size": [70000.0, 1000.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.38, 0.40, 0.48),
 		"modifiers": {
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,

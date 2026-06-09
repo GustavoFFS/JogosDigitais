@@ -24,6 +24,7 @@ var air_control:  float = 1.0
 # Sistema de controle de inatividade (trava de input)
 var is_locked:  bool  = false 
 var lock_timer: float = 0.0 
+var _was_on_floor: bool = true 
 
 # Coyote time
 var coyote_timer: float = 0.0
@@ -80,13 +81,23 @@ func _game_loop_input() -> void:
 	_input_jump = false
 	_input_ability = false
 
-	if is_active:
+	var main_scene = get_parent()
+	var exiting := false
+	if main_scene and "is_exiting" in main_scene and main_scene.is_exiting:
+		exiting = true
+
+	if is_active and not exiting:
 		_input_direction = Input.get_axis("move_left", "move_right")
 		_input_jump = Input.is_action_just_pressed("jump")
 		_input_ability = Input.is_action_just_pressed("ability")
 
 ## 2. ETAPA DE UPDATE (Física, Timers e Movimentação)
 func _game_loop_update(delta: float) -> void:
+	var on_floor := is_on_floor()
+	if on_floor and not _was_on_floor:
+		_on_land()
+	_was_on_floor = on_floor
+
 	_update_timers(delta)
 	_apply_gravity(delta)
 
@@ -162,6 +173,15 @@ func _handle_jump() -> void:
 		velocity.y        = get_jump()
 		coyote_timer      = 0.0
 		jump_buffer_timer = 0.0
+		SoundManager.play_sfx("jump")
+		var main_scene = get_parent()
+		if main_scene and main_scene.has_method("spawn_jump_particles"):
+			main_scene.spawn_jump_particles(global_position, character_name)
+
+func _on_land() -> void:
+	var main_scene = get_parent()
+	if main_scene and main_scene.has_method("spawn_land_particles"):
+		main_scene.spawn_land_particles(global_position, character_name)
 
 func _use_ability() -> void:
 	pass  # sobrescrito pelas subclasses
@@ -169,30 +189,55 @@ func _use_ability() -> void:
 func _apply_horizontal_movement(direction: float, delta: float) -> void:
 	if is_locked: return # Se estiver travado, ignora o atrito e mantém o voo
 	
+	var is_ice := friction < 0.2
+	
 	if direction != 0:
 		var target := direction * get_speed()
 		if is_on_floor():
-			velocity.x = lerp(velocity.x, target, friction)
+			if is_ice:
+				# Se estiver acelerando na direção do movimento, acelera um pouco mais rápido
+				if sign(direction) == sign(velocity.x) or abs(velocity.x) < 15.0:
+					velocity.x = lerp(velocity.x, target, friction * 1.2)
+				else:
+					# Se estiver freando ou mudando de direção, desliza mais
+					velocity.x = lerp(velocity.x, target, friction * 0.4)
+			else:
+				velocity.x = lerp(velocity.x, target, friction)
 		else:
-			velocity.x = lerp(velocity.x, target, clamp(air_control * friction, 0.02, 1.0))
+			if is_ice:
+				velocity.x = lerp(velocity.x, target, clamp(air_control * friction * 0.7, 0.01, 1.0))
+			else:
+				velocity.x = lerp(velocity.x, target, clamp(air_control * friction, 0.02, 1.0))
 		if sprite:
 			sprite.flip_h = direction < 0
 	else:
 		# --- DIREÇÃO = 0 (Nenhum botão pressionado) ---
 		if is_active:
-			# JOGADOR ATIVO: Controle preciso. Soltou o botão, freia rápido mesmo no ar.
 			if is_on_floor():
-				velocity.x = lerp(velocity.x, 0.0, friction)
+				if is_ice:
+					# Desaceleração muito lenta no gelo (deslize longo)
+					velocity.x = lerp(velocity.x, 0.0, friction * 0.3)
+				else:
+					velocity.x = lerp(velocity.x, 0.0, friction)
 			else:
 				velocity.x = lerp(velocity.x, 0.0, clamp(air_control * 0.5, 0.01, 1.0))
 		else:
 			# PERSONAGEM INATIVO: Física realista.
 			if is_on_floor():
-				# No chão, raspa e para.
-				velocity.x = lerp(velocity.x, 0.0, friction)
+				if is_ice:
+					velocity.x = lerp(velocity.x, 0.0, friction * 0.3)
+				else:
+					velocity.x = lerp(velocity.x, 0.0, friction)
 			else:
 				# NO AR: Comportamento Parabólico (mantém a inércia do arremesso do Bog)
 				velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)
+				
+	# Partículas visuais de deslize no gelo
+	if is_on_floor() and is_ice and abs(velocity.x) > 40.0:
+		if direction == 0 or sign(direction) != sign(velocity.x):
+			var main_scene = get_parent()
+			if main_scene and main_scene.has_method("_spawn_dust") and randf() < 0.20:
+				main_scene._spawn_dust(global_position + Vector2(0, 20), Color(0.90, 0.95, 1.0, 0.75), 2, -10.0)
 
 func _handle_push() -> void:
 	if not can_push or not is_active:

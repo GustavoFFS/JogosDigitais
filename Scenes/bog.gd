@@ -62,17 +62,33 @@ func _use_ability() -> void:
 	velocity.y = 800.0
 	velocity.x = 0.0
 	
+	SoundManager.play_sfx("switch") # Som de acionamento no ar
+	
 	# Efeito visual de flash do personagem
 	var tw := create_tween()
 	tw.tween_property(sprite, "modulate", Color(1.0, 0.60, 0.22, 1.0), 0.04)
 	tw.tween_property(sprite, "modulate", Color(1.0, 1.0,  1.0,  1.0), 0.28)
 
 func _apply_ground_impact() -> void:
+	SoundManager.play_sfx("impact") # Som de impacto pesado no chão
+	
 	var pushables = get_tree().get_nodes_in_group("pushable")
 	var main_scene = get_parent()
 	
-	if main_scene and main_scene.has_method("apply_shake"):
-		main_scene.apply_shake(8.0) # Força do tremor
+	if main_scene:
+		if main_scene.has_method("apply_shake"):
+			main_scene.apply_shake(8.0) # Força do tremor
+		if main_scene.has_method("spawn_impact_wave"):
+			main_scene.spawn_impact_wave(global_position)
+
+	var breakables = get_tree().get_nodes_in_group("breakable")
+	for obj in breakables:
+		if not is_instance_valid(obj):
+			continue
+		var distance = global_position.distance_to(obj.global_position)
+		if distance <= impact_radius:
+			if obj.has_method("break_block"):
+				obj.break_block()
 
 	for obj in pushables:
 		if not is_instance_valid(obj) or obj == self:
