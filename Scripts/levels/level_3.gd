@@ -1,61 +1,68 @@
 extends RefCounted
 class_name Level3Data
 
-## Fase 3 - Telhados
-## Gravidade moderada com pulo mais alto. Dificuldade intermediaria.
+## Fase 3 - Fábrica Abandonada
+## Ajustes de acessibilidade: plataformas mais baixas e hazards reposicionados.
 
 static func get_data() -> Dictionary:
 	return {
-		"name": "Telhados",
-		"description": "Ele está nos telhados! Pule alto e cuidado com a queda rápida!",
-		"modifier_hint": "Gravidade Elevada  +  Pulo Forte",
-		"bg_color":       Color(0.07, 0.06, 0.14),
-		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
-		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
-		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
+		"name": "Fábrica Abandonada",
+		"description": "Loopy entrou nos portões de metal da velha fábrica...\nAlterne de personagem e destranque as passagens!",
+		"modifier_hint": "Portas e Botões  ·  Empurre a caixa sobre o botão!",
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
+		"bg_image": "res://Assets/Backgrounds/FabricaAbandonada.png",
+		"dust_effect":    true,
+		"bg_size": [8000.0, 1080.0],
+		"platform_color": Color(0.65, 0.35, 0.20),
 		"modifiers": {
 			"speed_mult":   1.0,
-			"jump_mult":    1.25,
-			"gravity_mult": 1.35,
+			"jump_mult":    1.0,
+			"gravity_mult": 1.0,
 			"friction":     1.0,
 			"air_control":  1.0,
 		},
 		"platforms": [
 			[0,    620, 280, 28],
-			[360,  520, 120, 18],
-			[560,  420, 110, 18],
-			[760,  520, 120, 18],
-			[970,  420, 100, 18],
-			[1150, 545, 210, 22],   # CHECKPOINT
-			[1440, 440, 120, 18],
-			[1640, 340, 110, 18],
-			[1840, 440, 120, 18],
-			[2040, 545, 120, 18],
+			[360,  560, 120, 18],   # Mais baixo (era 520)
+			[560,  480, 110, 18],   # Mais baixo (era 420)
+			[760,  530, 120, 18],   # Mais baixo (era 520)
+			[970,  460, 100, 18],   # Mais baixo (era 420)
+			[1150, 560, 210, 22],   # CHECKPOINT (era 545)
+			[1440, 500, 120, 18],   # Mais baixo (era 440)
+			[1640, 420, 110, 18],   # Mais baixo (era 340)
+			[1840, 500, 120, 18],   # Mais baixo (era 440)
+			[2040, 560, 120, 18],   # Mais baixo (era 545)
 			[2230, 620, 360, 28],
 		],
 		"checkpoints": [
-			[1210, 520],
+			[1210, 535],
 		],
 		"hazards": [
-			[ 300, 590,  50, 22],
-			[ 480, 510,  60, 22],
+			[ 300, 600,  50, 22],   # Mais baixo
+			[ 480, 540,  60, 22],   # Reajustado
 			[ 880, 590,  70, 22],
 			[1370, 590,  60, 22],
-			[1750, 510,  70, 22],
-			[2150, 540,  60, 22],
+			[1750, 530,  70, 22],   # Reajustado
+			[2150, 580,  60, 22],   # Reajustado
 		],
 		"pushable_blocks": [
 			[140, 580, 40, 40],
 		],
+		"switches": [
+			[1, 230, 612, 40, 8],
+		],
+		"gates": [
+			[1, 410, 480, 16, 80],  # Reajustado para a nova altura de plat 2
+		],
 		"stars": [
-			[450, 385],
-			[1690, 220],  # Acima da plataforma alta — pulo preciso
-			[2125, 415],
-			[220, 410],   # Estrela do Bog
+			[420, 460],   # Rebaixado (era 385)
+			[1690, 310],  # Rebaixado (era 220)
+			[2125, 470],  # Rebaixado (era 415)
+			[220, 440],   # Estrela do Bog (era 410)
 		],
 		"exit_pos":    [2510, 572],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [150,  560],
 		"loopy_start": [2360, 572],
-		"loopy_end":   [2520, 572],
+		"loopy_end":   [2510, 572],
 	}

@@ -15,6 +15,7 @@ var _intro_visible: bool = false
 
 func _ready() -> void:
 	_build_ui()
+	SoundManager.play_bgm("res://backgroundmusicforvideos-gaming-game-minecraft-background-music-372242.ogg")
 
 func _process(delta: float) -> void:
 	time += delta
@@ -24,6 +25,7 @@ func _process(delta: float) -> void:
 	if _newspaper_visible:
 		if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("ui_accept"):
 			_newspaper_visible = false
+			SoundManager.play_sfx("switch")
 			_build_character_intro()
 	elif _intro_visible:
 		if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("ui_accept"):
@@ -75,6 +77,7 @@ func _build_ui() -> void:
 	start_button.add_theme_font_size_override("font_size", 26)
 	start_button.pressed.connect(_on_start)
 	btn_box.add_child(start_button)
+	_setup_button_sounds(start_button)
 
 	var tips_button := Button.new()
 	tips_button.text = "?  Dicas"
@@ -82,6 +85,7 @@ func _build_ui() -> void:
 	tips_button.add_theme_font_size_override("font_size", 20)
 	tips_button.pressed.connect(_show_menu_help)
 	btn_box.add_child(tips_button)
+	_setup_button_sounds(tips_button)
 
 	quit_button = Button.new()
 	quit_button.text = "Sair"
@@ -89,6 +93,7 @@ func _build_ui() -> void:
 	quit_button.add_theme_font_size_override("font_size", 20)
 	quit_button.pressed.connect(_on_quit)
 	btn_box.add_child(quit_button)
+	_setup_button_sounds(quit_button)
 
 	var controls := Label.new()
 	controls.text     = "Controles:\nA/D ou Setas = Mover  |  Espaço = Pular  |  TAB = Trocar  |  Z = Habilidade"
@@ -185,6 +190,7 @@ func _show_menu_help() -> void:
 	btn_close.add_theme_font_size_override("font_size", 18)
 	btn_close.pressed.connect(_close_menu_help)
 	_menu_help_overlay.add_child(btn_close)
+	_setup_button_sounds(btn_close)
 
 func _menu_help_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int,
 					col: Color, center: bool = false) -> void:
@@ -206,6 +212,7 @@ func _close_menu_help() -> void:
 func _start_game() -> void:
 	_newspaper_visible = false
 	_intro_visible     = false
+	SoundManager.play_sfx("collect") # Som de início
 	GameManager.start_game()
 	get_tree().change_scene_to_file("res://Scenes/scene1.tscn")
 
@@ -666,3 +673,7 @@ func _draw_bog(parent: Node, cx: float, cy: float, s: float) -> void:
 	_rect(parent, cx - 5  * s, cy - 62 * s, 2  * s, 2  * s, Color.BLACK)
 	_rect(parent, cx + 3  * s, cy - 62 * s, 2  * s, 2  * s, Color.BLACK)
 	_rect(parent, cx - 2  * s, cy - 56 * s, 4  * s, 1.2 * s, Color(0.5, 0.2, 0.2))
+
+func _setup_button_sounds(btn: Button) -> void:
+	btn.pressed.connect(func(): SoundManager.play_sfx("collect"))
+	btn.mouse_entered.connect(func(): SoundManager.play_sfx("switch"))
