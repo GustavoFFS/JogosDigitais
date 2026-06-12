@@ -97,7 +97,6 @@ func _build_ui() -> void:
 	tips_button.pressed.connect(_show_menu_help)
 	btn_box.add_child(tips_button)
 	_setup_button_sounds(tips_button)
-<<<<<<< HEAD
 
 	var options_button := Button.new()
 	options_button.text = "Opções de Tela"
@@ -106,8 +105,6 @@ func _build_ui() -> void:
 	options_button.pressed.connect(_show_options_menu)
 	btn_box.add_child(options_button)
 	_setup_button_sounds(options_button)
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 	quit_button = Button.new()
 	quit_button.text = "Sair"
@@ -224,11 +221,7 @@ func _show_menu_help() -> void:
 	btn_close.size     = Vector2(280, 42)
 	btn_close.add_theme_font_size_override("font_size", 18)
 	btn_close.pressed.connect(_close_menu_help)
-<<<<<<< HEAD
 	_menu_help_overlay.get_node("CenterBox").add_child(btn_close)
-=======
-	_menu_help_overlay.add_child(btn_close)
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	_setup_button_sounds(btn_close)
 
 func _menu_help_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int,
@@ -354,14 +347,10 @@ func _start_game() -> void:
 	_newspaper_visible = false
 	_intro_visible     = false
 	SoundManager.play_sfx("collect") # Som de início
-<<<<<<< HEAD
 	if GameManager.current_level_index > 0:
 		GameManager.continue_game()
 	else:
 		GameManager.start_game()
-=======
-	GameManager.start_game()
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	get_tree().change_scene_to_file("res://Scenes/scene1.tscn")
 
 # ============================================================

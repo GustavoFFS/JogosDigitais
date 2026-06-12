@@ -9,14 +9,11 @@ static func get_data() -> Dictionary:
 		"name": "Esgotos de Loop",
 		"description": "Descendo pelos canos... a água escorre sob blocos instáveis.\nCorra antes que tudo desmorone!",
 		"modifier_hint": "Plataformas Instáveis  ·  Não fique parado!",
-<<<<<<< HEAD
 		"ambient_type": "sewer",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Ugh, que cheiro..."},
 			{"speaker": "Bog", "text": "O chão tá cedendo! Corre!"},
 		],
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"bg_color":       Color(0.05, 0.08, 0.06),
 		"bg_image": "res://Assets/Backgrounds/Esgoto.png",
 		"insect_effect":  true,
@@ -53,15 +50,12 @@ static func get_data() -> Dictionary:
 		"pushable_blocks": [
 			[80, 580, 40, 40],
 		],
-<<<<<<< HEAD
 		"levers": [
 			[1, 800, 540, 40, 40],
 		],
 		"gates": [
 			[1, 880, 410, 20, 70],
 		],
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"stars": [
 			[440, 380],   # Acima do percurso instável
 			[1070, 310],  # Alto
@@ -70,11 +64,7 @@ static func get_data() -> Dictionary:
 		],
 		"exit_pos":    [1580, 570],
 		"spawn_rob":   [40,   560],
-<<<<<<< HEAD
 		"spawn_bog":   [130,  560],
-=======
-		"spawn_bog":   [120,  560],
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"loopy_start": [1400, 572],
 		"loopy_end":   [1560, 572],
 	}

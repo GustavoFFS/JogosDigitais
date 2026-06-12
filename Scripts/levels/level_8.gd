@@ -9,14 +9,11 @@ static func get_data() -> Dictionary:
 		"name": "Parque Central",
 		"description": "O gramado do parque está coberto por uma camada fina de gelo...\nDeslize e ative os botões para abrir caminho!",
 		"modifier_hint": "Super Deslize  +  Portões de Energia",
-<<<<<<< HEAD
 		"ambient_type": "park_wind",
 		"dialogues": [
 			{"speaker": "Rob", "text": "O parque congelou também?"},
 			{"speaker": "Bog", "text": "Pelo menos tem botões pra ajudar."},
 		],
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"bg_color":       Color(0.06, 0.07, 0.12),
 		"bg_image": "res://Assets/Backgrounds/ParqueCentral.png",
 		"bg_size": [8000.0, 1080.0],

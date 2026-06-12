@@ -3,11 +3,7 @@ extends Node2D
 ## Cena principal - Lost & Loopy
 ## Gerencia plataformas, personagens, camera, Loopy, checkpoints, hazards e transicoes.
 var shake_strength: float = 0.0
-<<<<<<< HEAD
 var shake_decay: float = 3.0
-=======
-var shake_decay: float = 5.0
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 @onready var rob:    CharacterBase = $Rob
 @onready var bog:    CharacterBase = $Bog
@@ -59,7 +55,6 @@ var _death_overlay: Control = null
 var _snow_particles: CPUParticles2D = null
 var _dust_particles: CPUParticles2D = null
 var _insect_particles: CPUParticles2D = null
-<<<<<<< HEAD
 
 # Sistema de diálogos
 var _dialogue_system: DialogueSystem = null
@@ -68,8 +63,6 @@ var _dialogue_shown_for_level: int = -1
 # Sistema de Iluminação
 var _canvas_mod: CanvasModulate = null
 var _character_lights: Array = []
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 # ============================================================
 # INICIALIZACAO
@@ -118,18 +111,12 @@ func _game_loop_input() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Captura de Inputs discretos por eventos do SO
-<<<<<<< HEAD
 	# Bloqueia input durante diálogos (o sistema de diálogo consome o ESPAÇO)
 	if _dialogue_system and _dialogue_system.is_active():
 		return
 	if event.is_action_pressed("switch_character") and not get_tree().paused and not hud.showing_intro and not hud.fading and not is_exiting and not hud.transitioning and not rob.is_dead and not bog.is_dead:
 		_switch_character()
 	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting and not hud.transitioning:
-=======
-	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading and not is_exiting:
-		_switch_character()
-	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting:
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		# Bloqueia pause se tela de morte estiver ativa
 		if _death_overlay and is_instance_valid(_death_overlay):
 			return
@@ -141,15 +128,11 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 2. ETAPA DE UPDATE (Física, Movimentação e Regras de Jogo)
 func _game_loop_update(delta: float) -> void:
 	# Controla ativação do cronômetro de speedrun
-<<<<<<< HEAD
 	var dialogue_active := _dialogue_system != null and _dialogue_system.is_active()
 	GameManager.is_timer_active = not hud.showing_intro and not hud.fading and victory_overlay == null and not dialogue_active and not hud.transitioning
 	
 	# Inicia diálogos quando a intro terminar
 	_check_dialogue_trigger()
-=======
-	GameManager.is_timer_active = not hud.showing_intro and not hud.fading and victory_overlay == null
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	
 	_update_camera(delta)
 	_update_loopy(delta)
@@ -506,26 +489,19 @@ func _load_level() -> void:
 	for bb in level.get("breakable_blocks", []):
 		_create_breakable_block(bb[0], bb[1], bb[2], bb[3])
 		
-<<<<<<< HEAD
 	for k in level.get("keys", []):
 		_create_key(k[0], k[1], k[2])
 		
 	for lk in level.get("locks", []):
 		_create_lock(lk[0], lk[1], lk[2], lk[3], lk[4])
 		
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	# Jump Pads (Molas) e Speed Pads (Aceleradores)
 	for jp in level.get("jump_pads", []):
 		_create_jump_pad(jp[0], jp[1], jp[2], jp[3])
 	for sp in level.get("speed_pads", []):
 		_create_speed_pad(sp[0], sp[1], sp[2], sp[3], sp[4])
 
-<<<<<<< HEAD
 	# Puzzles: Switches (Botões), Gates (Portões), Crumbling Platforms (Instáveis) e Levers (Alavancas)
-=======
-	# Puzzles: Switches (Botões), Gates (Portões) e Crumbling Platforms (Instáveis)
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	for sw in level.get("switches", []):
 		var is_heavy := false
 		if sw.size() > 5:
@@ -535,7 +511,6 @@ func _load_level() -> void:
 		_create_gate(gt[0], gt[1], gt[2], gt[3], gt[4])
 	for cp in level.get("crumbling_platforms", []):
 		_create_crumbling_platform(cp[0], cp[1], cp[2], cp[3])
-<<<<<<< HEAD
 	for lv in level.get("levers", []):
 		_create_lever(lv[0], lv[1], lv[2], lv[3], lv[4])
 	for se in level.get("secret_exits", []):
@@ -545,8 +520,6 @@ func _load_level() -> void:
 
 	if level.get("dark_mode", false):
 		_setup_dark_mode()
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 	# Snow effect
 	if _snow_particles and is_instance_valid(_snow_particles):
@@ -619,7 +592,6 @@ func _clear_level() -> void:
 	_pushable_blocks.clear()
 	_gates.clear()
 	_switches.clear()
-<<<<<<< HEAD
 	_collected_keys.clear()
 	for light in _character_lights:
 		if is_instance_valid(light):
@@ -627,8 +599,6 @@ func _clear_level() -> void:
 	_character_lights.clear()
 	_canvas_mod = null
 	hud.update_keys(0)
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	for node in level_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -957,7 +927,6 @@ func _create_level_exit(pos: Vector2) -> void:
 	level_nodes.append(area)
 
 func _on_exit_body_entered(body: Node) -> void:
-<<<<<<< HEAD
 	if body == current_character and not hud.fading and not is_exiting and not hud.transitioning:
 		is_exiting = true
 		if rob:
@@ -966,10 +935,6 @@ func _on_exit_body_entered(body: Node) -> void:
 		if bog:
 			bog.velocity = Vector2.ZERO
 			bog.process_mode = Node.PROCESS_MODE_DISABLED
-=======
-	if body == current_character and not hud.fading and not is_exiting:
-		is_exiting = true
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		SoundManager.play_sfx("collect")
 		
 		# Efeito de câmera lenta e zoom usando Tween (ignora escala de tempo)
@@ -1289,11 +1254,7 @@ func _switch_character() -> void:
 # ============================================================
 
 func _check_death() -> void:
-<<<<<<< HEAD
 	if hud.fading or hud.showing_intro or is_exiting or hud.transitioning:
-=======
-	if hud.fading or hud.showing_intro or is_exiting:
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		return
 
 	if not current_character.is_dead and current_character.global_position.y > DEATH_Y:
@@ -1313,13 +1274,10 @@ func _on_player_died() -> void:
 	# antes do pause efetivar).
 	if _death_overlay and is_instance_valid(_death_overlay):
 		return
-<<<<<<< HEAD
 	if rob:
 		rob.die()
 	if bog:
 		bog.die()
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	SoundManager.play_sfx("death")
 	GameManager.register_death()
 	hud.update_deaths(GameManager.deaths)
@@ -1561,14 +1519,8 @@ func _show_victory() -> void:
 		return
 
 	SoundManager.play_sfx("victory")
-<<<<<<< HEAD
 	victory_overlay       = Control.new()
 	victory_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-=======
-	victory_overlay       = ColorRect.new()
-	victory_overlay.size  = Vector2(1152, 648)
-	victory_overlay.color = Color(0.02, 0.04, 0.08, 0.94)
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	hud.add_child(victory_overlay)
 
 	var dim = ColorRect.new()
@@ -1971,11 +1923,7 @@ func spawn_land_particles(pos: Vector2, character_name: String) -> void:
 	_spawn_dust(pos + Vector2(0, 24), color, 12, -20.0)
 	apply_shake(1.5)
 
-<<<<<<< HEAD
 func _spawn_dust(pos: Vector2, color: Color, amount: int, _vel_y: float) -> void:
-=======
-func _spawn_dust(pos: Vector2, color: Color, amount: int, vel_y: float) -> void:
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	var particles := CPUParticles2D.new()
 	particles.global_position = pos
 	particles.amount = amount
@@ -1997,7 +1945,6 @@ func _spawn_dust(pos: Vector2, color: Color, amount: int, vel_y: float) -> void:
 func _spawn_star_burst_particles(pos: Vector2) -> void:
 	var particles := CPUParticles2D.new()
 	particles.global_position = pos
-<<<<<<< HEAD
 	particles.amount = 24
 	particles.one_shot = true
 	particles.explosiveness = 0.90
@@ -2029,19 +1976,6 @@ func _spawn_star_burst_particles(pos: Vector2) -> void:
 	particles.scale_amount_min = 3.0
 	particles.scale_amount_max = 5.0
 
-=======
-	particles.amount = 20
-	particles.one_shot = true
-	particles.explosiveness = 0.90
-	particles.lifetime = 0.60
-	particles.spread = 180.0
-	particles.gravity = Vector2(0, 60)
-	particles.initial_velocity_min = 40.0
-	particles.initial_velocity_max = 90.0
-	particles.color = Color(1.00, 0.85, 0.25)
-	particles.scale_amount_min = 3.0
-	particles.scale_amount_max = 6.0
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	add_child(particles)
 	particles.emitting = true
 	particles.finished.connect(particles.queue_free)
@@ -2563,7 +2497,6 @@ func _create_insect_effect() -> void:
 	
 	_insect_particles.scale_amount_min = 1.0
 	_insect_particles.scale_amount_max = 2.0
-<<<<<<< HEAD
 
 # ============================================================
 # CHAVES E FECHADURAS
@@ -2804,5 +2737,3 @@ func _create_light_switch(x: float, y: float, w: float, h: float) -> void:
 	
 	add_child(area)
 	level_nodes.append(area)
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119

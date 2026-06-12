@@ -82,7 +82,6 @@ func _game_loop_input() -> void:
 	_input_ability = false
 
 	var main_scene = get_parent()
-<<<<<<< HEAD
 	var blocked := false
 	if main_scene and "is_exiting" in main_scene and main_scene.is_exiting:
 		blocked = true
@@ -93,13 +92,6 @@ func _game_loop_input() -> void:
 			blocked = true
 
 	if is_active and not blocked and not get_tree().paused:
-=======
-	var exiting := false
-	if main_scene and "is_exiting" in main_scene and main_scene.is_exiting:
-		exiting = true
-
-	if is_active and not exiting:
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		_input_direction = Input.get_axis("move_left", "move_right")
 		_input_jump = Input.is_action_just_pressed("jump")
 		_input_ability = Input.is_action_just_pressed("ability")

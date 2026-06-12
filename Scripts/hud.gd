@@ -24,10 +24,7 @@ var _bog_was_ready: bool  = false
 var _rob_flash_tween: Tween = null
 var _bog_flash_tween: Tween = null
 var _lbl_timer:    Label
-<<<<<<< HEAD
 var _lbl_keys:     Label
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 # --- Intro de fase ---
 var _intro_overlay:   Panel
@@ -276,7 +273,6 @@ func _build_top_panel() -> void:
 	_lbl_stars.add_theme_color_override("font_color", COLOR_GOLD)
 	add_child(_lbl_stars)
 
-<<<<<<< HEAD
 	# ---- Chaves coletadas (abaixo do painel, ao lado das estrelas) ----
 	_lbl_keys = Label.new()
 	_lbl_keys.text     = ""
@@ -286,8 +282,6 @@ func _build_top_panel() -> void:
 	_lbl_keys.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
 	add_child(_lbl_keys)
 
-=======
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	# ---- Cronômetro (abaixo do painel, canto direito) ----
 	_lbl_timer = Label.new()
 	_lbl_timer.text     = "⏱  00:00.000"
@@ -296,11 +290,7 @@ func _build_top_panel() -> void:
 	_lbl_timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_timer.add_theme_font_size_override("font_size", 18)
 	_lbl_timer.add_theme_color_override("font_color", Color(0.85, 0.88, 1.0))
-<<<<<<< HEAD
 	right_container.add_child(_lbl_timer)
-=======
-	add_child(_lbl_timer)
->>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 func _on_pause_pressed() -> void:
 	pause_requested.emit()
