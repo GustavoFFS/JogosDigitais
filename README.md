@@ -14,10 +14,15 @@ A história acompanha **Rob** e **Bog**, dois amigos que precisam seguir **Loopy
 
 ## 🎮 Mecânicas Principais
 
-- **Movimento Variável por Fase** — velocidade, pulo, aderência e precisão mudam a cada nível
-- **Troca de Personagens** — alterne entre Rob e Bog conforme a situação exige
-- **Sem inimigos tradicionais** — o desafio vem do ambiente e do próprio controle
-- **Sistema de Caçada Visual** — Loopy aparece no fim de cada fase como objetivo visual
+- **Movimento Variável por Fase** — velocidade, pulo, aderência e precisão mudam a cada nível.
+- **Troca de Personagens** — alterne entre Rob e Bog conforme a situação exige.
+- **Sem inimigos tradicionais** — o desafio vem do ambiente e do próprio controle.
+- **Sistema de Caçada Visual** — Loopy aparece no fim de cada fase como objetivo visual.
+- **Elementos Interativos do Ambiente** — interações dinâmicas que enriquecem o gameplay:
+  - **Zonas de Gravidade Invertida**: Campos de força roxos pulsantes com setas indicativas flutuantes que informam a direção e a força da alteração gravitacional antes mesmo de entrar neles.
+  - **Blocos Empurráveis**: Obstáculos pesados identificados com o nome "BOG" que apenas o personagem Bog consegue mover.
+  - **Molas (Jump Pads) e Aceleradores (Speed Pads)**: Itens de impulso rápido espalhados pelas fases.
+  - **Botões e Portões**: Mecanismos de puzzle simples que exigem ativação por peso para liberar passagens.
 
 ### Personagens
 

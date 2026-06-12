@@ -1,65 +1,81 @@
 extends RefCounted
 class_name Level4Data
 
-## Fase 4 - Becos Estreitos
-## Controle aereo reduzido, mas jogavel. Plataformas mais largas que antes.
+## Fase 4 - Telhados da Cidade
+## Gravidade elevada e pulo forte. Introduz Jump Pads (molas).
 
 static func get_data() -> Dictionary:
 	return {
-		"name": "Becos Estreitos",
-		"description": "Pelos becos... o controle no ar é limitado.\nPense antes de pular!",
-		"modifier_hint": "Controle Aéreo Reduzido  ·  Planeje seus pulos!",
-		"bg_color":       Color(0.09, 0.09, 0.11),
-		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
-		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
-		"platform_color": Color(0.0, 0.835, 0.208, 1.0),
+		"name": "Telhados da Cidade",
+		"description": "Ele está nos telhados! Pule alto e cuidado com a queda rápida!",
+		"modifier_hint": "Gravidade Elevada  +  Pulo Forte  ·  Use as molas!",
+		"ambient_type": "wind_high",
+		"dialogues": [
+			{"speaker": "Rob", "text": "Ele subiu pros telhados?!"},
+			{"speaker": "Bog", "text": "A gravidade tá estranha aqui em cima..."},
+		],
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
+		"bg_image": "res://Assets/Backgrounds/TelhadosdaCidade.png",
+		"bg_size": [8000.0, 1080.0],
+		"platform_color": Color(0.68, 0.26, 0.22),
 		"modifiers": {
-			"speed_mult":   0.90,
-			"jump_mult":    1.10,
-			"gravity_mult": 1.0,
+			"speed_mult":   1.0,
+			"jump_mult":    1.25,
+			"gravity_mult": 1.35,
 			"friction":     1.0,
-			"air_control":  0.28,
+			"air_control":  1.0,
 		},
 		"platforms": [
-			[0,    620, 240, 28],
-			[320,  535, 100, 18],
-			[490,  455,  90, 18],
-			[650,  535, 110, 18],
-			[830,  455,  90, 18],
-			[990,  560, 200, 22],   # CHECKPOINT 1
-			[1270, 475, 100, 18],
-			[1450, 385,  90, 18],
-			[1620, 475, 100, 18],
-			[1800, 560, 200, 22],   # CHECKPOINT 2
-			[2080, 475, 100, 18],
-			[2260, 385,  90, 18],
-			[2430, 480, 100, 18],
-			[2600, 560, 380, 28],
+			[0,    620, 280, 28],
+			[360,  520, 120, 18],
+			[560,  420, 110, 18],
+			[760,  520, 120, 18],
+			[970,  420, 100, 18],
+			[1150, 545, 210, 22],   # CHECKPOINT
+			[1440, 440, 120, 18],
+			[1640, 340, 110, 18],
+			[1840, 440, 120, 18],
+			[2040, 545, 120, 18],
+			[2230, 620, 360, 28],
 		],
 		"checkpoints": [
-			[1050, 535],
-			[1860, 535],
+			[1210, 520],
 		],
 		"hazards": [
-			[ 430, 590,  50, 22],
-			[ 750, 590,  60, 22],
+			[ 300, 590,  50, 22],
+			[ 480, 510,  60, 22],
 			[1370, 590,  60, 22],
-			[1700, 540,  70, 22],
-			[2160, 540,  70, 22],
-			[2520, 540,  70, 22],
+			[1750, 510,  70, 22],
+			[2150, 540,  60, 22],
+		],
+		"crumbling_platforms": [
+			[ 890, 500,  60, 18],
+		],
+		"secret_exits": [
+			[ 880, 590,  80, 22, "Casa Misteriosa" ],
 		],
 		"pushable_blocks": [
-			[100, 580, 40, 40],
+			[140, 580, 40, 40],
+		],
+		"keys": [
+			[1, 1180, 480],
+		],
+		"locks": [
+			[1, 1680, 160, 30, 180],
+		],
+		"jump_pads": [
+			[240, 600, 30, 20],
+			[1500, 420, 30, 20],
 		],
 		"stars": [
-			[400, 420],
-			[1490, 260],  # Acima da plataforma alta
-			[2330, 260],  # Acima da segunda plataforma alta
-			[200, 445],   # Estrela do Bog
+			[450, 385],
+			[1690, 220],
+			[2125, 415],
+			[220, 410],   # Estrela do Bog
 		],
-		"exit_pos":    [2900, 520],
-		"spawn_rob":   [50,   560],
-		"spawn_bog":   [130,  560],
-		"loopy_start": [2820, 510],
-		"loopy_end":   [2910, 510],
+		"exit_pos":    [2510, 572],
+		"spawn_rob":   [60,   560],
+		"spawn_bog":   [100,  560],
+		"loopy_start": [2360, 572],
+		"loopy_end":   [2510, 572],
 	}

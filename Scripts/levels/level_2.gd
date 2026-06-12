@@ -9,10 +9,17 @@ static func get_data() -> Dictionary:
 		"name": "Praça Escorregadia",
 		"description": "Loopy foi avistado deslizando pela praça...\no chão gelado dificulta cada passo!",
 		"modifier_hint": "Baixa Fricção  ·  Cuidado com o deslize!",
-		"bg_color":       Color(0.10, 0.18, 0.30),
-		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
-		"bg_size": [8000.0, 1080.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
-		"platform_color": Color(0.0, 0.835, 0.208, 1.0),		"modifiers": {
+		"ambient_type": "wind_cold",
+		"dialogues": [
+			{"speaker": "Rob", "text": "Cuidado, o chão tá escorregando!"},
+			{"speaker": "Bog", "text": "Já percebi... quase caí!"},
+		],
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
+		"bg_image": "res://Assets/Backgrounds/PracaEscorregadia.png", # <--- ADICIONE AQUI
+		"bg_size": [5000.0, 500.0], # Vai repetir a imagem horizontalmente por 8000 pixels!
+		"platform_color": Color(0.55, 0.85, 0.95),
+		"snow_effect": true,
+		"modifiers": {
 			"speed_mult":   1.0,
 			"jump_mult":    1.0,
 			"gravity_mult": 1.0,
@@ -58,7 +65,7 @@ static func get_data() -> Dictionary:
 		],
 
 		"gravity_zones": [
-			[750, 450, 250, 100],   # Zona 1 — cobre plataformas de teto 1-3
+			[725, 435, 300, 130],   # Zona 1 — cobre plataformas de teto 1-3
 		],
 
 		"pushable_blocks": [
