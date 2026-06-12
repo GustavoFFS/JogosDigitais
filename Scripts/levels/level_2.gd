@@ -9,11 +9,14 @@ static func get_data() -> Dictionary:
 		"name": "Praça Escorregadia",
 		"description": "Loopy foi avistado deslizando pela praça...\no chão gelado dificulta cada passo!",
 		"modifier_hint": "Baixa Fricção  ·  Cuidado com o deslize!",
+<<<<<<< HEAD
 		"ambient_type": "wind_cold",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Cuidado, o chão tá escorregando!"},
 			{"speaker": "Bog", "text": "Já percebi... quase caí!"},
 		],
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/PracaEscorregadia.png", # <--- ADICIONE AQUI
 		"bg_size": [5000.0, 500.0], # Vai repetir a imagem horizontalmente por 8000 pixels!

@@ -9,11 +9,14 @@ static func get_data() -> Dictionary:
 		"name": "Becos Estreitos",
 		"description": "Pelos becos... o controle no ar é limitado.\nPense antes de pular!",
 		"modifier_hint": "Controle Aéreo Reduzido  ·  Planeje seus pulos!",
+<<<<<<< HEAD
 		"ambient_type": "echo_urban",
 		"dialogues": [
 			{"speaker": "Bog", "text": "Esses becos são apertados..."},
 			{"speaker": "Rob", "text": "Pense antes de pular, o controle no ar é ruim!"},
 		],
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"bg_color":       Color(0.06, 0.07, 0.09),
 		"bg_image": "res://Assets/Backgrounds/BecosEstreitos.png",
 		"bg_size": [8000.0, 1080.0],
@@ -64,7 +67,11 @@ static func get_data() -> Dictionary:
 		],
 		"exit_pos":    [2900, 520],
 		"spawn_rob":   [50,   560],
+<<<<<<< HEAD
 		"spawn_bog":   [150,  560],
+=======
+		"spawn_bog":   [130,  560],
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"loopy_start": [2820, 510],
 		"loopy_end":   [2900, 510],
 	}

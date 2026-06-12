@@ -9,11 +9,14 @@ static func get_data() -> Dictionary:
 		"name": "Telhados da Cidade",
 		"description": "Ele está nos telhados! Pule alto e cuidado com a queda rápida!",
 		"modifier_hint": "Gravidade Elevada  +  Pulo Forte  ·  Use as molas!",
+<<<<<<< HEAD
 		"ambient_type": "wind_high",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Ele subiu pros telhados?!"},
 			{"speaker": "Bog", "text": "A gravidade tá estranha aqui em cima..."},
 		],
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/TelhadosdaCidade.png",
 		"bg_size": [8000.0, 1080.0],
@@ -44,6 +47,7 @@ static func get_data() -> Dictionary:
 		"hazards": [
 			[ 300, 590,  50, 22],
 			[ 480, 510,  60, 22],
+<<<<<<< HEAD
 			[1370, 590,  60, 22],
 			[1750, 510,  70, 22],
 			[2150, 540,  60, 22],
@@ -53,16 +57,25 @@ static func get_data() -> Dictionary:
 		],
 		"secret_exits": [
 			[ 880, 590,  80, 22, "Casa Misteriosa" ],
+=======
+			[ 880, 590,  70, 22],
+			[1370, 590,  60, 22],
+			[1750, 510,  70, 22],
+			[2150, 540,  60, 22],
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		],
 		"pushable_blocks": [
 			[140, 580, 40, 40],
 		],
+<<<<<<< HEAD
 		"keys": [
 			[1, 1180, 480],
 		],
 		"locks": [
 			[1, 1680, 160, 30, 180],
 		],
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"jump_pads": [
 			[240, 600, 30, 20],
 			[1500, 420, 30, 20],
@@ -75,7 +88,11 @@ static func get_data() -> Dictionary:
 		],
 		"exit_pos":    [2510, 572],
 		"spawn_rob":   [60,   560],
+<<<<<<< HEAD
 		"spawn_bog":   [100,  560],
+=======
+		"spawn_bog":   [150,  560],
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 		"loopy_start": [2360, 572],
 		"loopy_end":   [2510, 572],
 	}

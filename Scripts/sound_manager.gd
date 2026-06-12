@@ -8,6 +8,7 @@ var players: Array[AudioStreamPlayer] = []
 var sample_rate: float = 22050.0
 var bgm_player: AudioStreamPlayer = null
 
+<<<<<<< HEAD
 # Sons ambientais
 var ambient_player: AudioStreamPlayer = null
 var ambient_playback: AudioStreamGeneratorPlayback = null
@@ -23,6 +24,8 @@ var bgm_bus_idx: int = -1
 var muffle_tween: Tween = null
 var is_muffled: bool = false
 
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 func _ready() -> void:
 	# Configura modo de processamento para tocar sons mesmo com jogo pausado
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -36,6 +39,7 @@ func _ready() -> void:
 		add_child(player)
 		players.append(player)
 		
+<<<<<<< HEAD
 	# Criar Bus BGM e adicionar filtro
 	var existing_idx = AudioServer.get_bus_index("BGM")
 	if existing_idx == -1:
@@ -53,11 +57,16 @@ func _ready() -> void:
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	bgm_player.bus = "BGM"
+=======
+	bgm_player = AudioStreamPlayer.new()
+	bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 	add_child(bgm_player)
 	bgm_player.finished.connect(func():
 		if bgm_player.stream:
 			bgm_player.play()
 	)
+<<<<<<< HEAD
 	
 	# Player de som ambiente (gerador contínuo)
 	ambient_player = AudioStreamPlayer.new()
@@ -67,6 +76,8 @@ func _ready() -> void:
 	ambient_player.stream = amb_gen
 	ambient_player.volume_db = ambient_volume_db
 	add_child(ambient_player)
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
 
 func play_sfx(type: String) -> void:
 	# Acha um player que não esteja tocando
@@ -224,6 +235,7 @@ func play_bgm(stream_path: String, volume_db: float = -12.0) -> void:
 func stop_bgm() -> void:
 	if bgm_player:
 		bgm_player.stop()
+<<<<<<< HEAD
 
 func set_muffled_audio(muffled: bool) -> void:
 	if is_muffled == muffled:
@@ -410,3 +422,5 @@ func _generate_ambient_sample(type: String, t: float) -> float:
 			s = drone + drone2 + pulse + tension
 	
 	return s
+=======
+>>>>>>> 95a70239ae1677ac88b33fb622bcd3768c4c8119
