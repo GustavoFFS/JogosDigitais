@@ -154,6 +154,8 @@ func _show_current_line() -> void:
 
 func _process(delta: float) -> void:
 	if not _active:
+		if _balloon_container and _balloon_container.visible:
+			_update_balloon_position()
 		return
 
 	_update_balloon_position()
@@ -234,4 +236,4 @@ func _finish() -> void:
 	)
 
 func is_active() -> bool:
-	return _active
+	return _active or (_balloon_container and _balloon_container.visible)

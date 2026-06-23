@@ -7,6 +7,7 @@ extends Control
 
 var title_label: Label
 var start_button: Button
+var new_game_button: Button
 var quit_button: Button
 var bg: Control # <-- Alterado de ColorRect para Control genérico
 var time: float = 0.0
@@ -74,7 +75,10 @@ func _build_ui() -> void:
 	add_child(center_box)
 
 	var btn_box := VBoxContainer.new()
-	btn_box.position = Vector2(426, 260)
+	if GameManager.current_level_index > 0:
+		btn_box.position = Vector2(426, 215)
+	else:
+		btn_box.position = Vector2(426, 260)
 	btn_box.size     = Vector2(300, 200)
 	btn_box.add_theme_constant_override("separation", 15)
 	center_box.add_child(btn_box)
@@ -89,6 +93,15 @@ func _build_ui() -> void:
 	start_button.pressed.connect(_on_start)
 	btn_box.add_child(start_button)
 	_setup_button_sounds(start_button)
+
+	if GameManager.current_level_index > 0:
+		new_game_button = Button.new()
+		new_game_button.text = "Novo Jogo"
+		new_game_button.custom_minimum_size = Vector2(300, 45)
+		new_game_button.add_theme_font_size_override("font_size", 20)
+		new_game_button.pressed.connect(_on_new_game)
+		btn_box.add_child(new_game_button)
+		_setup_button_sounds(new_game_button)
 
 	var tips_button := Button.new()
 	tips_button.text = "?  Dicas"
@@ -138,11 +151,21 @@ func _build_ui() -> void:
 
 func _on_start() -> void:
 	start_button.disabled = true
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = true
 	quit_button.disabled  = true
 	if GameManager.current_level_index > 0:
 		_start_game()
 	else:
 		_build_newspaper()
+
+func _on_new_game() -> void:
+	start_button.disabled = true
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = true
+	quit_button.disabled  = true
+	GameManager.reset_game()
+	_build_newspaper()
 
 func _on_quit() -> void:
 	GameManager.save_game()

@@ -83,13 +83,17 @@ func _game_loop_input() -> void:
 
 	var main_scene = get_parent()
 	var blocked := false
-	if main_scene and "is_exiting" in main_scene and main_scene.is_exiting:
-		blocked = true
-	# Bloqueia input durante diálogos
-	if main_scene and "_dialogue_system" in main_scene:
-		var ds = main_scene._dialogue_system
-		if ds and ds.is_active():
+	if main_scene:
+		if "is_exiting" in main_scene and main_scene.is_exiting:
 			blocked = true
+		if "hud" in main_scene and main_scene.hud:
+			var hud = main_scene.hud
+			if hud.showing_intro or hud.fading or hud.transitioning:
+				blocked = true
+		if "_dialogue_system" in main_scene:
+			var ds = main_scene._dialogue_system
+			if ds and ds.is_active():
+				blocked = true
 
 	if is_active and not blocked and not get_tree().paused:
 		_input_direction = Input.get_axis("move_left", "move_right")
