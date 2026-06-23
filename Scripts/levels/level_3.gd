@@ -9,6 +9,11 @@ static func get_data() -> Dictionary:
 		"name": "Fábrica Abandonada",
 		"description": "Loopy entrou nos portões de metal da velha fábrica...\nAlterne de personagem e destranque as passagens!",
 		"modifier_hint": "Portas e Botões  ·  Empurre a caixa sobre o botão!",
+		"ambient_type": "factory",
+		"dialogues": [
+			{"speaker": "Rob", "text": "Tem portões trancados aqui..."},
+			{"speaker": "Bog", "text": "Deixa comigo, vou empurrar a caixa!"},
+		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/FabricaAbandonada.png",
 		"dust_effect":    true,
@@ -52,17 +57,17 @@ static func get_data() -> Dictionary:
 			[1, 230, 612, 40, 8],
 		],
 		"gates": [
-			[1, 410, 480, 16, 80],  # Reajustado para a nova altura de plat 2
+			[1, 410, 450, 16, 110],  # Reajustado para a nova altura de plat 2
 		],
 		"stars": [
-			[420, 460],   # Rebaixado (era 385)
+			[420, 430],   # Rebaixado (era 385)
 			[1690, 310],  # Rebaixado (era 220)
 			[2125, 470],  # Rebaixado (era 415)
 			[220, 440],   # Estrela do Bog (era 410)
 		],
 		"exit_pos":    [2510, 572],
 		"spawn_rob":   [60,   560],
-		"spawn_bog":   [150,  560],
+		"spawn_bog":   [100,  560],
 		"loopy_start": [2360, 572],
 		"loopy_end":   [2510, 572],
 	}

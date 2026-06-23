@@ -82,11 +82,20 @@ func _game_loop_input() -> void:
 	_input_ability = false
 
 	var main_scene = get_parent()
-	var exiting := false
-	if main_scene and "is_exiting" in main_scene and main_scene.is_exiting:
-		exiting = true
+	var blocked := false
+	if main_scene:
+		if "is_exiting" in main_scene and main_scene.is_exiting:
+			blocked = true
+		if "hud" in main_scene and main_scene.hud:
+			var hud = main_scene.hud
+			if hud.showing_intro or hud.fading or hud.transitioning:
+				blocked = true
+		if "_dialogue_system" in main_scene:
+			var ds = main_scene._dialogue_system
+			if ds and ds.is_active():
+				blocked = true
 
-	if is_active and not exiting:
+	if is_active and not blocked and not get_tree().paused:
 		_input_direction = Input.get_axis("move_left", "move_right")
 		_input_jump = Input.is_action_just_pressed("jump")
 		_input_ability = Input.is_action_just_pressed("ability")
@@ -289,6 +298,7 @@ func set_active(active: bool) -> void:
 func die() -> void:
 	is_dead  = true
 	velocity = Vector2.ZERO
+	process_mode = Node.PROCESS_MODE_DISABLED
 	if sprite:
 		sprite.modulate = Color(1, 0.3, 0.3, 0.6)
 
@@ -296,5 +306,8 @@ func revive() -> void:
 	is_dead       = false
 	velocity      = Vector2.ZERO
 	ability_timer = 0.0
+	is_locked     = false
+	lock_timer    = 0.0
+	process_mode = Node.PROCESS_MODE_INHERIT
 	if sprite:
 		sprite.modulate = Color(1, 1, 1, 1)

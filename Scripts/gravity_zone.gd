@@ -130,7 +130,15 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body is CharacterBase:
 		body.gravity_mult = gravity_scale
+	elif body is RigidBody2D:
+		body.set_meta("original_gravity_scale", body.gravity_scale)
+		body.gravity_scale = gravity_scale
 
 func _on_body_exited(body: Node) -> void:
 	if body is CharacterBase:
 		body.gravity_mult = 1.0  # restaura ao sair
+	elif body is RigidBody2D:
+		if body.has_meta("original_gravity_scale"):
+			body.gravity_scale = body.get_meta("original_gravity_scale")
+		else:
+			body.gravity_scale = 1.2

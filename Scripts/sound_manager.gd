@@ -8,6 +8,21 @@ var players: Array[AudioStreamPlayer] = []
 var sample_rate: float = 22050.0
 var bgm_player: AudioStreamPlayer = null
 
+# Sons ambientais
+var ambient_player: AudioStreamPlayer = null
+var ambient_playback: AudioStreamGeneratorPlayback = null
+var ambient_type: String = ""
+var ambient_active: bool = false
+var ambient_phase: float = 0.0
+var ambient_time: float = 0.0
+var ambient_volume_db: float = -18.0
+var ambient_fade_tween: Tween = null
+
+# Filtro BGM
+var bgm_bus_idx: int = -1
+var muffle_tween: Tween = null
+var is_muffled: bool = false
+
 func _ready() -> void:
 	# Configura modo de processamento para tocar sons mesmo com jogo pausado
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -21,13 +36,37 @@ func _ready() -> void:
 		add_child(player)
 		players.append(player)
 		
+	# Criar Bus BGM e adicionar filtro
+	var existing_idx = AudioServer.get_bus_index("BGM")
+	if existing_idx == -1:
+		bgm_bus_idx = AudioServer.get_bus_count()
+		AudioServer.add_bus(bgm_bus_idx)
+		AudioServer.set_bus_name(bgm_bus_idx, "BGM")
+		AudioServer.set_bus_send(bgm_bus_idx, "Master")
+		
+		var filter := AudioEffectLowPassFilter.new()
+		filter.cutoff_hz = 20500.0
+		AudioServer.add_bus_effect(bgm_bus_idx, filter, 0)
+	else:
+		bgm_bus_idx = existing_idx
+		
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	bgm_player.bus = "BGM"
 	add_child(bgm_player)
 	bgm_player.finished.connect(func():
 		if bgm_player.stream:
 			bgm_player.play()
 	)
+	
+	# Player de som ambiente (gerador contínuo)
+	ambient_player = AudioStreamPlayer.new()
+	var amb_gen := AudioStreamGenerator.new()
+	amb_gen.mix_rate = sample_rate
+	amb_gen.buffer_length = 0.5
+	ambient_player.stream = amb_gen
+	ambient_player.volume_db = ambient_volume_db
+	add_child(ambient_player)
 
 func play_sfx(type: String) -> void:
 	# Acha um player que não esteja tocando
@@ -185,3 +224,189 @@ func play_bgm(stream_path: String, volume_db: float = -12.0) -> void:
 func stop_bgm() -> void:
 	if bgm_player:
 		bgm_player.stop()
+
+func set_muffled_audio(muffled: bool) -> void:
+	if is_muffled == muffled:
+		return
+	is_muffled = muffled
+	
+	if muffle_tween and muffle_tween.is_valid():
+		muffle_tween.kill()
+		
+	if bgm_bus_idx == -1:
+		return
+		
+	var target_hz = 1200.0 if muffled else 20500.0
+	var filter = AudioServer.get_bus_effect(bgm_bus_idx, 0) as AudioEffectLowPassFilter
+	if not filter:
+		return
+		
+	muffle_tween = create_tween()
+	muffle_tween.tween_property(filter, "cutoff_hz", target_hz, 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+# ============================================================
+# SONS AMBIENTAIS (sintetizados proceduralmente)
+# ============================================================
+
+func play_ambient(type: String) -> void:
+	if type == "" or type == ambient_type:
+		return
+	
+	ambient_type = type
+	ambient_active = true
+	ambient_time = 0.0
+	ambient_phase = 0.0
+	
+	if not ambient_player.playing:
+		ambient_player.play()
+		ambient_playback = ambient_player.get_stream_playback()
+	
+	# Fade in suave
+	if ambient_fade_tween and ambient_fade_tween.is_valid():
+		ambient_fade_tween.kill()
+	ambient_player.volume_db = -40.0
+	ambient_fade_tween = create_tween()
+	ambient_fade_tween.tween_property(ambient_player, "volume_db", ambient_volume_db, 1.5)
+
+func stop_ambient() -> void:
+	if not ambient_active:
+		return
+	
+	if ambient_fade_tween and ambient_fade_tween.is_valid():
+		ambient_fade_tween.kill()
+	ambient_fade_tween = create_tween()
+	ambient_fade_tween.tween_property(ambient_player, "volume_db", -40.0, 0.8)
+	ambient_fade_tween.tween_callback(func():
+		ambient_player.stop()
+		ambient_active = false
+		ambient_type = ""
+	)
+
+func _process(delta: float) -> void:
+	if ambient_active and ambient_playback:
+		_fill_ambient_buffer(delta)
+
+func _fill_ambient_buffer(_delta: float) -> void:
+	if not ambient_playback:
+		return
+	var frames_available := ambient_playback.get_frames_available()
+	if frames_available <= 0:
+		return
+	
+	var frames := PackedVector2Array()
+	frames.resize(frames_available)
+	
+	for i in range(frames_available):
+		ambient_time += 1.0 / sample_rate
+		var sample := _generate_ambient_sample(ambient_type, ambient_time)
+		var val: float = clamp(sample, -1.0, 1.0)
+		frames[i] = Vector2(val, val)
+	
+	ambient_playback.push_buffer(frames)
+
+func _generate_ambient_sample(type: String, t: float) -> float:
+	var s := 0.0
+	
+	match type:
+		"city":
+			# Ruído rosa filtrado + tons graves periódicos (tráfego leve)
+			var noise := randf_range(-1.0, 1.0) * 0.12
+			var rumble := sin(t * 18.0) * 0.06 * (0.5 + 0.5 * sin(t * 0.3))
+			var horn: float = sin(t * 280.0) * 0.03 * max(0.0, sin(t * 0.15) - 0.85) * 6.0
+			s = noise + rumble + horn
+		
+		"wind_cold":
+			# Vento gelado — ruído modulado em amplitude lenta
+			var wind_mod := 0.5 + 0.5 * sin(t * 0.4)
+			var gust := 0.5 + 0.5 * sin(t * 0.12 + 2.0)
+			var noise := randf_range(-1.0, 1.0)
+			s = noise * 0.15 * wind_mod * gust
+			# Assobio do vento
+			s += sin(t * 620.0 + sin(t * 1.8) * 200.0) * 0.04 * wind_mod
+		
+		"factory":
+			# Máquinas — dente-de-serra LFO + batida rítmica
+			var saw_phase := fmod(t * 45.0, TAU)
+			var saw := (saw_phase / PI - 1.0) * 0.08
+			var beat_t := fmod(t, 0.8)
+			var clank := 0.0
+			if beat_t < 0.03:
+				clank = randf_range(-1.0, 1.0) * 0.25 * (1.0 - beat_t / 0.03)
+			var hum := sin(t * 120.0) * 0.05 * (0.6 + 0.4 * sin(t * 0.5))
+			s = saw + clank + hum
+		
+		"wind_high":
+			# Vento alto nos telhados — sweep oscilatório
+			var sweep := sin(t * 0.25) * 400.0 + 500.0
+			var wind := sin(t * sweep) * 0.06
+			var gust := randf_range(-1.0, 1.0) * 0.10 * (0.5 + 0.5 * sin(t * 0.35))
+			s = wind + gust
+		
+		"echo_urban":
+			# Eco urbano em becos — pulsos espaçados com reverb
+			var noise := randf_range(-1.0, 1.0) * 0.06
+			var drip_t := fmod(t, 2.3)
+			var drip := 0.0
+			if drip_t < 0.015:
+				drip = sin(drip_t * 4800.0) * 0.20 * (1.0 - drip_t / 0.015)
+			var echo := sin(t * 85.0) * 0.03 * (0.3 + 0.7 * sin(t * 0.18))
+			s = noise + drip + echo
+		
+		"sewer":
+			# Água escorrendo + gotas aleatórias
+			var water_flow := randf_range(-1.0, 1.0) * 0.08 * (0.6 + 0.4 * sin(t * 0.6))
+			var drip1_t := fmod(t, 1.7)
+			var drip2_t := fmod(t + 0.8, 2.9)
+			var drip := 0.0
+			if drip1_t < 0.012:
+				drip += sin(drip1_t * 5200.0) * 0.22 * (1.0 - drip1_t / 0.012)
+			if drip2_t < 0.010:
+				drip += sin(drip2_t * 6400.0) * 0.18 * (1.0 - drip2_t / 0.010)
+			var rumble := sin(t * 28.0) * 0.04
+			s = water_flow + drip + rumble
+		
+		"construction":
+			# Metal rangendo + tons metálicos com vibrato
+			var creak_freq := 220.0 + sin(t * 1.5) * 80.0
+			var creak: float = sin(t * creak_freq) * 0.05 * max(0.0, sin(t * 0.4) - 0.3) * 1.4
+			var noise := randf_range(-1.0, 1.0) * 0.06
+			var clang_t := fmod(t, 3.2)
+			var clang := 0.0
+			if clang_t < 0.04:
+				clang = sin(clang_t * 3200.0) * 0.20 * (1.0 - clang_t / 0.04)
+			s = creak + noise * 0.5 + clang
+		
+		"park_wind":
+			# Vento suave + folhas
+			var breeze := randf_range(-1.0, 1.0) * 0.09 * (0.5 + 0.5 * sin(t * 0.28))
+			var leaves: float = sin(t * 1200.0 + sin(t * 3.5) * 600.0) * 0.02 * max(0.0, sin(t * 0.5) - 0.4) * 2.5
+			var bird_t := fmod(t, 5.5)
+			var bird := 0.0
+			if bird_t < 0.08:
+				bird = sin(bird_t * 2800.0 + sin(bird_t * 80.0) * 600.0) * 0.10 * (1.0 - bird_t / 0.08)
+			s = breeze + leaves + bird
+		
+		"metro":
+			# Ecos subterrâneos — drone grave + ecos metálicos
+			var drone := sin(t * 55.0) * 0.10 * (0.7 + 0.3 * sin(t * 0.2))
+			var echo_t := fmod(t, 4.1)
+			var echo := 0.0
+			if echo_t < 0.06:
+				echo = sin(echo_t * 1800.0) * 0.15 * (1.0 - echo_t / 0.06)
+			var hum := sin(t * 100.0) * 0.03 + sin(t * 150.0) * 0.02
+			var rumble := randf_range(-1.0, 1.0) * 0.04
+			s = drone + echo + hum + rumble
+		
+		"epic_tension":
+			# Tensão épica — drone ascendente + pulso rítmico
+			var base_freq := 50.0 + sin(t * 0.08) * 15.0
+			var drone := sin(t * base_freq) * 0.10
+			var drone2 := sin(t * base_freq * 1.5) * 0.05
+			var pulse_t := fmod(t, 1.2)
+			var pulse := 0.0
+			if pulse_t < 0.08:
+				pulse = sin(pulse_t * 180.0) * 0.12 * (1.0 - pulse_t / 0.08)
+			var tension := randf_range(-1.0, 1.0) * 0.05 * (0.5 + 0.5 * sin(t * 0.15))
+			s = drone + drone2 + pulse + tension
+	
+	return s

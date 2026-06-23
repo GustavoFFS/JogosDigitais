@@ -135,3 +135,7 @@ func _apply_ground_impact() -> void:
 					obj.is_locked = true
 					if "lock_timer" in obj:
 						obj.lock_timer = 0.5 * power_multiplier
+
+func revive() -> void:
+	super.revive()
+	is_ground_pounding = false

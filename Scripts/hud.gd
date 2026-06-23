@@ -24,6 +24,7 @@ var _bog_was_ready: bool  = false
 var _rob_flash_tween: Tween = null
 var _bog_flash_tween: Tween = null
 var _lbl_timer:    Label
+var _lbl_keys:     Label
 
 # --- Intro de fase ---
 var _intro_overlay:   Panel
@@ -80,16 +81,33 @@ func _process(delta: float) -> void:
 
 func _build_top_panel() -> void:
 	var bg := ColorRect.new()
-	bg.size     = Vector2(1152, 68)
-	bg.position = Vector2.ZERO
+	bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	bg.offset_bottom = 68
 	bg.color    = Color(0.04, 0.05, 0.10, 0.93)
 	add_child(bg)
 
 	var border := ColorRect.new()
-	border.size     = Vector2(1152, 2)
-	border.position = Vector2(0, 66)
+	border.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	border.offset_top = 66
+	border.offset_bottom = 68
 	border.color    = Color(0.20, 0.25, 0.45, 0.80)
 	add_child(border)
+
+	var center_container = Control.new()
+	center_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	center_container.offset_left = -576
+	center_container.offset_right = 576
+	center_container.offset_bottom = 68
+	center_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(center_container)
+
+	var right_container = Control.new()
+	right_container.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	right_container.offset_left = -1152
+	right_container.offset_right = 0
+	right_container.offset_bottom = 120
+	right_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(right_container)
 
 	# ---- Fase (esquerda) ----
 	_lbl_phase = Label.new()
@@ -118,7 +136,7 @@ func _build_top_panel() -> void:
 	lbl_prog.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_prog.add_theme_font_size_override("font_size", 9)
 	lbl_prog.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
-	add_child(lbl_prog)
+	center_container.add_child(lbl_prog)
 
 	var total_levels := GameManager.get_level_count()
 	var dots_per_row := 5
@@ -135,7 +153,7 @@ func _build_top_panel() -> void:
 		dot.position             = Vector2(offset_x + col * spacing, y_pos)
 		dot.add_theme_font_size_override("font_size", 18)
 		dot.add_theme_color_override("font_color", COLOR_DIM)
-		add_child(dot)
+		center_container.add_child(dot)
 		_dots.append(dot)
 
 	for xpos in [452, 668]:
@@ -143,7 +161,7 @@ func _build_top_panel() -> void:
 		sep.size     = Vector2(1, 50)
 		sep.position = Vector2(xpos, 9)
 		sep.color    = Color(0.20, 0.22, 0.35, 0.60)
-		add_child(sep)
+		center_container.add_child(sep)
 
 	# ---- Personagens (direita) ----
 	var lbl_char := Label.new()
@@ -153,13 +171,13 @@ func _build_top_panel() -> void:
 	lbl_char.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_char.add_theme_font_size_override("font_size", 9)
 	lbl_char.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
-	add_child(lbl_char)
+	center_container.add_child(lbl_char)
 
 	_rob_bg = ColorRect.new()
 	_rob_bg.size     = Vector2(96, 30)
 	_rob_bg.position = Vector2(685, 24)
 	_rob_bg.color    = Color(0.08, 0.16, 0.28)
-	add_child(_rob_bg)
+	center_container.add_child(_rob_bg)
 
 	_lbl_rob = Label.new()
 	_lbl_rob.text                 = "ROB"
@@ -168,13 +186,13 @@ func _build_top_panel() -> void:
 	_lbl_rob.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_rob.add_theme_font_size_override("font_size", 16)
 	_lbl_rob.add_theme_color_override("font_color", COLOR_ROB)
-	add_child(_lbl_rob)
+	center_container.add_child(_lbl_rob)
 
 	_bog_bg = ColorRect.new()
 	_bog_bg.size     = Vector2(96, 30)
 	_bog_bg.position = Vector2(789, 24)
 	_bog_bg.color    = Color(0.08, 0.22, 0.12)
-	add_child(_bog_bg)
+	center_container.add_child(_bog_bg)
 
 	_lbl_bog = Label.new()
 	_lbl_bog.text                 = "BOG"
@@ -183,7 +201,7 @@ func _build_top_panel() -> void:
 	_lbl_bog.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_bog.add_theme_font_size_override("font_size", 16)
 	_lbl_bog.add_theme_color_override("font_color", COLOR_BOG)
-	add_child(_lbl_bog)
+	center_container.add_child(_lbl_bog)
 
 	var lbl_tab := Label.new()
 	lbl_tab.text                 = "[ TAB ] trocar   [ Z ] habilidade"
@@ -192,7 +210,7 @@ func _build_top_panel() -> void:
 	lbl_tab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_tab.add_theme_font_size_override("font_size", 9)
 	lbl_tab.add_theme_color_override("font_color", Color(0.28, 0.28, 0.34))
-	add_child(lbl_tab)
+	center_container.add_child(lbl_tab)
 
 	# Barras de cooldown da habilidade (abaixo dos boxes)
 	# ROB
@@ -200,33 +218,33 @@ func _build_top_panel() -> void:
 	_rob_ability_bg.size   = Vector2(96, 4)
 	_rob_ability_bg.position = Vector2(685, 62)
 	_rob_ability_bg.color  = Color(0.12, 0.12, 0.16)
-	add_child(_rob_ability_bg)
+	center_container.add_child(_rob_ability_bg)
 
 	_rob_ability_fill        = ColorRect.new()
 	_rob_ability_fill.size   = Vector2(96, 4)
 	_rob_ability_fill.position = Vector2(685, 62)
 	_rob_ability_fill.color  = Color(0.25, 0.88, 1.0)
-	add_child(_rob_ability_fill)
+	center_container.add_child(_rob_ability_fill)
 
 	# BOG
 	_bog_ability_bg        = ColorRect.new()
 	_bog_ability_bg.size   = Vector2(96, 4)
 	_bog_ability_bg.position = Vector2(789, 62)
 	_bog_ability_bg.color  = Color(0.12, 0.12, 0.16)
-	add_child(_bog_ability_bg)
+	center_container.add_child(_bog_ability_bg)
 
 	_bog_ability_fill        = ColorRect.new()
 	_bog_ability_fill.size   = Vector2(96, 4)
 	_bog_ability_fill.position = Vector2(789, 62)
 	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22)
-	add_child(_bog_ability_fill)
+	center_container.add_child(_bog_ability_fill)
 
 	# ---- Mortes (sem limite — só contador) ----
 	var sep_deaths := ColorRect.new()
 	sep_deaths.size     = Vector2(1, 50)
 	sep_deaths.position = Vector2(908, 9)
 	sep_deaths.color    = Color(0.20, 0.22, 0.35, 0.60)
-	add_child(sep_deaths)
+	right_container.add_child(sep_deaths)
 
 	var lbl_deaths_caption := Label.new()
 	lbl_deaths_caption.text                 = "M O R T E S"
@@ -235,7 +253,7 @@ func _build_top_panel() -> void:
 	lbl_deaths_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_deaths_caption.add_theme_font_size_override("font_size", 9)
 	lbl_deaths_caption.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
-	add_child(lbl_deaths_caption)
+	right_container.add_child(lbl_deaths_caption)
 
 	_lbl_deaths = Label.new()
 	_lbl_deaths.text                 = "💀  0"
@@ -244,7 +262,7 @@ func _build_top_panel() -> void:
 	_lbl_deaths.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_deaths.add_theme_font_size_override("font_size", 26)
 	_lbl_deaths.add_theme_color_override("font_color", Color(0.92, 0.30, 0.40))
-	add_child(_lbl_deaths)
+	right_container.add_child(_lbl_deaths)
 
 	# ---- Estrelas coletadas (abaixo do painel, canto esquerdo) ----
 	_lbl_stars = Label.new()
@@ -255,6 +273,15 @@ func _build_top_panel() -> void:
 	_lbl_stars.add_theme_color_override("font_color", COLOR_GOLD)
 	add_child(_lbl_stars)
 
+	# ---- Chaves coletadas (abaixo do painel, ao lado das estrelas) ----
+	_lbl_keys = Label.new()
+	_lbl_keys.text     = ""
+	_lbl_keys.position = Vector2(140, 76)
+	_lbl_keys.size     = Vector2(200, 26)
+	_lbl_keys.add_theme_font_size_override("font_size", 18)
+	_lbl_keys.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
+	add_child(_lbl_keys)
+
 	# ---- Cronômetro (abaixo do painel, canto direito) ----
 	_lbl_timer = Label.new()
 	_lbl_timer.text     = "⏱  00:00.000"
@@ -263,7 +290,7 @@ func _build_top_panel() -> void:
 	_lbl_timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_timer.add_theme_font_size_override("font_size", 18)
 	_lbl_timer.add_theme_color_override("font_color", Color(0.85, 0.88, 1.0))
-	add_child(_lbl_timer)
+	right_container.add_child(_lbl_timer)
 
 func _on_pause_pressed() -> void:
 	pause_requested.emit()
@@ -284,26 +311,35 @@ func _show_help() -> void:
 	get_tree().paused = true
 
 	_help_overlay = Control.new()
-	_help_overlay.size = Vector2(1152, 648)
+	_help_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_help_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	add_child(_help_overlay)
 
 	var dim := ColorRect.new()
-	dim.size  = Vector2(1152, 648)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.color = Color(0, 0, 0, 0.82)
 	_help_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_help_overlay.add_child(center_box)
 
 	var box := ColorRect.new()
 	box.position = Vector2(116, 70)
 	box.size     = Vector2(920, 508)
 	box.color    = Color(0.08, 0.10, 0.16, 0.98)
-	_help_overlay.add_child(box)
+	center_box.add_child(box)
 
 	var top := ColorRect.new()
 	top.position = Vector2(116, 70)
 	top.size     = Vector2(920, 4)
 	top.color    = Color(0.85, 0.65, 0.25, 0.9)
-	_help_overlay.add_child(top)
+	center_box.add_child(top)
 
 	_help_label("DICAS", 0, 82, 1152, 38, 28, Color(1.0, 0.85, 0.30), true)
 	_help_label("Tudo o que você precisa saber para resgatar o Loopy", 0, 120, 1152, 22, 13,
@@ -323,7 +359,7 @@ func _show_help() -> void:
 	sep.position = Vector2(576, 160)
 	sep.size     = Vector2(2, 150)
 	sep.color    = Color(0.25, 0.30, 0.45, 0.45)
-	_help_overlay.add_child(sep)
+	_help_overlay.get_node("CenterBox").add_child(sep)
 
 	# Controles
 	_help_label("CONTROLES", 0, 330, 1152, 24, 16, Color(0.50, 0.88, 0.55), true)
@@ -341,7 +377,7 @@ func _show_help() -> void:
 	btn_close.size     = Vector2(280, 54) # Altura aumentada de 42 para 54
 	btn_close.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_close.pressed.connect(_close_help)
-	_help_overlay.add_child(btn_close)
+	_help_overlay.get_node("CenterBox").add_child(btn_close)
 
 	# Texto Principal do Botão Fechar
 	var lbl_close_main := Label.new()
@@ -383,7 +419,7 @@ func _help_label(txt: String, x: float, y: float, w: float, h: float, fs: int,
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", fs)
 	l.add_theme_color_override("font_color", col)
-	_help_overlay.add_child(l)
+	_help_overlay.get_node("CenterBox").add_child(l)
 
 func _close_help() -> void:
 	if _help_overlay and is_instance_valid(_help_overlay):
@@ -406,12 +442,31 @@ func flash_star() -> void:
 	tw.tween_property(_lbl_stars, "scale", Vector2.ONE, 0.35)\
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
+func update_keys(count: int) -> void:
+	if not _lbl_keys:
+		return
+	if count > 0:
+		var keys_str = ""
+		for i in range(count):
+			keys_str += "🔑 "
+		_lbl_keys.text = keys_str
+		_lbl_keys.scale = Vector2(1.35, 1.35)
+		_lbl_keys.pivot_offset = Vector2(0, 13)
+		var tw := create_tween()
+		tw.tween_property(_lbl_keys, "scale", Vector2.ONE, 0.35)\
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	else:
+		_lbl_keys.text = ""
+
 # ============================================================
 # METODOS DE ATUALIZACAO
 # ============================================================
 
 func update_level_info(level: Dictionary, idx: int, total: int) -> void:
-	_lbl_phase.text    = "FASE  %d / %d" % [idx + 1, total]
+	if level.get("is_secret", false):
+		_lbl_phase.text    = "FASE SECRETA"
+	else:
+		_lbl_phase.text    = "FASE  %d / %d" % [idx + 1, total]
 	_lbl_name.text     = level["name"]
 	_lbl_modifier.text = level["modifier_hint"]
 
@@ -503,6 +558,13 @@ func update_deaths(total: int) -> void:
 # ============================================================
 
 func _build_checkpoint_label() -> void:
+	var cp_container = Control.new()
+	cp_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	cp_container.offset_left = -576
+	cp_container.offset_right = 576
+	cp_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(cp_container)
+
 	_checkpoint_lbl          = Label.new()
 	_checkpoint_lbl.text     = "✓  Checkpoint!"
 	_checkpoint_lbl.position = Vector2(390, 82)
@@ -511,7 +573,7 @@ func _build_checkpoint_label() -> void:
 	_checkpoint_lbl.add_theme_font_size_override("font_size", 20)
 	_checkpoint_lbl.add_theme_color_override("font_color", Color(0.25, 1.0, 0.45))
 	_checkpoint_lbl.modulate.a = 0.0
-	add_child(_checkpoint_lbl)
+	cp_container.add_child(_checkpoint_lbl)
 
 func show_checkpoint_notification() -> void:
 	_checkpoint_timer          = 2.2
@@ -532,7 +594,7 @@ func _tick_checkpoint(delta: float) -> void:
 
 func _build_intro_overlay() -> void:
 	_intro_overlay              = Panel.new()
-	_intro_overlay.size         = Vector2(1152, 648)
+	_intro_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_intro_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro_overlay.visible      = false
 
@@ -540,12 +602,25 @@ func _build_intro_overlay() -> void:
 	style.bg_color = Color(0.03, 0.04, 0.09, 0.92)
 	_intro_overlay.add_theme_stylebox_override("panel", style)
 
-	for y_pos in [0, 645]:
-		var stripe := ColorRect.new()
-		stripe.size     = Vector2(1152, 3)
-		stripe.position = Vector2(0, y_pos)
-		stripe.color    = Color(0.25, 0.80, 0.40, 0.70)
-		_intro_overlay.add_child(stripe)
+	var stripe_top := ColorRect.new()
+	stripe_top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	stripe_top.offset_bottom = 3
+	stripe_top.color    = Color(0.25, 0.80, 0.40, 0.70)
+	_intro_overlay.add_child(stripe_top)
+
+	var stripe_bot := ColorRect.new()
+	stripe_bot.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	stripe_bot.offset_top = -3
+	stripe_bot.color    = Color(0.25, 0.80, 0.40, 0.70)
+	_intro_overlay.add_child(stripe_bot)
+
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_intro_overlay.add_child(center_box)
 
 	_intro_lbl_phase = Label.new()
 	_intro_lbl_phase.position             = Vector2(0, 155)
@@ -553,7 +628,7 @@ func _build_intro_overlay() -> void:
 	_intro_lbl_phase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro_lbl_phase.add_theme_font_size_override("font_size", 16)
 	_intro_lbl_phase.add_theme_color_override("font_color", Color(0.45, 0.70, 1.0, 0.85))
-	_intro_overlay.add_child(_intro_lbl_phase)
+	center_box.add_child(_intro_lbl_phase)
 
 	_intro_lbl_name = Label.new()
 	_intro_lbl_name.position             = Vector2(0, 188)
@@ -561,13 +636,13 @@ func _build_intro_overlay() -> void:
 	_intro_lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro_lbl_name.add_theme_font_size_override("font_size", 56)
 	_intro_lbl_name.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
-	_intro_overlay.add_child(_intro_lbl_name)
+	center_box.add_child(_intro_lbl_name)
 
 	var sep := ColorRect.new()
 	sep.size     = Vector2(500, 2)
 	sep.position = Vector2(326, 285)
 	sep.color    = Color(0.25, 0.80, 0.40, 0.35)
-	_intro_overlay.add_child(sep)
+	center_box.add_child(sep)
 
 	_intro_lbl_desc = Label.new()
 	_intro_lbl_desc.position             = Vector2(130, 296)
@@ -575,13 +650,13 @@ func _build_intro_overlay() -> void:
 	_intro_lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro_lbl_desc.add_theme_font_size_override("font_size", 20)
 	_intro_lbl_desc.add_theme_color_override("font_color", Color(0.72, 0.72, 0.82))
-	_intro_overlay.add_child(_intro_lbl_desc)
+	center_box.add_child(_intro_lbl_desc)
 
 	var mod_bg := ColorRect.new()
 	mod_bg.size     = Vector2(700, 52)
 	mod_bg.position = Vector2(226, 354)
 	mod_bg.color    = Color(0.12, 0.10, 0.04, 0.80)
-	_intro_overlay.add_child(mod_bg)
+	center_box.add_child(mod_bg)
 
 	_intro_lbl_mod = Label.new()
 	_intro_lbl_mod.position             = Vector2(226, 354)
@@ -589,7 +664,7 @@ func _build_intro_overlay() -> void:
 	_intro_lbl_mod.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro_lbl_mod.add_theme_font_size_override("font_size", 28)
 	_intro_lbl_mod.add_theme_color_override("font_color", COLOR_GOLD)
-	_intro_overlay.add_child(_intro_lbl_mod)
+	center_box.add_child(_intro_lbl_mod)
 
 	var skip := Label.new()
 	skip.text                 = "Pressione  ESPAÇO  para começar"
@@ -598,7 +673,7 @@ func _build_intro_overlay() -> void:
 	skip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	skip.add_theme_font_size_override("font_size", 15)
 	skip.add_theme_color_override("font_color", Color(0.35, 0.35, 0.42))
-	_intro_overlay.add_child(skip)
+	center_box.add_child(skip)
 
 	add_child(_intro_overlay)
 
@@ -608,7 +683,10 @@ func show_intro(level: Dictionary, level_index: int) -> void:
 	_intro_overlay.modulate.a = 1.0
 
 	var total := GameManager.get_level_count()
-	_intro_lbl_phase.text = "—  FASE  %d  DE  %d  —" % [level_index + 1, total]
+	if level.get("is_secret", false):
+		_intro_lbl_phase.text = "—  FASE SECRETA  —"
+	else:
+		_intro_lbl_phase.text = "—  FASE  %d  DE  %d  —" % [level_index + 1, total]
 	_intro_lbl_name.text  = level["name"]
 	_intro_lbl_desc.text  = level["description"]
 	_intro_lbl_mod.text   = level["modifier_hint"]
@@ -636,7 +714,7 @@ func _tick_intro(delta: float) -> void:
 
 func _build_fade() -> void:
 	_fade_rect              = ColorRect.new()
-	_fade_rect.size         = Vector2(1152, 648)
+	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fade_rect.color        = Color(0, 0, 0, 1)
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_fade_rect)
@@ -662,3 +740,166 @@ func _tick_fade(delta: float) -> void:
 		fading = false
 		if _fade_callback.is_valid():
 			_fade_callback.call()
+
+# ============================================================
+# TRANSIÇÃO CINEMATOGRÁFICA ENTRE FASES
+# ============================================================
+
+var _transition_overlay: Control = null
+var transitioning: bool = false
+
+func start_level_transition(from_name: String, to_name: String, callback: Callable) -> void:
+	if transitioning:
+		return
+	transitioning = true
+	
+	_transition_overlay = Control.new()
+	_transition_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_transition_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_transition_overlay)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_transition_overlay.add_child(center_box)
+	
+	# Barras diagonais (wipe) — 8 barras que se fecham da esquerda
+	var num_bars := 8
+	var bar_h := 648.0 / num_bars + 4.0  # overlap leve
+	var bars: Array[ColorRect] = []
+	
+	for i in range(num_bars):
+		var bar := ColorRect.new()
+		bar.size = Vector2(1350, bar_h)  # Extra largo para cobrir diagonal
+		bar.position = Vector2(-1400, i * (648.0 / num_bars))
+		bar.color = Color(0.04, 0.05, 0.10, 0.98)
+		bar.pivot_offset = Vector2(675, bar_h / 2.0)
+		bar.rotation = deg_to_rad(-3.0 + (i % 2) * 6.0)  # Leve inclinação alternada
+		center_box.add_child(bar)
+		bars.append(bar)
+	
+	# Animação: barras deslizam para fechar
+	var close_tween := create_tween()
+	for i in range(num_bars):
+		var delay := i * 0.04
+		close_tween.parallel().tween_property(bars[i], "position:x", -100.0, 0.35)\
+			.set_delay(delay)\
+			.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	
+	close_tween.tween_interval(0.15)
+	
+	# Mostra label de transição
+	close_tween.tween_callback(func():
+		_show_transition_label(from_name, to_name)
+	)
+	
+	# Espera na tela de transição
+	close_tween.tween_interval(1.2)
+	
+	# Executa o callback (carrega nova fase)
+	close_tween.tween_callback(func():
+		callback.call()
+	)
+	
+	# Pausa para a fase carregar
+	close_tween.tween_interval(0.2)
+	
+	# Remove o label
+	close_tween.tween_callback(func():
+		_remove_transition_label()
+	)
+	
+	# Barras deslizam para abrir (saem pela direita)
+	for i in range(num_bars):
+		var delay := i * 0.04
+		close_tween.parallel().tween_property(bars[i], "position:x", 1200.0, 0.35)\
+			.set_delay(delay)\
+			.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
+	
+	close_tween.tween_callback(func():
+		transitioning = false
+		if _transition_overlay and is_instance_valid(_transition_overlay):
+			_transition_overlay.queue_free()
+			_transition_overlay = null
+	)
+
+var _trans_label_container: Control = null
+
+func _show_transition_label(from_name: String, to_name: String) -> void:
+	_trans_label_container = Control.new()
+	_trans_label_container.set_anchors_preset(Control.PRESET_CENTER)
+	_trans_label_container.offset_left = -576
+	_trans_label_container.offset_top = -324
+	_trans_label_container.offset_right = 576
+	_trans_label_container.offset_bottom = 324
+	_trans_label_container.modulate.a = 0.0
+	_transition_overlay.add_child(_trans_label_container)
+	
+	# Glow de fundo central
+	var glow := ColorRect.new()
+	glow.size = Vector2(700, 180)
+	glow.position = Vector2(226, 234)
+	glow.color = Color(0.08, 0.10, 0.18, 0.75)
+	_trans_label_container.add_child(glow)
+	
+	# Linha superior decorativa
+	var line_top := ColorRect.new()
+	line_top.size = Vector2(500, 2)
+	line_top.position = Vector2(326, 250)
+	line_top.color = Color(0.30, 0.75, 1.0, 0.60)
+	_trans_label_container.add_child(line_top)
+	
+	# Nome da fase anterior (pequeno, esmaecido)
+	var lbl_from := Label.new()
+	lbl_from.text = from_name
+	lbl_from.position = Vector2(0, 260)
+	lbl_from.size = Vector2(1152, 30)
+	lbl_from.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_from.add_theme_font_size_override("font_size", 16)
+	lbl_from.add_theme_color_override("font_color", Color(0.55, 0.58, 0.70))
+	_trans_label_container.add_child(lbl_from)
+	
+	# Seta
+	var lbl_arrow := Label.new()
+	lbl_arrow.text = "▼"
+	lbl_arrow.position = Vector2(0, 292)
+	lbl_arrow.size = Vector2(1152, 30)
+	lbl_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_arrow.add_theme_font_size_override("font_size", 18)
+	lbl_arrow.add_theme_color_override("font_color", Color(0.30, 0.90, 0.50, 0.80))
+	_trans_label_container.add_child(lbl_arrow)
+	
+	# Nome da próxima fase (grande, brilhante)
+	var lbl_to := Label.new()
+	lbl_to.text = to_name
+	lbl_to.position = Vector2(0, 322)
+	lbl_to.size = Vector2(1152, 50)
+	lbl_to.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_to.add_theme_font_size_override("font_size", 36)
+	lbl_to.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
+	_trans_label_container.add_child(lbl_to)
+	
+	# Linha inferior decorativa
+	var line_bot := ColorRect.new()
+	line_bot.size = Vector2(500, 2)
+	line_bot.position = Vector2(326, 380)
+	line_bot.color = Color(0.30, 0.75, 1.0, 0.40)
+	_trans_label_container.add_child(line_bot)
+	
+	# Fade in do label
+	var tw := create_tween()
+	tw.tween_property(_trans_label_container, "modulate:a", 1.0, 0.3)
+
+func _remove_transition_label() -> void:
+	if _trans_label_container and is_instance_valid(_trans_label_container):
+		var tw := create_tween()
+		tw.tween_property(_trans_label_container, "modulate:a", 0.0, 0.15)
+		tw.tween_callback(func():
+			if _trans_label_container and is_instance_valid(_trans_label_container):
+				_trans_label_container.queue_free()
+				_trans_label_container = null
+		)

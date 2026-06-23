@@ -31,8 +31,8 @@ func test_inicia_na_fase_1() -> void:
 # Fases
 # --------------------------------------------------------
 
-func test_total_de_5_fases() -> void:
-	assert_that(gm.get_level_count()).is_equal(5)
+func test_total_de_10_fases() -> void:
+	assert_that(gm.get_level_count()).is_equal(10)
 
 func test_proximo_nivel_avanca_indice() -> void:
 	gm.start_game()
@@ -42,13 +42,13 @@ func test_proximo_nivel_avanca_indice() -> void:
 
 func test_ultima_fase_retorna_false() -> void:
 	gm.start_game()
-	gm.current_level_index = 4
+	gm.current_level_index = 9
 	var avancou := gm.next_level()
 	assert_that(avancou).is_false()
 
 func test_jogo_completo_apos_ultima_fase() -> void:
 	gm.start_game()
-	gm.current_level_index = 4
+	gm.current_level_index = 9
 	gm.next_level()
 	assert_that(gm.current_state).is_equal(gm.GameState.GAME_COMPLETE)
 

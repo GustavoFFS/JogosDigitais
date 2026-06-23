@@ -338,7 +338,6 @@ distance = -13.0
 [sub_resource type="TileSet" id="TileSet_2xbvg"]
 
 [node name="Node2D" type="Node2D" unique_id=1656276022]
-process_mode = 3
 script = ExtResource("4_scene")
 
 [node name="Rob" type="CharacterBody2D" parent="." unique_id=933595460]

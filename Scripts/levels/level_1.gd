@@ -9,6 +9,11 @@ static func get_data() -> Dictionary:
 		"name": "Ruas da Cidade",
 		"description": "Rob e Bog viram Loopy sair do Café Loop com olhar distante...\na busca começa aqui nas ruas!",
 		"modifier_hint": "Controles Normais  ·  Aprenda o básico!",
+		"ambient_type": "city",
+		"dialogues": [
+			{"speaker": "Rob", "text": "Viu pra onde o Loopy foi?"},
+			{"speaker": "Bog", "text": "Saiu correndo do café... vamos atrás!"},
+		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
 		"bg_size": [70000.0, 1000.0], # Vai repetir a imagem horizontalmente por 8000 pixels!

@@ -7,6 +7,7 @@ extends Control
 
 var title_label: Label
 var start_button: Button
+var new_game_button: Button
 var quit_button: Button
 var bg: Control # <-- Alterado de ColorRect para Control genérico
 var time: float = 0.0
@@ -65,19 +66,42 @@ func _build_ui() -> void:
 			star.color    = Color(1, 1, 1, randf() * 0.5 + 0.1)
 			add_child(star)
 
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	add_child(center_box)
+
 	var btn_box := VBoxContainer.new()
-	btn_box.position = Vector2(426, 260)
+	if GameManager.current_level_index > 0:
+		btn_box.position = Vector2(426, 215)
+	else:
+		btn_box.position = Vector2(426, 260)
 	btn_box.size     = Vector2(300, 200)
 	btn_box.add_theme_constant_override("separation", 15)
-	add_child(btn_box)
+	center_box.add_child(btn_box)
 
 	start_button = Button.new()
-	start_button.text = "Jogar"
+	if GameManager.current_level_index > 0:
+		start_button.text = "Continuar"
+	else:
+		start_button.text = "Jogar"
 	start_button.custom_minimum_size = Vector2(300, 55)
 	start_button.add_theme_font_size_override("font_size", 26)
 	start_button.pressed.connect(_on_start)
 	btn_box.add_child(start_button)
 	_setup_button_sounds(start_button)
+
+	if GameManager.current_level_index > 0:
+		new_game_button = Button.new()
+		new_game_button.text = "Novo Jogo"
+		new_game_button.custom_minimum_size = Vector2(300, 45)
+		new_game_button.add_theme_font_size_override("font_size", 20)
+		new_game_button.pressed.connect(_on_new_game)
+		btn_box.add_child(new_game_button)
+		_setup_button_sounds(new_game_button)
 
 	var tips_button := Button.new()
 	tips_button.text = "?  Dicas"
@@ -86,6 +110,14 @@ func _build_ui() -> void:
 	tips_button.pressed.connect(_show_menu_help)
 	btn_box.add_child(tips_button)
 	_setup_button_sounds(tips_button)
+
+	var options_button := Button.new()
+	options_button.text = "Opções de Tela"
+	options_button.custom_minimum_size = Vector2(300, 45)
+	options_button.add_theme_font_size_override("font_size", 20)
+	options_button.pressed.connect(_show_options_menu)
+	btn_box.add_child(options_button)
+	_setup_button_sounds(options_button)
 
 	quit_button = Button.new()
 	quit_button.text = "Sair"
@@ -102,7 +134,7 @@ func _build_ui() -> void:
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.add_theme_font_size_override("font_size", 15)
 	controls.add_theme_color_override("font_color", Color(0.5, 0.5, 0.58))
-	add_child(controls)
+	center_box.add_child(controls)
 
 	var credits := Label.new()
 	credits.text     = "Lost & Loopy - Projeto Jogos Digitais 2026"
@@ -111,7 +143,7 @@ func _build_ui() -> void:
 	credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credits.add_theme_font_size_override("font_size", 12)
 	credits.add_theme_color_override("font_color", Color(0.35, 0.35, 0.4))
-	add_child(credits)
+	center_box.add_child(credits)
 
 # ============================================================
 # ACOES
@@ -119,10 +151,24 @@ func _build_ui() -> void:
 
 func _on_start() -> void:
 	start_button.disabled = true
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = true
 	quit_button.disabled  = true
+	if GameManager.current_level_index > 0:
+		_start_game()
+	else:
+		_build_newspaper()
+
+func _on_new_game() -> void:
+	start_button.disabled = true
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = true
+	quit_button.disabled  = true
+	GameManager.reset_game()
 	_build_newspaper()
 
 func _on_quit() -> void:
+	GameManager.save_game()
 	get_tree().quit()
 
 # ============================================================
@@ -144,17 +190,26 @@ func _show_menu_help() -> void:
 	dim.color = Color(0, 0, 0, 0.82)
 	_menu_help_overlay.add_child(dim)
 
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_menu_help_overlay.add_child(center_box)
+
 	var box := ColorRect.new()
 	box.position = Vector2(116, 70)
 	box.size     = Vector2(920, 508)
 	box.color    = Color(0.08, 0.10, 0.16, 0.98)
-	_menu_help_overlay.add_child(box)
+	center_box.add_child(box)
 
 	var top := ColorRect.new()
 	top.position = Vector2(116, 70)
 	top.size     = Vector2(920, 4)
 	top.color    = Color(0.85, 0.65, 0.25, 0.9)
-	_menu_help_overlay.add_child(top)
+	center_box.add_child(top)
 
 	_menu_help_lbl("DICAS", 0, 82, 1152, 38, 28, Color(1.0, 0.85, 0.30), true)
 	_menu_help_lbl("Tudo o que você precisa saber para resgatar o Loopy",
@@ -173,7 +228,7 @@ func _show_menu_help() -> void:
 	sep.position = Vector2(576, 160)
 	sep.size     = Vector2(2, 150)
 	sep.color    = Color(0.25, 0.30, 0.45, 0.45)
-	_menu_help_overlay.add_child(sep)
+	_menu_help_overlay.get_node("CenterBox").add_child(sep)
 
 	_menu_help_lbl("CONTROLES", 0, 330, 1152, 24, 16, Color(0.50, 0.88, 0.55), true)
 	_menu_help_lbl("A/D ou ←/→  mover   ·   ESPAÇO  pular   ·   TAB  trocar personagem   ·   Z  habilidade   ·   ESC  pausa",
@@ -189,7 +244,7 @@ func _show_menu_help() -> void:
 	btn_close.size     = Vector2(280, 42)
 	btn_close.add_theme_font_size_override("font_size", 18)
 	btn_close.pressed.connect(_close_menu_help)
-	_menu_help_overlay.add_child(btn_close)
+	_menu_help_overlay.get_node("CenterBox").add_child(btn_close)
 	_setup_button_sounds(btn_close)
 
 func _menu_help_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int,
@@ -202,18 +257,123 @@ func _menu_help_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", fs)
 	l.add_theme_color_override("font_color", col)
-	_menu_help_overlay.add_child(l)
+	_menu_help_overlay.get_node("CenterBox").add_child(l)
 
 func _close_menu_help() -> void:
 	if _menu_help_overlay and is_instance_valid(_menu_help_overlay):
 		_menu_help_overlay.queue_free()
 	_menu_help_overlay = null
 
+# ============================================================
+# OPÇÕES (acessível pelo botão do menu)
+# ============================================================
+
+var _options_overlay: Control = null
+
+func _show_options_menu() -> void:
+	if _options_overlay and is_instance_valid(_options_overlay):
+		return
+
+	_options_overlay = Control.new()
+	_options_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_options_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.82)
+	_options_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_options_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(326, 120)
+	box.size     = Vector2(500, 400)
+	box.color    = Color(0.08, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var top := ColorRect.new()
+	top.position = Vector2(326, 120)
+	top.size     = Vector2(500, 4)
+	top.color    = Color(0.40, 0.75, 1.00, 0.9)
+	center_box.add_child(top)
+
+	var title := Label.new()
+	title.text = "TAMANHO DA TELA"
+	title.position = Vector2(326, 140)
+	title.size = Vector2(500, 30)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	center_box.add_child(title)
+
+	var y_pos = 190
+	var resolutions = [
+		{"name": "1152 x 648 (Janela Padrão)", "w": 1152, "h": 648},
+		{"name": "1280 x 720 (Janela HD)", "w": 1280, "h": 720},
+		{"name": "1920 x 1080 (Janela Full HD)", "w": 1920, "h": 1080}
+	]
+
+	for res in resolutions:
+		var btn = Button.new()
+		btn.text = res["name"]
+		btn.position = Vector2(376, y_pos)
+		btn.size = Vector2(400, 40)
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.pressed.connect(func():
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_size(Vector2i(res["w"], res["h"]))
+			# Centraliza a janela
+			var screen_size = DisplayServer.screen_get_size()
+			var window_size = DisplayServer.window_get_size()
+			DisplayServer.window_set_position((screen_size - window_size) / 2)
+			GameManager.save_game()
+		)
+		_options_overlay.get_node("CenterBox").add_child(btn)
+		_setup_button_sounds(btn)
+		y_pos += 50
+
+	var btn_full = Button.new()
+	btn_full.text = "Tela Cheia"
+	btn_full.position = Vector2(376, y_pos)
+	btn_full.size = Vector2(400, 40)
+	btn_full.add_theme_font_size_override("font_size", 18)
+	btn_full.add_theme_color_override("font_color", Color(0.50, 0.88, 0.55))
+	btn_full.pressed.connect(func():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		GameManager.save_game()
+	)
+	_options_overlay.get_node("CenterBox").add_child(btn_full)
+	_setup_button_sounds(btn_full)
+
+	var btn_close := Button.new()
+	btn_close.text     = "Voltar"
+	btn_close.position = Vector2(376, 440)
+	btn_close.size     = Vector2(400, 42)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.pressed.connect(_close_options_menu)
+	_options_overlay.get_node("CenterBox").add_child(btn_close)
+	_setup_button_sounds(btn_close)
+
+func _close_options_menu() -> void:
+	if _options_overlay and is_instance_valid(_options_overlay):
+		_options_overlay.queue_free()
+	_options_overlay = null
+
 func _start_game() -> void:
 	_newspaper_visible = false
 	_intro_visible     = false
 	SoundManager.play_sfx("collect") # Som de início
-	GameManager.start_game()
+	if GameManager.current_level_index > 0:
+		GameManager.continue_game()
+	else:
+		GameManager.start_game()
 	get_tree().change_scene_to_file("res://Scenes/scene1.tscn")
 
 # ============================================================
@@ -230,10 +390,18 @@ func _build_character_intro() -> void:
 	dim.color = Color(0.04, 0.05, 0.10, 0.97)
 	root.add_child(dim)
 
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	root.add_child(center_box)
+
 	# Título
-	_nl(root, "CONHEÇA SEUS HERÓIS",
+	_nl(center_box, "CONHEÇA SEUS HERÓIS",
 		0, 32, 1152, 50, 34, Color(0.95, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(root, "Dois amigos em busca de Loopy  ·  cada um com um jeito",
+	_nl(center_box, "Dois amigos em busca de Loopy  ·  cada um com um jeito",
 		0, 78, 1152, 24, 14, Color(0.60, 0.65, 0.80), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Linha divisória
@@ -241,10 +409,10 @@ func _build_character_intro() -> void:
 	divider.position = Vector2(576, 130)
 	divider.size     = Vector2(2, 400)
 	divider.color    = Color(0.25, 0.30, 0.45, 0.45)
-	root.add_child(divider)
+	center_box.add_child(divider)
 
 	# ---- ROB (lado esquerdo) ----
-	_build_hero_card(root, "res://Assets/Characters/Main_2/Idle.png",
+	_build_hero_card(center_box, "res://Assets/Characters/Main_2/Idle.png",
 		70, "ROB", Color(0.30, 0.65, 1.00),
 		"Ágil e rápido",
 		[
@@ -256,7 +424,7 @@ func _build_character_intro() -> void:
 		])
 
 	# ---- BOG (lado direito) ----
-	_build_hero_card(root, "res://Assets/Characters/Main_1/Idle.png",
+	_build_hero_card(center_box, "res://Assets/Characters/Main_1/Idle.png",
 		640, "BOG", Color(1.00, 0.60, 0.25),
 		"Forte e pesado",
 		[
@@ -272,14 +440,14 @@ func _build_character_intro() -> void:
 	footer_bg.position = Vector2(76, 540)
 	footer_bg.size     = Vector2(1000, 60)
 	footer_bg.color    = Color(0.10, 0.08, 0.04, 0.85)
-	root.add_child(footer_bg)
+	center_box.add_child(footer_bg)
 
-	_nl(root, "CONTROLES  ·  A/D ou Setas = Mover   ·   ESPAÇO = Pular   ·   TAB = Trocar personagem   ·   Z = Habilidade   ·   ESC = Pausa",
+	_nl(center_box, "CONTROLES  ·  A/D ou Setas = Mover   ·   ESPAÇO = Pular   ·   TAB = Trocar personagem   ·   Z = Habilidade   ·   ESC = Pausa",
 		76, 552, 1000, 18, 13, Color(0.85, 0.78, 0.40), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(root, "Colete ★ estrelas pelo caminho — algumas só se alcançam com o bloco do Bog como degrau",
+	_nl(center_box, "Colete ★ estrelas pelo caminho — algumas só se alcançam com o bloco do Bog como degrau",
 		76, 574, 1000, 18, 11, Color(1.0, 0.85, 0.35), HORIZONTAL_ALIGNMENT_CENTER)
 
-	_nl(root, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR  —",
+	_nl(center_box, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR  —",
 		0, 612, 1152, 30, 18,
 		Color(0.30, 1.0, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -354,6 +522,14 @@ func _build_newspaper() -> void:
 	dim.color = Color(0, 0, 0, 0.80)
 	root.add_child(dim)
 
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	root.add_child(center_box)
+
 	# --- Papel do jornal ---
 	const PX: float = 76.0
 	const PY: float = 22.0
@@ -364,7 +540,7 @@ func _build_newspaper() -> void:
 	paper.position = Vector2(PX, PY)
 	paper.size     = Vector2(PW, PH)
 	paper.color    = Color(0.965, 0.930, 0.810)
-	root.add_child(paper)
+	center_box.add_child(paper)
 
 	# Bordas laterais escuras (efeito envelhecido)
 	for xv in [PX, PX + PW - 6]:
@@ -372,18 +548,18 @@ func _build_newspaper() -> void:
 		edge.position = Vector2(xv, PY)
 		edge.size     = Vector2(6, PH)
 		edge.color    = Color(0.80, 0.74, 0.60, 0.4)
-		root.add_child(edge)
+		center_box.add_child(edge)
 
 	# ---- Cabeçalho ----
 	var header := ColorRect.new()
 	header.position = Vector2(PX, PY)
 	header.size     = Vector2(PW, 70)
 	header.color    = Color(0.07, 0.05, 0.03)
-	root.add_child(header)
+	center_box.add_child(header)
 
-	_nl(root, "O DIÁRIO DA CIDADE",
+	_nl(center_box, "O DIÁRIO DA CIDADE",
 		PX, PY + 6, PW, 40, 36, Color(0.98, 0.96, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(root, "Edição Especial  ·  Cidade Urbana, 2026  ·  Número 4.521",
+	_nl(center_box, "Edição Especial  ·  Cidade Urbana, 2026  ·  Número 4.521",
 		PX, PY + 48, PW, 18, 11, Color(0.68, 0.64, 0.52), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Fio separador superior
@@ -391,14 +567,14 @@ func _build_newspaper() -> void:
 	sep1.position = Vector2(PX, PY + 70)
 	sep1.size     = Vector2(PW, 3)
 	sep1.color    = Color(0.14, 0.11, 0.07)
-	root.add_child(sep1)
+	center_box.add_child(sep1)
 
 	# ---- Manchete ----
-	_nl(root, "GAROTO DESAPARECE APÓS TOMAR CHÁ MISTERIOSO",
+	_nl(center_box, "GAROTO DESAPARECE APÓS TOMAR CHÁ MISTERIOSO",
 		PX + 10, PY + 78, PW - 20, 50, 31,
 		Color(0.06, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 
-	_nl(root, "Jovem saiu do Café Loop completamente desorientado após receber chá de senhora misteriosa",
+	_nl(center_box, "Jovem saiu do Café Loop completamente desorientado após receber chá de senhora misteriosa",
 		PX + 60, PY + 130, PW - 120, 22, 13,
 		Color(0.22, 0.18, 0.12), HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -407,10 +583,10 @@ func _build_newspaper() -> void:
 	sep2.position = Vector2(PX + 20, PY + 158)
 	sep2.size     = Vector2(PW - 40, 2)
 	sep2.color    = Color(0.22, 0.16, 0.08)
-	root.add_child(sep2)
+	center_box.add_child(sep2)
 
 	# ---- Coluna esquerda: artigo ----
-	_nl(root, "Por nosso correspondente especial  ·  Ontem, às 09h47",
+	_nl(center_box, "Por nosso correspondente especial  ·  Ontem, às 09h47",
 		PX + 20, PY + 164, 590, 16, 10, Color(0.38, 0.32, 0.22))
 
 	var paras: Array = [
@@ -421,7 +597,7 @@ func _build_newspaper() -> void:
 	]
 	var ay: float = PY + 182.0
 	for p in paras:
-		_nl(root, p, PX + 20, ay, 600, 72, 13, Color(0.10, 0.09, 0.07))
+		_nl(center_box, p, PX + 20, ay, 600, 72, 13, Color(0.10, 0.09, 0.07))
 		ay += 76.0
 
 	# Fio separador vertical entre colunas
@@ -429,7 +605,7 @@ func _build_newspaper() -> void:
 	vsep.position = Vector2(PX + 642, PY + 158)
 	vsep.size     = Vector2(2, 398)
 	vsep.color    = Color(0.28, 0.22, 0.12, 0.45)
-	root.add_child(vsep)
+	center_box.add_child(vsep)
 
 	# ---- Coluna direita: foto + box ----
 	# Moldura externa (efeito de foto antiga em sépia)
@@ -437,23 +613,23 @@ func _build_newspaper() -> void:
 	photo_frame.position = Vector2(PX + 650, PY + 156)
 	photo_frame.size     = Vector2(332, 222)
 	photo_frame.color    = Color(0.18, 0.14, 0.08)
-	root.add_child(photo_frame)
+	center_box.add_child(photo_frame)
 
 	var photo := ColorRect.new()
 	photo.position = Vector2(PX + 656, PY + 162)
 	photo.size     = Vector2(320, 210)
 	photo.color    = Color(0.82, 0.72, 0.52)  # fundo sépia claro
-	root.add_child(photo)
+	center_box.add_child(photo)
 
 	# Chão da foto (tom mais escuro)
 	var photo_ground := ColorRect.new()
 	photo_ground.position = Vector2(PX + 656, PY + 340)
 	photo_ground.size     = Vector2(320, 32)
 	photo_ground.color    = Color(0.60, 0.48, 0.32)
-	root.add_child(photo_ground)
+	center_box.add_child(photo_ground)
 
 	# Loopy detalhado (tons sépia para parecer foto de jornal)
-	_draw_loopy(root, PX + 816, PY + 355, 1.3, true)
+	_draw_loopy(center_box, PX + 816, PY + 355, 1.3, true)
 
 	# Cantos da moldura (decoração de foto antiga)
 	for cx in [PX + 652, PX + 970]:
@@ -462,9 +638,9 @@ func _build_newspaper() -> void:
 			corner.position = Vector2(cx, cy)
 			corner.size     = Vector2(10, 10)
 			corner.color    = Color(0.10, 0.08, 0.05)
-			root.add_child(corner)
+			center_box.add_child(corner)
 
-	_nl(root, "Loopy, visto pela última vez saindo do Café Loop",
+	_nl(center_box, "Loopy, visto pela última vez saindo do Café Loop",
 		PX + 656, PY + 374, 320, 18, 10,
 		Color(0.28, 0.22, 0.14), HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -473,19 +649,19 @@ func _build_newspaper() -> void:
 	hl.position = Vector2(PX + 656, PY + 396)
 	hl.size     = Vector2(320, 126)
 	hl.color    = Color(0.935, 0.875, 0.635)
-	root.add_child(hl)
+	center_box.add_child(hl)
 
 	var hl_top := ColorRect.new()
 	hl_top.position = Vector2(PX + 656, PY + 396)
 	hl_top.size     = Vector2(320, 3)
 	hl_top.color    = Color(0.16, 0.11, 0.05)
-	root.add_child(hl_top)
+	center_box.add_child(hl_top)
 
-	_nl(root, "QUEM É LOOPY?",
+	_nl(center_box, "QUEM É LOOPY?",
 		PX + 656, PY + 402, 320, 20, 12,
 		Color(0.07, 0.06, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 
-	_nl(root, "Jovem de personalidade descontraída,\nconhecido pelo bom humor e pelo hábito\nde ler o jornal e tomar chá todas as manhãs\nno banco da praça em frente ao Café Loop.",
+	_nl(center_box, "Jovem de personalidade descontraída,\nconhecido pelo bom humor e pelo hábito\nde ler o jornal e tomar chá todas as manhãs\nno banco da praça em frente ao Café Loop.",
 		PX + 666, PY + 424, 300, 96, 12, Color(0.14, 0.11, 0.07))
 
 	# ---- Rodapé ----
@@ -493,9 +669,9 @@ func _build_newspaper() -> void:
 	sep_foot.position = Vector2(PX, PY + PH - 50)
 	sep_foot.size     = Vector2(PW, 3)
 	sep_foot.color    = Color(0.14, 0.11, 0.07)
-	root.add_child(sep_foot)
+	center_box.add_child(sep_foot)
 
-	_nl(root, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR A BUSCA  —",
+	_nl(center_box, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR A BUSCA  —",
 		PX, PY + PH - 42, PW, 38, 16,
 		Color(0.07, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 

@@ -9,6 +9,11 @@ static func get_data() -> Dictionary:
 		"name": "Canteiro de Obras",
 		"description": "Ferrugem, andaimes e guindastes em movimento...\nCalcule o tempo dos saltos sob gravidade flutuante!",
 		"modifier_hint": "Gravidade Reduzida  ·  Calcule a inércia móvel!",
+		"ambient_type": "construction",
+		"dialogues": [
+			{"speaker": "Bog", "text": "Olha esses andaimes balançando!"},
+			{"speaker": "Rob", "text": "Calcula o tempo do pulo!"},
+		],
 		"bg_color":       Color(0.14, 0.10, 0.06),
 		"bg_image": "res://Assets/Backgrounds/CanteirodeObras.png",
 		"dust_effect":    true,
@@ -75,7 +80,7 @@ static func get_data() -> Dictionary:
 		],
 		"exit_pos":    [1770, 570],
 		"spawn_rob":   [50,   560],
-		"spawn_bog":   [130,  560],
+		"spawn_bog":   [150,  560],
 		"loopy_start": [1600, 572],
 		"loopy_end":   [1760, 572],
 	}

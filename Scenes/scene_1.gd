@@ -3,7 +3,7 @@ extends Node2D
 ## Cena principal - Lost & Loopy
 ## Gerencia plataformas, personagens, camera, Loopy, checkpoints, hazards e transicoes.
 var shake_strength: float = 0.0
-var shake_decay: float = 5.0
+var shake_decay: float = 3.0
 
 @onready var rob:    CharacterBase = $Rob
 @onready var bog:    CharacterBase = $Bog
@@ -31,7 +31,7 @@ var bg_rect: TextureRect
 var bg_texture: TextureRect      # NOVO: Onde a imagem vai ficar
 
 # Tela de vitoria
-var victory_overlay: ColorRect = null
+var victory_overlay: Control = null
 
 # Plataformas moveis
 var _moving_platforms: Array = []
@@ -40,6 +40,7 @@ const DEATH_Y: float = 950.0
 
 # Estrelas
 var _stars_left_in_level: int = 0
+var _collected_keys: Array = []
 
 # Blocos empurráveis (para mostrar dica de proximidade)
 var _pushable_blocks: Array = []
@@ -55,6 +56,14 @@ var _snow_particles: CPUParticles2D = null
 var _dust_particles: CPUParticles2D = null
 var _insect_particles: CPUParticles2D = null
 
+# Sistema de diálogos
+var _dialogue_system: DialogueSystem = null
+var _dialogue_shown_for_level: int = -1
+
+# Sistema de Iluminação
+var _canvas_mod: CanvasModulate = null
+var _character_lights: Array = []
+
 # ============================================================
 # INICIALIZACAO
 # ============================================================
@@ -65,6 +74,7 @@ func _ready() -> void:
 	hud = GameHUD.new()
 	add_child(hud)
 	hud.pause_requested.connect(_toggle_pause)
+	_setup_dialogue_system()
 	_setup_characters()
 	_load_level()
 
@@ -101,9 +111,12 @@ func _game_loop_input() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Captura de Inputs discretos por eventos do SO
-	if event.is_action_pressed("switch_character") and not hud.showing_intro and not hud.fading and not is_exiting:
+	# Bloqueia input durante diálogos (o sistema de diálogo consome o ESPAÇO)
+	if _dialogue_system and _dialogue_system.is_active():
+		return
+	if event.is_action_pressed("switch_character") and not get_tree().paused and not hud.showing_intro and not hud.fading and not is_exiting and not hud.transitioning and not rob.is_dead and not bog.is_dead:
 		_switch_character()
-	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting:
+	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting and not hud.transitioning:
 		# Bloqueia pause se tela de morte estiver ativa
 		if _death_overlay and is_instance_valid(_death_overlay):
 			return
@@ -115,7 +128,11 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 2. ETAPA DE UPDATE (Física, Movimentação e Regras de Jogo)
 func _game_loop_update(delta: float) -> void:
 	# Controla ativação do cronômetro de speedrun
-	GameManager.is_timer_active = not hud.showing_intro and not hud.fading and victory_overlay == null
+	var dialogue_active := _dialogue_system != null and _dialogue_system.is_active()
+	GameManager.is_timer_active = not hud.showing_intro and not hud.fading and victory_overlay == null and not dialogue_active and not hud.transitioning
+	
+	# Inicia diálogos quando a intro terminar
+	_check_dialogue_trigger()
 	
 	_update_camera(delta)
 	_update_loopy(delta)
@@ -148,26 +165,35 @@ func _open_pause() -> void:
 	get_tree().paused = true
 
 	_pause_overlay = Control.new()
-	_pause_overlay.size = Vector2(1152, 648)
+	_pause_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	hud.add_child(_pause_overlay)
 
 	var dim := ColorRect.new()
-	dim.size  = Vector2(1152, 648)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.color = Color(0, 0, 0, 0.72)
 	_pause_overlay.add_child(dim)
 
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_pause_overlay.add_child(center_box)
+
 	var box := ColorRect.new()
-	box.size     = Vector2(440, 370)
+	box.size     = Vector2(440, 430)
 	box.position = Vector2(356, 144)
 	box.color    = Color(0.10, 0.12, 0.20, 0.98)
-	_pause_overlay.add_child(box)
+	center_box.add_child(box)
 
 	var border := ColorRect.new()
 	border.size     = Vector2(440, 4)
 	border.position = Vector2(356, 144)
 	border.color    = Color(0.30, 0.75, 1.0, 0.9)
-	_pause_overlay.add_child(border)
+	_pause_overlay.get_node("CenterBox").add_child(border)
 
 	var title := Label.new()
 	title.text     = "— PAUSA —"
@@ -176,7 +202,7 @@ func _open_pause() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(0.95, 0.95, 1.0))
-	_pause_overlay.add_child(title)
+	_pause_overlay.get_node("CenterBox").add_child(title)
 
 	var info := Label.new()
 	info.text     = "★  Estrelas: %d / %d" % [GameManager.stars_collected, GameManager.stars_total_game]
@@ -185,7 +211,7 @@ func _open_pause() -> void:
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.add_theme_font_size_override("font_size", 16)
 	info.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	_pause_overlay.add_child(info)
+	_pause_overlay.get_node("CenterBox").add_child(info)
 
 	var btn_resume := Button.new()
 	btn_resume.text = "Continuar"
@@ -194,7 +220,7 @@ func _open_pause() -> void:
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_resume.pressed.connect(_close_pause)
-	_pause_overlay.add_child(btn_resume)
+	_pause_overlay.get_node("CenterBox").add_child(btn_resume)
 
 	var btn_help := Button.new()
 	btn_help.text = "Dicas"
@@ -203,25 +229,136 @@ func _open_pause() -> void:
 	btn_help.add_theme_font_size_override("font_size", 19)
 	btn_help.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_help.pressed.connect(hud._show_help)
-	_pause_overlay.add_child(btn_help)
+	_pause_overlay.get_node("CenterBox").add_child(btn_help)
+
+	var btn_options := Button.new()
+	btn_options.text = "Opções de Tela"
+	btn_options.position = Vector2(416, 364)
+	btn_options.size     = Vector2(320, 44)
+	btn_options.add_theme_font_size_override("font_size", 20)
+	btn_options.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_options.pressed.connect(_show_options_menu)
+	_pause_overlay.get_node("CenterBox").add_child(btn_options)
 
 	var btn_menu := Button.new()
 	btn_menu.text = "Voltar ao Menu"
-	btn_menu.position = Vector2(416, 364)
+	btn_menu.position = Vector2(416, 418)
 	btn_menu.size     = Vector2(320, 44)
 	btn_menu.add_theme_font_size_override("font_size", 20)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_menu.pressed.connect(_quit_to_menu)
-	_pause_overlay.add_child(btn_menu)
+	_pause_overlay.get_node("CenterBox").add_child(btn_menu)
 
 	var hint := Label.new()
 	hint.text     = "ESC  para continuar"
-	hint.position = Vector2(356, 430)
+	hint.position = Vector2(356, 484)
 	hint.size     = Vector2(440, 24)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.62))
-	_pause_overlay.add_child(hint)
+	_pause_overlay.get_node("CenterBox").add_child(hint)
+
+# ============================================================
+# OPÇÕES DE TELA (no pause)
+# ============================================================
+
+var _options_overlay: Control = null
+
+func _show_options_menu() -> void:
+	if _options_overlay and is_instance_valid(_options_overlay):
+		return
+
+	_options_overlay = Control.new()
+	_options_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_options_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	hud.add_child(_options_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.82)
+	_options_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_options_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(326, 120)
+	box.size     = Vector2(500, 400)
+	box.color    = Color(0.08, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var top := ColorRect.new()
+	top.position = Vector2(326, 120)
+	top.size     = Vector2(500, 4)
+	top.color    = Color(0.40, 0.75, 1.00, 0.9)
+	center_box.add_child(top)
+
+	var title := Label.new()
+	title.text = "TAMANHO DA TELA"
+	title.position = Vector2(326, 140)
+	title.size = Vector2(500, 30)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	_options_overlay.get_node("CenterBox").add_child(title)
+
+	var y_pos = 190
+	var resolutions = [
+		{"name": "1152 x 648 (Janela Padrão)", "w": 1152, "h": 648},
+		{"name": "1280 x 720 (Janela HD)", "w": 1280, "h": 720},
+		{"name": "1920 x 1080 (Janela Full HD)", "w": 1920, "h": 1080}
+	]
+
+	for res in resolutions:
+		var btn = Button.new()
+		btn.text = res["name"]
+		btn.position = Vector2(376, y_pos)
+		btn.size = Vector2(400, 40)
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+		btn.pressed.connect(func():
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_size(Vector2i(res["w"], res["h"]))
+			var screen_size = DisplayServer.screen_get_size()
+			var window_size = DisplayServer.window_get_size()
+			DisplayServer.window_set_position((screen_size - window_size) / 2)
+			GameManager.save_game()
+		)
+		_options_overlay.get_node("CenterBox").add_child(btn)
+		y_pos += 50
+
+	var btn_full = Button.new()
+	btn_full.text = "Tela Cheia"
+	btn_full.position = Vector2(376, y_pos)
+	btn_full.size = Vector2(400, 40)
+	btn_full.add_theme_font_size_override("font_size", 18)
+	btn_full.add_theme_color_override("font_color", Color(0.50, 0.88, 0.55))
+	btn_full.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_full.pressed.connect(func():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		GameManager.save_game()
+	)
+	_options_overlay.get_node("CenterBox").add_child(btn_full)
+
+	var btn_close := Button.new()
+	btn_close.text     = "Voltar"
+	btn_close.position = Vector2(376, 440)
+	btn_close.size     = Vector2(400, 42)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_close.pressed.connect(_close_options_menu)
+	_options_overlay.get_node("CenterBox").add_child(btn_close)
+
+func _close_options_menu() -> void:
+	if _options_overlay and is_instance_valid(_options_overlay):
+		_options_overlay.queue_free()
+	_options_overlay = null
 
 func _close_pause() -> void:
 	if _pause_overlay and is_instance_valid(_pause_overlay):
@@ -231,7 +368,8 @@ func _close_pause() -> void:
 
 func _quit_to_menu() -> void:
 	get_tree().paused = false
-	GameManager.reset_game()
+	SoundManager.stop_ambient()
+	GameManager.return_to_menu()
 	get_tree().change_scene_to_file("res://Scenes/main_menu.tscn")
 
 # ============================================================
@@ -280,11 +418,16 @@ func _load_level() -> void:
 	var spawn_b := Vector2(level["spawn_bog"][0], level["spawn_bog"][1])
 
 	if has_checkpoint:
+		print("[DEBUG] Loading checkpoint: Rob=", checkpoint_rob, ", Bog=", checkpoint_bog)
 		rob.global_position = checkpoint_rob
 		bog.global_position = checkpoint_bog
 	else:
+		print("[DEBUG] Loading start spawn: Rob=", spawn_r, ", Bog=", spawn_b)
 		rob.global_position = spawn_r
 		bog.global_position = spawn_b
+
+	rob.force_update_transform()
+	bog.force_update_transform()
 
 	rob.velocity = Vector2.ZERO
 	bog.velocity = Vector2.ZERO
@@ -346,13 +489,19 @@ func _load_level() -> void:
 	for bb in level.get("breakable_blocks", []):
 		_create_breakable_block(bb[0], bb[1], bb[2], bb[3])
 		
+	for k in level.get("keys", []):
+		_create_key(k[0], k[1], k[2])
+		
+	for lk in level.get("locks", []):
+		_create_lock(lk[0], lk[1], lk[2], lk[3], lk[4])
+		
 	# Jump Pads (Molas) e Speed Pads (Aceleradores)
 	for jp in level.get("jump_pads", []):
 		_create_jump_pad(jp[0], jp[1], jp[2], jp[3])
 	for sp in level.get("speed_pads", []):
 		_create_speed_pad(sp[0], sp[1], sp[2], sp[3], sp[4])
 
-	# Puzzles: Switches (Botões), Gates (Portões) e Crumbling Platforms (Instáveis)
+	# Puzzles: Switches (Botões), Gates (Portões), Crumbling Platforms (Instáveis) e Levers (Alavancas)
 	for sw in level.get("switches", []):
 		var is_heavy := false
 		if sw.size() > 5:
@@ -362,6 +511,15 @@ func _load_level() -> void:
 		_create_gate(gt[0], gt[1], gt[2], gt[3], gt[4])
 	for cp in level.get("crumbling_platforms", []):
 		_create_crumbling_platform(cp[0], cp[1], cp[2], cp[3])
+	for lv in level.get("levers", []):
+		_create_lever(lv[0], lv[1], lv[2], lv[3], lv[4])
+	for se in level.get("secret_exits", []):
+		_create_secret_exit(se[0], se[1], se[2], se[3], se[4])
+	for ls in level.get("light_switches", []):
+		_create_light_switch(ls[0], ls[1], ls[2], ls[3])
+
+	if level.get("dark_mode", false):
+		_setup_dark_mode()
 
 	# Snow effect
 	if _snow_particles and is_instance_valid(_snow_particles):
@@ -394,6 +552,10 @@ func _load_level() -> void:
 		_create_star(stars[i][0], stars[i][1], idx, i)
 	hud.update_stars(GameManager.stars_collected, GameManager.stars_total_game)
 
+	var spiders: Array = level.get("spiders", [])
+	for s in spiders:
+		_create_spider(s[0], s[1], s[2], s[3])
+
 	loopy_start = Vector2(level["loopy_start"][0], level["loopy_start"][1])
 	loopy_end   = Vector2(level["loopy_end"][0],   level["loopy_end"][1])
 	_create_loopy(loopy_start)
@@ -404,6 +566,14 @@ func _load_level() -> void:
 	hud.update_deaths(GameManager.deaths)
 	hud.show_intro(level, idx)
 	hud.start_fade(-1, Callable())
+	
+	# Inicia som ambiente da fase
+	var ambient: String = level.get("ambient_type", "")
+	if ambient != "":
+		SoundManager.play_ambient(ambient)
+		
+	# Ajusta som da música se for local fechado
+	SoundManager.set_muffled_audio(level.get("is_indoor", false))
 
 func _clear_level() -> void:
 	if _snow_particles and is_instance_valid(_snow_particles):
@@ -422,6 +592,13 @@ func _clear_level() -> void:
 	_pushable_blocks.clear()
 	_gates.clear()
 	_switches.clear()
+	_collected_keys.clear()
+	for light in _character_lights:
+		if is_instance_valid(light):
+			light.queue_free()
+	_character_lights.clear()
+	_canvas_mod = null
+	hud.update_keys(0)
 	for node in level_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -553,6 +730,79 @@ func _update_moving_platforms(delta: float) -> void:
 						character.set_meta("platform_velocity", platform_velocity)
 
 # ============================================================
+# SPIDERS (ARANHAS)
+# ============================================================
+
+func _create_spider(x: float, y: float, range_y: float, speed: float) -> void:
+	var area = Area2D.new()
+	area.position = Vector2(x, y)
+	
+	var shape = CollisionShape2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = 16.0
+	shape.shape = circle
+	area.add_child(shape)
+	
+	# Fio de teia (cresce para cima)
+	var thread = ColorRect.new()
+	thread.size = Vector2(2, 2000)
+	thread.position = Vector2(-1, -2000)
+	thread.color = Color(0.8, 0.8, 0.8, 0.5)
+	area.add_child(thread)
+	
+	# Corpo da aranha
+	var visual = Node2D.new()
+	area.add_child(visual)
+	
+	var body = ColorRect.new()
+	body.size = Vector2(24, 24)
+	body.position = Vector2(-12, -12)
+	body.color = Color(0.05, 0.05, 0.08)
+	visual.add_child(body)
+	
+	var eye1 = ColorRect.new()
+	eye1.size = Vector2(4, 4)
+	eye1.position = Vector2(-6, 2)
+	eye1.color = Color(0.9, 0.1, 0.1)
+	visual.add_child(eye1)
+	
+	var eye2 = ColorRect.new()
+	eye2.size = Vector2(4, 4)
+	eye2.position = Vector2(2, 2)
+	eye2.color = Color(0.9, 0.1, 0.1)
+	visual.add_child(eye2)
+	
+	# Pernas
+	for leg_y in [-6, 0, 6]:
+		var legL = ColorRect.new()
+		legL.size = Vector2(8, 2)
+		legL.position = Vector2(-20, leg_y)
+		legL.color = Color(0.05, 0.05, 0.08)
+		visual.add_child(legL)
+		
+		var legR = ColorRect.new()
+		legR.size = Vector2(8, 2)
+		legR.position = Vector2(12, leg_y)
+		legR.color = Color(0.05, 0.05, 0.08)
+		visual.add_child(legR)
+	
+	area.collision_layer = 0
+	area.collision_mask = 1
+	
+	var script = GDScript.new()
+	script.source_code = "extends Area2D\n\nvar main_scene: Node2D\n\nfunc _ready():\n\tmain_scene = get_parent()\n\tbody_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n\tif (body == main_scene.rob or body == main_scene.bog):\n\t\tmain_scene._on_player_died()\n"
+	script.reload()
+	area.set_script(script)
+	
+	var duration = range_y / speed
+	var tw = area.create_tween().set_loops()
+	tw.tween_property(area, "position:y", y + range_y, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(area, "position:y", y, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	add_child(area)
+	level_nodes.append(area)
+
+# ============================================================
 # CHECKPOINTS
 # ============================================================
 
@@ -590,15 +840,20 @@ func _create_checkpoint(x: float, y: float) -> void:
 func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 	if body != rob and body != bog:
 		return
+	if hud.fading or hud.showing_intro or is_exiting or hud.transitioning:
+		return
 	if area.get_meta("activated", false):
 		return
 	area.set_meta("activated", true)
 	SoundManager.play_sfx("collect")
 
 	# Ambos os personagens ressurgem ao lado da bandeira (não onde estavam ao tocar)
-	checkpoint_rob = Vector2(area.global_position.x - 28, body.global_position.y)
-	checkpoint_bog = Vector2(area.global_position.x + 28, body.global_position.y)
+	# Limita o Y para garantir que nunca renasçam abaixo do abismo caso o gatilho ative atrasado durante quedas
+	var safe_y: float = area.global_position.y - 35.0
+	checkpoint_rob = Vector2(area.global_position.x - 28, safe_y)
+	checkpoint_bog = Vector2(area.global_position.x + 28, safe_y)
 	has_checkpoint = true
+	print("[DEBUG] Checkpoint entered! flag_y=", area.global_position.y, ", safe_y=", safe_y, ", checkpoint_rob=", checkpoint_rob, ", checkpoint_bog=", checkpoint_bog)
 
 	var flag := area.get_node_or_null("Flag")
 	if flag:
@@ -653,7 +908,7 @@ func _create_hazard(x: float, y: float, w: float, h: float) -> void:
 	level_nodes.append(static_body)
 
 func _on_hazard_entered(body: Node) -> void:
-	if (body == rob or body == bog) and not hud.fading and not hud.showing_intro:
+	if (body == rob or body == bog) and not body.is_dead and not hud.fading and not hud.showing_intro and not is_exiting and not hud.transitioning:
 		_on_player_died()
 
 # ============================================================
@@ -661,45 +916,25 @@ func _on_hazard_entered(body: Node) -> void:
 # ============================================================
 
 func _create_level_exit(pos: Vector2) -> void:
-	var area := Area2D.new()
+	var level_exit_script = load("res://Scripts/level_exit.gd")
+	var area = level_exit_script.new()
 	area.position = pos
 	area.name     = "LevelExit"
 
-	var shape := CollisionShape2D.new()
-	var rect  := RectangleShape2D.new()
-	rect.size   = Vector2(40, 60)
-	shape.shape = rect
-	area.add_child(shape)
-
-	var glow := ColorRect.new()
-	glow.size     = Vector2(48, 68)
-	glow.position = Vector2(-24, -34)
-	glow.color    = Color(0.3, 1.0, 0.4, 0.22)
-	area.add_child(glow)
-
-	var visual := ColorRect.new()
-	visual.size     = Vector2(40, 60)
-	visual.position = Vector2(-20, -30)
-	visual.color    = Color(0.2, 0.9, 0.3, 0.85)
-	area.add_child(visual)
-
-	var arrow := Label.new()
-	arrow.text     = ">>>"
-	arrow.position = Vector2(-18, -50)
-	arrow.add_theme_font_size_override("font_size", 20)
-	arrow.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4))
-	area.add_child(arrow)
-
-	area.collision_layer = 0
-	area.collision_mask  = 1
 	area.body_entered.connect(_on_exit_body_entered)
 
 	add_child(area)
 	level_nodes.append(area)
 
 func _on_exit_body_entered(body: Node) -> void:
-	if body == current_character and not hud.fading and not is_exiting:
+	if body == current_character and not hud.fading and not is_exiting and not hud.transitioning:
 		is_exiting = true
+		if rob:
+			rob.velocity = Vector2.ZERO
+			rob.process_mode = Node.PROCESS_MODE_DISABLED
+		if bog:
+			bog.velocity = Vector2.ZERO
+			bog.process_mode = Node.PROCESS_MODE_DISABLED
 		SoundManager.play_sfx("collect")
 		
 		# Efeito de câmera lenta e zoom usando Tween (ignora escala de tempo)
@@ -1019,16 +1254,17 @@ func _switch_character() -> void:
 # ============================================================
 
 func _check_death() -> void:
-	if hud.fading or hud.showing_intro or is_exiting:
+	if hud.fading or hud.showing_intro or is_exiting or hud.transitioning:
 		return
 
-	if current_character.global_position.y > DEATH_Y:
+	if not current_character.is_dead and current_character.global_position.y > DEATH_Y:
+		print("[DEBUG] current_character died! pos=", current_character.global_position)
 		_on_player_died()
 		return
 
 	var other := bog if current_character == rob else rob
 	
-	if other.global_position.y > DEATH_Y and not other.is_dead:
+	if not other.is_dead and other.global_position.y > DEATH_Y:
 		_on_player_died()
 		return
 
@@ -1038,6 +1274,10 @@ func _on_player_died() -> void:
 	# antes do pause efetivar).
 	if _death_overlay and is_instance_valid(_death_overlay):
 		return
+	if rob:
+		rob.die()
+	if bog:
+		bog.die()
 	SoundManager.play_sfx("death")
 	GameManager.register_death()
 	hud.update_deaths(GameManager.deaths)
@@ -1056,32 +1296,41 @@ func _show_death_screen() -> void:
 	get_tree().paused = true
 
 	_death_overlay = Control.new()
-	_death_overlay.size = Vector2(1152, 648)
+	_death_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_death_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	hud.add_child(_death_overlay)
 
 	var dim := ColorRect.new()
-	dim.size  = Vector2(1152, 648)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.color = Color(0.18, 0.02, 0.05, 0.86)
 	_death_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_death_overlay.add_child(center_box)
 
 	var box := ColorRect.new()
 	box.position = Vector2(266, 134)
 	box.size     = Vector2(620, 380)
 	box.color    = Color(0.08, 0.05, 0.07, 0.97)
-	_death_overlay.add_child(box)
+	center_box.add_child(box)
 
 	var border_top := ColorRect.new()
 	border_top.position = Vector2(266, 134)
 	border_top.size     = Vector2(620, 6)
 	border_top.color    = Color(0.95, 0.25, 0.35)
-	_death_overlay.add_child(border_top)
+	_death_overlay.get_node("CenterBox").add_child(border_top)
 
 	var border_bot := ColorRect.new()
 	border_bot.position = Vector2(266, 508)
 	border_bot.size     = Vector2(620, 6)
 	border_bot.color    = Color(0.50, 0.15, 0.20)
-	_death_overlay.add_child(border_bot)
+	_death_overlay.get_node("CenterBox").add_child(border_bot)
 
 	var title := Label.new()
 	title.text     = "💀  VOCÊ MORREU  💀"
@@ -1090,7 +1339,7 @@ func _show_death_screen() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 46)
 	title.add_theme_color_override("font_color", Color(1.0, 0.32, 0.42))
-	_death_overlay.add_child(title)
+	_death_overlay.get_node("CenterBox").add_child(title)
 
 	var sub_msg := Label.new()
 	sub_msg.text = "Sem limite de vidas — tente quantas vezes precisar."
@@ -1099,7 +1348,7 @@ func _show_death_screen() -> void:
 	sub_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_msg.add_theme_font_size_override("font_size", 14)
 	sub_msg.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
-	_death_overlay.add_child(sub_msg)
+	_death_overlay.get_node("CenterBox").add_child(sub_msg)
 
 	var stats := Label.new()
 	stats.text = "★  %d / %d        💀  %d morte%s" % [
@@ -1111,7 +1360,7 @@ func _show_death_screen() -> void:
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stats.add_theme_font_size_override("font_size", 18)
 	stats.add_theme_color_override("font_color", Color(0.95, 0.85, 0.40))
-	_death_overlay.add_child(stats)
+	_death_overlay.get_node("CenterBox").add_child(stats)
 
 	# --- BOTÃO DE TENTAR NOVAMENTE ---
 	var btn_retry := Button.new()
@@ -1119,7 +1368,7 @@ func _show_death_screen() -> void:
 	btn_retry.size     = Vector2(500, 58) # Altura levemente maior para os 2 textos
 	btn_retry.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_retry.pressed.connect(_retry_from_death)
-	_death_overlay.add_child(btn_retry)
+	_death_overlay.get_node("CenterBox").add_child(btn_retry)
 	
 	# Texto Principal do Botão Retry
 	var lbl_retry_main := Label.new()
@@ -1151,7 +1400,7 @@ func _show_death_screen() -> void:
 	# --- BOTÃO DE VOLTAR AO MENU ---
 	var btn_menu := Button.new()
 	btn_menu.position = Vector2(326, 408)
-	btn_menu.size     = Vector2(500, 58) # Mesma altura do botão anterior para padrão
+	btn_menu.size     = Vector2(500, 58)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_menu.pressed.connect(_quit_to_menu_from_death)
 	_death_overlay.add_child(btn_menu)
@@ -1195,25 +1444,69 @@ func _quit_to_menu_from_death() -> void:
 		_death_overlay.queue_free()
 	_death_overlay = null
 	get_tree().paused = false
-	GameManager.reset_game()
+	SoundManager.stop_ambient()
+	GameManager.return_to_menu()
 	get_tree().change_scene_to_file("res://Scenes/main_menu.tscn")
 
 func _go_to_menu() -> void:
+	SoundManager.stop_ambient()
 	GameManager.reset_game()
 	get_tree().change_scene_to_file("res://Scenes/main_menu.tscn")
+
+# ============================================================
+# SISTEMA DE DIÁLOGOS
+# ============================================================
+
+func _setup_dialogue_system() -> void:
+	_dialogue_system = DialogueSystem.new()
+	add_child(_dialogue_system)
+	_dialogue_system.dialogue_finished.connect(_on_dialogue_finished)
+
+func _check_dialogue_trigger() -> void:
+	# Dispara diálogos quando a intro da fase terminar
+	if hud.showing_intro or hud.fading or is_exiting or hud.transitioning:
+		return
+	if _dialogue_system and _dialogue_system.is_active():
+		return
+	if GameManager.current_level_index >= GameManager.get_level_count():
+		return
+	if _dialogue_shown_for_level == GameManager.current_level_index:
+		return
+	
+	var level := GameManager.get_current_level()
+	var dialogues: Array = level.get("dialogues", [])
+	if dialogues.is_empty():
+		_dialogue_shown_for_level = GameManager.current_level_index
+		return
+	
+	_dialogue_shown_for_level = GameManager.current_level_index
+	_dialogue_system.start_dialogue(dialogues, rob, bog, camera)
+
+func _on_dialogue_finished() -> void:
+	# Diálogo concluído — jogo prossegue normalmente
+	pass
 
 # ============================================================
 # COMPLETAR FASE
 # ============================================================
 
 func _complete_level() -> void:
+	var current_level_data := GameManager.get_current_level()
+	var from_name: String = current_level_data.get("name", "")
+	
 	if GameManager.next_level():
-		hud.start_fade(1, _load_next_level)
+		var next_level_data := GameManager.get_current_level()
+		var to_name: String = next_level_data.get("name", "")
+		# Usa transição cinematográfica com barras
+		SoundManager.stop_ambient()
+		hud.start_level_transition(from_name, to_name, _load_next_level)
 	else:
+		SoundManager.stop_ambient()
 		_show_victory()
 
 func _load_next_level() -> void:
 	has_checkpoint = false
+	_dialogue_shown_for_level = -1  # Permite diálogo na nova fase
 	_setup_characters()
 	_load_level()
 
@@ -1226,10 +1519,23 @@ func _show_victory() -> void:
 		return
 
 	SoundManager.play_sfx("victory")
-	victory_overlay       = ColorRect.new()
-	victory_overlay.size  = Vector2(1152, 648)
-	victory_overlay.color = Color(0.02, 0.04, 0.08, 0.94)
+	victory_overlay       = Control.new()
+	victory_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud.add_child(victory_overlay)
+
+	var dim = ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.02, 0.04, 0.08, 0.94)
+	victory_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	victory_overlay.add_child(center_box)
 
 	_run_victory_sequence()
 
@@ -1242,7 +1548,7 @@ func _add_victory_label(txt: String, y: float, fs: int, col: Color) -> void:
 	lbl.add_theme_font_size_override("font_size", fs)
 	lbl.add_theme_color_override("font_color", col)
 	lbl.modulate.a = 0.0
-	victory_overlay.add_child(lbl)
+	victory_overlay.get_node("CenterBox").add_child(lbl)
 	var tw := create_tween()
 	tw.tween_property(lbl, "modulate:a", 1.0, 0.55)
 
@@ -1352,17 +1658,17 @@ func _add_victory_sky(tier: int = 0) -> void:
 	sky.position = Vector2(0, 230)
 	sky.size     = Vector2(1152, 80)
 	sky.color    = sky_col
-	victory_overlay.add_child(sky)
+	victory_overlay.get_node("CenterBox").add_child(sky)
 	var dusk := ColorRect.new()
 	dusk.position = Vector2(0, 310)
 	dusk.size     = Vector2(1152, 80)
 	dusk.color    = dusk_col
-	victory_overlay.add_child(dusk)
+	victory_overlay.get_node("CenterBox").add_child(dusk)
 	var glow := ColorRect.new()
 	glow.position = Vector2(0, 390)
 	glow.size     = Vector2(1152, 80)
 	glow.color    = glow_col
-	victory_overlay.add_child(glow)
+	victory_overlay.get_node("CenterBox").add_child(glow)
 
 	if tier == 3:
 		for i in range(40):
@@ -1372,7 +1678,7 @@ func _add_victory_sky(tier: int = 0) -> void:
 			twk.position = Vector2(sx, sy)
 			twk.size     = Vector2(3, 3)
 			twk.color    = Color(1.0, 0.95, 0.70)
-			victory_overlay.add_child(twk)
+			victory_overlay.get_node("CenterBox").add_child(twk)
 			var tw := create_tween().set_loops()
 			tw.tween_property(twk, "modulate:a", 0.3, 0.6 + (i % 5) * 0.15)
 			tw.tween_property(twk, "modulate:a", 1.0, 0.6 + (i % 5) * 0.15)
@@ -1382,7 +1688,7 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	scene.position = Vector2(0, 0)
 	scene.size     = Vector2(1152, 648)
 	scene.modulate.a = 0.0
-	victory_overlay.add_child(scene)
+	victory_overlay.get_node("CenterBox").add_child(scene)
 
 	if tier >= 2:
 		var halo := ColorRect.new()
@@ -1617,7 +1923,7 @@ func spawn_land_particles(pos: Vector2, character_name: String) -> void:
 	_spawn_dust(pos + Vector2(0, 24), color, 12, -20.0)
 	apply_shake(1.5)
 
-func _spawn_dust(pos: Vector2, color: Color, amount: int, vel_y: float) -> void:
+func _spawn_dust(pos: Vector2, color: Color, amount: int, _vel_y: float) -> void:
 	var particles := CPUParticles2D.new()
 	particles.global_position = pos
 	particles.amount = amount
@@ -1639,17 +1945,37 @@ func _spawn_dust(pos: Vector2, color: Color, amount: int, vel_y: float) -> void:
 func _spawn_star_burst_particles(pos: Vector2) -> void:
 	var particles := CPUParticles2D.new()
 	particles.global_position = pos
-	particles.amount = 20
+	particles.amount = 24
 	particles.one_shot = true
 	particles.explosiveness = 0.90
-	particles.lifetime = 0.60
+	particles.lifetime = 0.55
 	particles.spread = 180.0
-	particles.gravity = Vector2(0, 60)
-	particles.initial_velocity_min = 40.0
-	particles.initial_velocity_max = 90.0
-	particles.color = Color(1.00, 0.85, 0.25)
+	particles.gravity = Vector2(0, 25)
+	particles.initial_velocity_min = 50.0
+	particles.initial_velocity_max = 100.0
+	particles.damping_min = 25.0
+	particles.damping_max = 45.0
+	particles.angular_velocity_min = -180.0
+	particles.angular_velocity_max = 180.0
+
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([
+		Color(1.0, 0.98, 0.65, 1.0), # Brilho forte central
+		Color(1.0, 0.85, 0.30, 0.8), # Amarelo ouro
+		Color(1.0, 0.45, 0.10, 0.0)  # Laranja desaparecendo
+	])
+	grad.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	particles.color_ramp = grad
+
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 1.0))
+	curve.add_point(Vector2(0.7, 0.7))
+	curve.add_point(Vector2(1.0, 0.0))
+	particles.scale_amount_curve = curve
+
 	particles.scale_amount_min = 3.0
-	particles.scale_amount_max = 6.0
+	particles.scale_amount_max = 5.0
+
 	add_child(particles)
 	particles.emitting = true
 	particles.finished.connect(particles.queue_free)
@@ -2171,3 +2497,243 @@ func _create_insect_effect() -> void:
 	
 	_insect_particles.scale_amount_min = 1.0
 	_insect_particles.scale_amount_max = 2.0
+
+# ============================================================
+# CHAVES E FECHADURAS
+# ============================================================
+
+func _create_key(lock_id: int, x: float, y: float) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x, y)
+	area.name = "Key_" + str(lock_id)
+	area.set_meta("lock_id", lock_id)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(24, 24)
+	shape.shape = rect
+	area.add_child(shape)
+
+	var visual := Label.new()
+	visual.text = "🔑"
+	visual.position = Vector2(-12, -12)
+	visual.size = Vector2(24, 24)
+	visual.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	visual.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	visual.add_theme_font_size_override("font_size", 20)
+	area.add_child(visual)
+
+	var tw := area.create_tween().set_loops()
+	tw.tween_property(visual, "position:y", -18.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(visual, "position:y", -12.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	area.collision_layer = 0
+	area.collision_mask = 1
+	area.body_entered.connect(_on_key_collected.bind(area))
+
+	add_child(area)
+	level_nodes.append(area)
+
+func _on_key_collected(body: Node, area: Area2D) -> void:
+	if body != current_character and body != rob and body != bog:
+		return
+	if not is_instance_valid(area):
+		return
+		
+	var lock_id: int = area.get_meta("lock_id")
+	if not _collected_keys.has(lock_id):
+		_collected_keys.append(lock_id)
+		hud.update_keys(_collected_keys.size())
+		SoundManager.play_sfx("collect")
+		_spawn_star_burst_particles(area.global_position)
+		
+		var tw := area.create_tween().set_parallel(true)
+		tw.tween_property(area, "scale", Vector2(2.0, 2.0), 0.25)
+		tw.tween_property(area, "modulate:a", 0.0, 0.25)
+		tw.chain().tween_callback(area.queue_free)
+		level_nodes.erase(area)
+
+func _create_lock(lock_id: int, x: float, y: float, w: float, h: float) -> void:
+	var block := StaticBody2D.new()
+	block.position = Vector2(x + w / 2.0, y + h / 2.0)
+	block.collision_layer = 1
+	block.collision_mask = 1
+	block.set_meta("lock_id", lock_id)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	block.add_child(shape)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.40, 0.20, 0.20)
+	visual.name = "Visual"
+	block.add_child(visual)
+
+	var border := ColorRect.new()
+	border.size = Vector2(w, 4)
+	border.position = Vector2(-w / 2.0, -h / 2.0)
+	border.color = Color(0.60, 0.30, 0.30)
+	block.add_child(border)
+
+	var label := Label.new()
+	label.text = "🔒"
+	label.position = Vector2(-w / 2.0, -12)
+	label.size = Vector2(w, 24)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 18)
+	label.name = "LockIcon"
+	block.add_child(label)
+	
+	# Área para detectar toque
+	var area := Area2D.new()
+	var area_shape := CollisionShape2D.new()
+	var area_rect := RectangleShape2D.new()
+	area_rect.size = Vector2(w + 4, h + 4)
+	area_shape.shape = area_rect
+	area.add_child(area_shape)
+	area.collision_layer = 0
+	area.collision_mask = 1
+	block.add_child(area)
+
+	var block_script = GDScript.new()
+	block_script.source_code = "extends StaticBody2D\n\nvar _broken := false\nvar main_scene: Node2D\nvar lock_id: int\n\nfunc _ready():\n	main_scene = get_parent()\n	lock_id = get_meta(\"lock_id\")\n	var area = get_child(4)\n	area.body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if _broken or not (body is CharacterBase):\n		return\n	if main_scene._collected_keys.has(lock_id):\n		open_lock()\n\nfunc open_lock():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.8, 0.7, 0.4), 24, -40.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
+	block_script.reload()
+	block.set_script(block_script)
+
+	add_child(block)
+	level_nodes.append(block)
+
+func _create_lever(gate_id: int, x: float, y: float, w: float, h: float) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	area.name = "Lever_" + str(gate_id)
+	area.set_meta("gate_id", gate_id)
+	area.set_meta("w", w)
+	
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w + 12, h + 12)
+	shape.shape = rect
+	area.add_child(shape)
+
+	var bg := ColorRect.new()
+	bg.size = Vector2(w, h)
+	bg.position = Vector2(-w / 2.0, -h / 2.0)
+	bg.color = Color(0.15, 0.15, 0.20)
+	area.add_child(bg)
+
+	var haste := ColorRect.new()
+	haste.size = Vector2(w / 2.0 - 4, h - 8)
+	haste.position = Vector2(-w / 2.0 + 4, -h / 2.0 + 4)
+	haste.color = Color(0.8, 0.2, 0.2)
+	haste.name = "Haste"
+	area.add_child(haste)
+	
+	var label := Label.new()
+	label.text = "OFF"
+	label.position = Vector2(-w / 2.0, -h / 2.0 - 18)
+	label.size = Vector2(w, 16)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+	label.name = "Label"
+	area.add_child(label)
+
+	area.collision_layer = 0
+	area.collision_mask = 1
+
+	var lever_script = GDScript.new()
+	lever_script.source_code = "extends Area2D\n\nvar _is_on := false\nvar gate_id: int\nvar main_scene: Node2D\nvar haste: ColorRect\nvar label: Label\nvar cooldown := 0.0\nvar w: float\n\nfunc _ready():\n	main_scene = get_parent()\n	gate_id = get_meta(\"gate_id\")\n	w = get_meta(\"w\")\n	haste = get_node(\"Haste\")\n	label = get_node(\"Label\")\n	body_entered.connect(_on_body_entered)\n\nfunc _process(delta):\n	if cooldown > 0:\n		cooldown -= delta\n\nfunc _on_body_entered(body):\n	if not (body is CharacterBase) or cooldown > 0:\n		return\n	cooldown = 0.5\n	_is_on = not _is_on\n	SoundManager.play_sfx(\"switch\")\n	var tw = create_tween()\n	if _is_on:\n		tw.tween_property(haste, \"position:x\", 0.0, 0.15)\n		haste.color = Color(0.2, 0.8, 0.4)\n		label.text = \"ON\"\n		label.add_theme_color_override(\"font_color\", Color(0.4, 1.0, 0.4))\n	else:\n		tw.tween_property(haste, \"position:x\", -w/2.0 + 4.0, 0.15)\n		haste.color = Color(0.8, 0.2, 0.2)\n		label.text = \"OFF\"\n		label.add_theme_color_override(\"font_color\", Color(1.0, 0.4, 0.4))\n	if main_scene and main_scene.has_method(\"_set_gates_active\"):\n		main_scene._set_gates_active(gate_id, _is_on)"
+	lever_script.reload()
+	area.set_script(lever_script)
+
+	add_child(area)
+	level_nodes.append(area)
+
+func _create_secret_exit(x: float, y: float, w: float, h: float, target_name: String) -> void:
+	var area = Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	var shape = CollisionShape2D.new()
+	var rect = RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+	area.set_meta("target_name", target_name)
+	area.collision_layer = 0
+	area.collision_mask = 1
+	
+	var exit_script = GDScript.new()
+	exit_script.source_code = "extends Area2D\n\nvar main_scene: Node2D\nvar target_name: String\n\nfunc _ready():\n	main_scene = get_parent()\n	target_name = get_meta(\"target_name\")\n	body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if (body == main_scene.rob or body == main_scene.bog) and not main_scene.is_exiting and not main_scene.hud.fading and not main_scene.hud.transitioning:\n		main_scene.is_exiting = true\n		if main_scene.rob:\n			main_scene.rob.velocity = Vector2.ZERO\n		if main_scene.bog:\n			main_scene.bog.velocity = Vector2.ZERO\n		SoundManager.play_sfx(\"collect\")\n		var tween := main_scene.create_tween().bind_node(main_scene)\n		tween.set_ignore_time_scale(true)\n		tween.tween_property(Engine, \"time_scale\", 0.2, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)\n		tween.tween_property(main_scene.camera, \"zoom\", Vector2(1.25, 1.25), 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)\n		tween.tween_interval(0.8)\n		tween.tween_callback(func():\n			main_scene.is_exiting = false\n			Engine.time_scale = 1.0\n			var from_name = GameManager.get_current_level().get(\"name\", \"\")\n			if GameManager.goto_level_by_name(target_name):\n				var to_name = GameManager.get_current_level().get(\"name\", \"\")\n				SoundManager.stop_ambient()\n				main_scene.hud.start_level_transition(from_name, to_name, main_scene._load_next_level)\n			else:\n				print(\"[ERROR] Nível secreto não encontrado:\", target_name)\n		)\n"
+	exit_script.reload()
+	area.set_script(exit_script)
+	
+	add_child(area)
+	level_nodes.append(area)
+
+func _setup_dark_mode() -> void:
+	_canvas_mod = CanvasModulate.new()
+	_canvas_mod.color = Color(0.02, 0.02, 0.05)
+	add_child(_canvas_mod)
+	level_nodes.append(_canvas_mod)
+	
+	for character in [rob, bog]:
+		if not is_instance_valid(character):
+			continue
+		var light = PointLight2D.new()
+		var tex = GradientTexture2D.new()
+		tex.fill = GradientTexture2D.FILL_RADIAL
+		tex.fill_from = Vector2(0.5, 0.5)
+		tex.fill_to = Vector2(0.5, 0.0)
+		var grad = Gradient.new()
+		grad.colors = PackedColorArray([Color.WHITE, Color.TRANSPARENT])
+		grad.offsets = PackedFloat32Array([0.0, 1.0])
+		tex.gradient = grad
+		tex.width = 400
+		tex.height = 400
+		light.texture = tex
+		light.color = Color(1.0, 0.95, 0.8)
+		light.energy = 1.0
+		light.blend_mode = Light2D.BLEND_MODE_ADD
+		light.position = Vector2(0, -10)
+		character.add_child(light)
+		_character_lights.append(light)
+		light.set_meta("dynamic_light", true)
+
+func _create_light_switch(x: float, y: float, w: float, h: float) -> void:
+	var area = Area2D.new()
+	area.position = Vector2(x + w / 2.0, y + h / 2.0)
+	var shape = CollisionShape2D.new()
+	var rect = RectangleShape2D.new()
+	rect.size = Vector2(w, h)
+	shape.shape = rect
+	area.add_child(shape)
+	
+	var visual = ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	visual.color = Color(0.1, 0.1, 0.1)
+	visual.name = "SwitchVisual"
+	area.add_child(visual)
+	
+	var btn = ColorRect.new()
+	btn.size = Vector2(w - 8, h - 8)
+	btn.position = Vector2(-w / 2.0 + 4, -h / 2.0 + 4)
+	btn.color = Color(0.8, 0.2, 0.2)
+	btn.name = "BtnVisual"
+	area.add_child(btn)
+	
+	area.collision_layer = 0
+	area.collision_mask = 1
+	
+	var switch_script = GDScript.new()
+	switch_script.source_code = "extends Area2D\n\nvar main_scene: Node2D\nvar activated := false\n\nfunc _ready():\n	main_scene = get_parent()\n	body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if activated:\n		return\n	if (body == main_scene.rob or body == main_scene.bog):\n		activated = true\n		SoundManager.play_sfx(\"switch\")\n		get_node(\"BtnVisual\").color = Color(0.2, 0.8, 0.4)\n		if main_scene._canvas_mod:\n			var tw = main_scene.create_tween()\n			tw.tween_property(main_scene._canvas_mod, \"color\", Color.WHITE, 1.5)\n		for light in main_scene._character_lights:\n			if is_instance_valid(light):\n				var tw2 = main_scene.create_tween()\n				tw2.tween_property(light, \"energy\", 0.0, 1.5)\n"
+	switch_script.reload()
+	area.set_script(switch_script)
+	
+	add_child(area)
+	level_nodes.append(area)
