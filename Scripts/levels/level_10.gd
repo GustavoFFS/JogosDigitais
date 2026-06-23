@@ -14,7 +14,7 @@ static func get_data() -> Dictionary:
 			{"speaker": "Rob", "text": "Ali! Eu vejo o Loopy!"},
 			{"speaker": "Bog", "text": "Última fase... vamos dar tudo!"},
 		],
-		"bg_color":       Color(0.22, 0.11, 0.14),
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/EncontroFinal.png",
 		"bg_size": [8000.0, 1080.0],
 		"platform_color": Color(0.48, 0.20, 0.65),

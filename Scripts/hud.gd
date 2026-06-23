@@ -406,7 +406,7 @@ func _show_help() -> void:
 	btn_close.shortcut = close_shortcut
 
 	_help_overlay.modulate.a = 0.0
-	var tw := create_tween()
+	var tw := _help_overlay.create_tween()
 	tw.tween_property(_help_overlay, "modulate:a", 1.0, 0.25)
 
 func _help_label(txt: String, x: float, y: float, w: float, h: float, fs: int,

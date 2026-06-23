@@ -20,6 +20,7 @@ var ambient_fade_tween: Tween = null
 
 # Filtro BGM
 var bgm_bus_idx: int = -1
+var sfx_bus_idx: int = -1
 var muffle_tween: Tween = null
 var is_muffled: bool = false
 
@@ -33,6 +34,7 @@ func _ready() -> void:
 		generator.mix_rate = sample_rate
 		generator.buffer_length = 1.0 # Buffer de até 1 segundo
 		player.stream = generator
+		player.bus = "SFX"
 		add_child(player)
 		players.append(player)
 		
@@ -50,6 +52,16 @@ func _ready() -> void:
 	else:
 		bgm_bus_idx = existing_idx
 		
+	# Criar Bus SFX
+	var existing_sfx_idx = AudioServer.get_bus_index("SFX")
+	if existing_sfx_idx == -1:
+		sfx_bus_idx = AudioServer.get_bus_count()
+		AudioServer.add_bus(sfx_bus_idx)
+		AudioServer.set_bus_name(sfx_bus_idx, "SFX")
+		AudioServer.set_bus_send(sfx_bus_idx, "Master")
+	else:
+		sfx_bus_idx = existing_sfx_idx
+		
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	bgm_player.bus = "BGM"
@@ -65,8 +77,23 @@ func _ready() -> void:
 	amb_gen.mix_rate = sample_rate
 	amb_gen.buffer_length = 0.5
 	ambient_player.stream = amb_gen
+	ambient_player.bus = "SFX"
 	ambient_player.volume_db = ambient_volume_db
 	add_child(ambient_player)
+
+func set_bus_volume(bus_name: String, linear_vol: float) -> void:
+	var idx = AudioServer.get_bus_index(bus_name)
+	if idx != -1:
+		AudioServer.set_bus_volume_db(idx, linear_to_db(max(linear_vol, 0.0001)))
+		AudioServer.set_bus_mute(idx, linear_vol <= 0.0)
+
+func get_bus_volume(bus_name: String) -> float:
+	var idx = AudioServer.get_bus_index(bus_name)
+	if idx != -1:
+		if AudioServer.is_bus_mute(idx):
+			return 0.0
+		return db_to_linear(AudioServer.get_bus_volume_db(idx))
+	return 1.0
 
 func play_sfx(type: String) -> void:
 	# Acha um player que não esteja tocando

@@ -14,7 +14,7 @@ static func get_data() -> Dictionary:
 			{"speaker": "Bog", "text": "Esses becos são apertados..."},
 			{"speaker": "Rob", "text": "Pense antes de pular, o controle no ar é ruim!"},
 		],
-		"bg_color":       Color(0.06, 0.07, 0.09),
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/BecosEstreitos.png",
 		"bg_size": [8000.0, 1080.0],
 		"platform_color": Color(0.24, 0.26, 0.30),

@@ -16,6 +16,10 @@ var collected_ids:       Dictionary = {}  # chave "idx:starIdx" -> true
 var elapsed_time:        float      = 0.0
 var is_timer_active:     bool       = false
 
+var master_volume:       float      = 1.0
+var bgm_volume:          float      = 1.0
+var sfx_volume:          float      = 1.0
+
 signal level_changed(level_index: int)
 signal state_changed(new_state: GameState)
 signal deaths_changed(total: int)
@@ -121,7 +125,10 @@ func save_game() -> void:
 		"settings": {
 			"window_mode": DisplayServer.window_get_mode(),
 			"window_size_x": DisplayServer.window_get_size().x,
-			"window_size_y": DisplayServer.window_get_size().y
+			"window_size_y": DisplayServer.window_get_size().y,
+			"master_volume": master_volume,
+			"bgm_volume": bgm_volume,
+			"sfx_volume": sfx_volume
 		}
 	}
 	var file = FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
@@ -152,6 +159,13 @@ func load_game() -> void:
 				
 			if data.has("settings"):
 				var st = data["settings"]
+				master_volume = float(st.get("master_volume", 1.0))
+				bgm_volume = float(st.get("bgm_volume", 1.0))
+				sfx_volume = float(st.get("sfx_volume", 1.0))
+				SoundManager.set_bus_volume("Master", master_volume)
+				SoundManager.set_bus_volume("BGM", bgm_volume)
+				SoundManager.set_bus_volume("SFX", sfx_volume)
+				
 				var mode = int(st.get("window_mode", DisplayServer.WINDOW_MODE_WINDOWED))
 				DisplayServer.window_set_mode(mode)
 				if mode != DisplayServer.WINDOW_MODE_FULLSCREEN and mode != DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:

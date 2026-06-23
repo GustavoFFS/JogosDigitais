@@ -232,7 +232,7 @@ func _open_pause() -> void:
 	_pause_overlay.get_node("CenterBox").add_child(btn_help)
 
 	var btn_options := Button.new()
-	btn_options.text = "Opções de Tela"
+	btn_options.text = "Opções"
 	btn_options.position = Vector2(416, 364)
 	btn_options.size     = Vector2(320, 44)
 	btn_options.add_theme_font_size_override("font_size", 20)
@@ -288,27 +288,27 @@ func _show_options_menu() -> void:
 	_options_overlay.add_child(center_box)
 
 	var box := ColorRect.new()
-	box.position = Vector2(326, 120)
-	box.size     = Vector2(500, 400)
+	box.position = Vector2(326, 50)
+	box.size     = Vector2(500, 540)
 	box.color    = Color(0.08, 0.10, 0.16, 0.98)
 	center_box.add_child(box)
 
 	var top := ColorRect.new()
-	top.position = Vector2(326, 120)
+	top.position = Vector2(326, 50)
 	top.size     = Vector2(500, 4)
 	top.color    = Color(0.40, 0.75, 1.00, 0.9)
 	center_box.add_child(top)
 
 	var title := Label.new()
 	title.text = "TAMANHO DA TELA"
-	title.position = Vector2(326, 140)
+	title.position = Vector2(326, 70)
 	title.size = Vector2(500, 30)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
 	_options_overlay.get_node("CenterBox").add_child(title)
 
-	var y_pos = 190
+	var y_pos = 110
 	var resolutions = [
 		{"name": "1152 x 648 (Janela Padrão)", "w": 1152, "h": 648},
 		{"name": "1280 x 720 (Janela HD)", "w": 1280, "h": 720},
@@ -345,10 +345,50 @@ func _show_options_menu() -> void:
 		GameManager.save_game()
 	)
 	_options_overlay.get_node("CenterBox").add_child(btn_full)
+	
+	var title_audio := Label.new()
+	title_audio.text = "ÁUDIO"
+	title_audio.position = Vector2(326, 320)
+	title_audio.size = Vector2(500, 30)
+	title_audio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_audio.add_theme_font_size_override("font_size", 24)
+	title_audio.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	_options_overlay.get_node("CenterBox").add_child(title_audio)
+
+	var audio_configs = [
+		{"name": "Volume Geral", "val": GameManager.master_volume, "bus": "Master", "var": "master_volume"},
+		{"name": "Música", "val": GameManager.bgm_volume, "bus": "BGM", "var": "bgm_volume"},
+		{"name": "Efeitos", "val": GameManager.sfx_volume, "bus": "SFX", "var": "sfx_volume"}
+	]
+	
+	var a_y = 370
+	for cfg in audio_configs:
+		var lbl = Label.new()
+		lbl.text = cfg["name"]
+		lbl.position = Vector2(376, a_y)
+		lbl.size = Vector2(150, 30)
+		lbl.add_theme_font_size_override("font_size", 16)
+		_options_overlay.get_node("CenterBox").add_child(lbl)
+		
+		var slider = HSlider.new()
+		slider.position = Vector2(536, a_y + 4)
+		slider.size = Vector2(240, 20)
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = cfg["val"]
+		slider.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+		slider.value_changed.connect(func(v: float):
+			GameManager.set(cfg["var"], v)
+			SoundManager.set_bus_volume(cfg["bus"], v)
+			GameManager.save_game()
+		)
+		_options_overlay.get_node("CenterBox").add_child(slider)
+		a_y += 40
 
 	var btn_close := Button.new()
 	btn_close.text     = "Voltar"
-	btn_close.position = Vector2(376, 440)
+	btn_close.position = Vector2(376, 520)
 	btn_close.size     = Vector2(400, 42)
 	btn_close.add_theme_font_size_override("font_size", 18)
 	btn_close.process_mode = Node.PROCESS_MODE_WHEN_PAUSED

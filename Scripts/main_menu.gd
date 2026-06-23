@@ -112,12 +112,20 @@ func _build_ui() -> void:
 	_setup_button_sounds(tips_button)
 
 	var options_button := Button.new()
-	options_button.text = "Opções de Tela"
+	options_button.text = "Opções"
 	options_button.custom_minimum_size = Vector2(300, 45)
 	options_button.add_theme_font_size_override("font_size", 20)
 	options_button.pressed.connect(_show_options_menu)
 	btn_box.add_child(options_button)
 	_setup_button_sounds(options_button)
+
+	var credits_button := Button.new()
+	credits_button.text = "Créditos"
+	credits_button.custom_minimum_size = Vector2(300, 45)
+	credits_button.add_theme_font_size_override("font_size", 20)
+	credits_button.pressed.connect(_show_credits_menu)
+	btn_box.add_child(credits_button)
+	_setup_button_sounds(credits_button)
 
 	quit_button = Button.new()
 	quit_button.text = "Sair"
@@ -293,27 +301,27 @@ func _show_options_menu() -> void:
 	_options_overlay.add_child(center_box)
 
 	var box := ColorRect.new()
-	box.position = Vector2(326, 120)
-	box.size     = Vector2(500, 400)
+	box.position = Vector2(326, 50)
+	box.size     = Vector2(500, 540)
 	box.color    = Color(0.08, 0.10, 0.16, 0.98)
 	center_box.add_child(box)
 
 	var top := ColorRect.new()
-	top.position = Vector2(326, 120)
+	top.position = Vector2(326, 50)
 	top.size     = Vector2(500, 4)
 	top.color    = Color(0.40, 0.75, 1.00, 0.9)
 	center_box.add_child(top)
 
 	var title := Label.new()
 	title.text = "TAMANHO DA TELA"
-	title.position = Vector2(326, 140)
+	title.position = Vector2(326, 70)
 	title.size = Vector2(500, 30)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
 	center_box.add_child(title)
 
-	var y_pos = 190
+	var y_pos = 110
 	var resolutions = [
 		{"name": "1152 x 648 (Janela Padrão)", "w": 1152, "h": 648},
 		{"name": "1280 x 720 (Janela HD)", "w": 1280, "h": 720},
@@ -351,10 +359,49 @@ func _show_options_menu() -> void:
 	)
 	_options_overlay.get_node("CenterBox").add_child(btn_full)
 	_setup_button_sounds(btn_full)
+	
+	var title_audio := Label.new()
+	title_audio.text = "ÁUDIO"
+	title_audio.position = Vector2(326, 320)
+	title_audio.size = Vector2(500, 30)
+	title_audio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_audio.add_theme_font_size_override("font_size", 24)
+	title_audio.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	_options_overlay.get_node("CenterBox").add_child(title_audio)
+
+	var audio_configs = [
+		{"name": "Volume Geral", "val": GameManager.master_volume, "bus": "Master", "var": "master_volume"},
+		{"name": "Música", "val": GameManager.bgm_volume, "bus": "BGM", "var": "bgm_volume"},
+		{"name": "Efeitos", "val": GameManager.sfx_volume, "bus": "SFX", "var": "sfx_volume"}
+	]
+	
+	var a_y = 370
+	for cfg in audio_configs:
+		var lbl = Label.new()
+		lbl.text = cfg["name"]
+		lbl.position = Vector2(376, a_y)
+		lbl.size = Vector2(150, 30)
+		lbl.add_theme_font_size_override("font_size", 16)
+		_options_overlay.get_node("CenterBox").add_child(lbl)
+		
+		var slider = HSlider.new()
+		slider.position = Vector2(536, a_y + 4)
+		slider.size = Vector2(240, 20)
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = cfg["val"]
+		slider.value_changed.connect(func(v: float):
+			GameManager.set(cfg["var"], v)
+			SoundManager.set_bus_volume(cfg["bus"], v)
+			GameManager.save_game()
+		)
+		_options_overlay.get_node("CenterBox").add_child(slider)
+		a_y += 40
 
 	var btn_close := Button.new()
 	btn_close.text     = "Voltar"
-	btn_close.position = Vector2(376, 440)
+	btn_close.position = Vector2(376, 520)
 	btn_close.size     = Vector2(400, 42)
 	btn_close.add_theme_font_size_override("font_size", 18)
 	btn_close.pressed.connect(_close_options_menu)
@@ -365,6 +412,91 @@ func _close_options_menu() -> void:
 	if _options_overlay and is_instance_valid(_options_overlay):
 		_options_overlay.queue_free()
 	_options_overlay = null
+
+# ============================================================
+# CRÉDITOS
+# ============================================================
+
+var _credits_overlay: Control = null
+
+func _show_credits_menu() -> void:
+	if _credits_overlay and is_instance_valid(_credits_overlay):
+		return
+
+	_credits_overlay = Control.new()
+	_credits_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_credits_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.82)
+	_credits_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_credits_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(226, 70)
+	box.size     = Vector2(700, 500)
+	box.color    = Color(0.08, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var top := ColorRect.new()
+	top.position = Vector2(226, 70)
+	top.size     = Vector2(700, 4)
+	top.color    = Color(0.40, 0.75, 1.00, 0.9)
+	center_box.add_child(top)
+
+	_credits_lbl("CRÉDITOS", 226, 90, 700, 30, 26, Color(1.0, 0.85, 0.30), true)
+	
+	_credits_lbl("Desenvolvedores:", 226, 150, 700, 20, 20, Color(0.50, 0.88, 0.55), true)
+	_credits_lbl("Alunos de Engenharia de Computação - UNIFEI Campus Itabira", 226, 180, 700, 40, 16, Color(0.60, 0.65, 0.78), true)
+	
+	var devs = [
+		"FREDERICO PIRES DE MORAES GOMES",
+		"GUSTAVO FELIPE FERREIRA SOARES",
+		"MATHEUS LUCAS TAVARES BUENO",
+		"ROBSON DIAS CARVALHO SOARES"
+	]
+	
+	var y = 220
+	for dev in devs:
+		_credits_lbl("• " + dev, 226, y, 700, 20, 18, Color(0.88, 0.90, 0.98), true)
+		y += 30
+		
+	_credits_lbl("Professor Orientador:", 226, 360, 700, 20, 20, Color(0.50, 0.88, 0.55), true)
+	_credits_lbl("WENDELL FIORAVANTE DA SILVA DINIZ", 226, 390, 700, 20, 18, Color(0.88, 0.90, 0.98), true)
+
+	var btn_close := Button.new()
+	btn_close.text     = "Voltar"
+	btn_close.position = Vector2(376, 480)
+	btn_close.size     = Vector2(400, 42)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.pressed.connect(_close_credits_menu)
+	center_box.add_child(btn_close)
+	_setup_button_sounds(btn_close)
+
+func _credits_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int, col: Color, center: bool = false) -> void:
+	var l := Label.new()
+	l.text     = txt
+	l.position = Vector2(x, y)
+	l.size     = Vector2(w, h)
+	if center:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", fs)
+	l.add_theme_color_override("font_color", col)
+	_credits_overlay.get_node("CenterBox").add_child(l)
+
+func _close_credits_menu() -> void:
+	if _credits_overlay and is_instance_valid(_credits_overlay):
+		_credits_overlay.queue_free()
+	_credits_overlay = null
 
 func _start_game() -> void:
 	_newspaper_visible = false
