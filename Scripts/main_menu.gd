@@ -119,6 +119,14 @@ func _build_ui() -> void:
 	btn_box.add_child(options_button)
 	_setup_button_sounds(options_button)
 
+	var credits_button := Button.new()
+	credits_button.text = "Créditos"
+	credits_button.custom_minimum_size = Vector2(300, 45)
+	credits_button.add_theme_font_size_override("font_size", 20)
+	credits_button.pressed.connect(_show_credits_menu)
+	btn_box.add_child(credits_button)
+	_setup_button_sounds(credits_button)
+
 	quit_button = Button.new()
 	quit_button.text = "Sair"
 	quit_button.custom_minimum_size = Vector2(300, 45)
@@ -404,6 +412,91 @@ func _close_options_menu() -> void:
 	if _options_overlay and is_instance_valid(_options_overlay):
 		_options_overlay.queue_free()
 	_options_overlay = null
+
+# ============================================================
+# CRÉDITOS
+# ============================================================
+
+var _credits_overlay: Control = null
+
+func _show_credits_menu() -> void:
+	if _credits_overlay and is_instance_valid(_credits_overlay):
+		return
+
+	_credits_overlay = Control.new()
+	_credits_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_credits_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.82)
+	_credits_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.name = "CenterBox"
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_credits_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(226, 70)
+	box.size     = Vector2(700, 500)
+	box.color    = Color(0.08, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var top := ColorRect.new()
+	top.position = Vector2(226, 70)
+	top.size     = Vector2(700, 4)
+	top.color    = Color(0.40, 0.75, 1.00, 0.9)
+	center_box.add_child(top)
+
+	_credits_lbl("CRÉDITOS", 226, 90, 700, 30, 26, Color(1.0, 0.85, 0.30), true)
+	
+	_credits_lbl("Desenvolvedores:", 226, 150, 700, 20, 20, Color(0.50, 0.88, 0.55), true)
+	_credits_lbl("Alunos de Engenharia de Computação - UNIFEI Campus Itabira", 226, 180, 700, 40, 16, Color(0.60, 0.65, 0.78), true)
+	
+	var devs = [
+		"FREDERICO PIRES DE MORAES GOMES",
+		"GUSTAVO FELIPE FERREIRA SOARES",
+		"MATHEUS LUCAS TAVARES BUENO",
+		"ROBSON DIAS CARVALHO SOARES"
+	]
+	
+	var y = 220
+	for dev in devs:
+		_credits_lbl("• " + dev, 226, y, 700, 20, 18, Color(0.88, 0.90, 0.98), true)
+		y += 30
+		
+	_credits_lbl("Professor Orientador:", 226, 360, 700, 20, 20, Color(0.50, 0.88, 0.55), true)
+	_credits_lbl("WENDELL FIORAVANTE DA SILVA DINIZ", 226, 390, 700, 20, 18, Color(0.88, 0.90, 0.98), true)
+
+	var btn_close := Button.new()
+	btn_close.text     = "Voltar"
+	btn_close.position = Vector2(376, 480)
+	btn_close.size     = Vector2(400, 42)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.pressed.connect(_close_credits_menu)
+	center_box.add_child(btn_close)
+	_setup_button_sounds(btn_close)
+
+func _credits_lbl(txt: String, x: float, y: float, w: float, h: float, fs: int, col: Color, center: bool = false) -> void:
+	var l := Label.new()
+	l.text     = txt
+	l.position = Vector2(x, y)
+	l.size     = Vector2(w, h)
+	if center:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", fs)
+	l.add_theme_color_override("font_color", col)
+	_credits_overlay.get_node("CenterBox").add_child(l)
+
+func _close_credits_menu() -> void:
+	if _credits_overlay and is_instance_valid(_credits_overlay):
+		_credits_overlay.queue_free()
+	_credits_overlay = null
 
 func _start_game() -> void:
 	_newspaper_visible = false
