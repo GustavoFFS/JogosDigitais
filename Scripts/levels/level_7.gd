@@ -14,7 +14,7 @@ static func get_data() -> Dictionary:
 			{"speaker": "Bog", "text": "Olha esses andaimes balançando!"},
 			{"speaker": "Rob", "text": "Calcula o tempo do pulo!"},
 		],
-		"bg_color":       Color(0.14, 0.10, 0.06),
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/CanteirodeObras.png",
 		"dust_effect":    true,
 		"bg_size": [8000.0, 1080.0],

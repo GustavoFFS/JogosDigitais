@@ -14,7 +14,7 @@ static func get_data() -> Dictionary:
 			{"speaker": "Rob", "text": "O parque congelou também?"},
 			{"speaker": "Bog", "text": "Pelo menos tem botões pra ajudar."},
 		],
-		"bg_color":       Color(0.06, 0.07, 0.12),
+		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/ParqueCentral.png",
 		"bg_size": [8000.0, 1080.0],
 		"platform_color": Color(0.25, 0.44, 0.20),
