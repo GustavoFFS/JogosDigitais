@@ -22,9 +22,6 @@ SoundManager="*res://Scripts/sound_manager.gd"
 
 [display]
 
-window/size/mode=0
-window/size/viewport_width=1152
-window/size/viewport_height=648
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

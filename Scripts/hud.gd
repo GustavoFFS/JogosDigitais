@@ -678,6 +678,10 @@ func _build_intro_overlay() -> void:
 	add_child(_intro_overlay)
 
 func show_intro(level: Dictionary, level_index: int) -> void:
+	if GameManager.intros_shown.has(level_index):
+		return
+		
+	GameManager.intros_shown[level_index] = true
 	showing_intro  = true
 	_intro_timer   = INTRO_DURATION
 	_intro_overlay.modulate.a = 1.0

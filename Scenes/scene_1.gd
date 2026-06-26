@@ -2415,6 +2415,17 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 	timer_bar.color = Color(1.0, 0.85, 0.3)
 	timer_bg.add_child(timer_bar)
 
+	var warning_lbl := Label.new()
+	warning_lbl.text = "Peso insuficiente.\nAlgo mais pesado é necessário"
+	warning_lbl.position = Vector2(-150, -h / 2.0 - 100)
+	warning_lbl.size = Vector2(300, 40)
+	warning_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warning_lbl.add_theme_font_size_override("font_size", 14)
+	warning_lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+	warning_lbl.modulate.a = 0.0
+	warning_lbl.name = "WarningLbl"
+	area.add_child(warning_lbl)
+
 	if is_heavy:
 		pass
 
@@ -2424,6 +2435,8 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 	area.body_entered.connect(func(body):
 		if body is CharacterBase or body is RigidBody2D:
 			if is_heavy and body is CharacterBase and body.character_name == "Rob":
+				var tw = area.create_tween()
+				tw.tween_property(warning_lbl, "modulate:a", 1.0, 0.2)
 				return
 				
 			var count: int = area.get_meta("active_bodies") + 1
@@ -2446,6 +2459,8 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 	area.body_exited.connect(func(body):
 		if body is CharacterBase or body is RigidBody2D:
 			if is_heavy and body is CharacterBase and body.character_name == "Rob":
+				var tw = area.create_tween()
+				tw.tween_property(warning_lbl, "modulate:a", 0.0, 0.2)
 				return
 				
 			var count: int = max(0, area.get_meta("active_bodies") - 1)
@@ -2860,6 +2875,43 @@ func _create_lock(lock_id: int, x: float, y: float, w: float, h: float) -> void:
 	border.position = Vector2(-w / 2.0, -h / 2.0)
 	border.color = Color(0.60, 0.30, 0.30)
 	block.add_child(border)
+
+	# Fechadura (Keyhole) indicativo
+	var keyhole := Node2D.new()
+	
+	var keyhole_bg_top := Polygon2D.new()
+	var bg_pts: PackedVector2Array = PackedVector2Array()
+	for i in range(16):
+		var angle: float = float(i) * PI * 2.0 / 16.0
+		bg_pts.append(Vector2(cos(angle), sin(angle)) * 8.0)
+	keyhole_bg_top.polygon = bg_pts
+	keyhole_bg_top.color = Color(0.9, 0.75, 0.2)
+	keyhole_bg_top.position = Vector2(0, -2)
+	keyhole.add_child(keyhole_bg_top)
+	
+	var keyhole_bg_bot := ColorRect.new()
+	keyhole_bg_bot.size = Vector2(10, 10)
+	keyhole_bg_bot.position = Vector2(-5, 2)
+	keyhole_bg_bot.color = Color(0.9, 0.75, 0.2)
+	keyhole.add_child(keyhole_bg_bot)
+
+	var keyhole_hole_top := Polygon2D.new()
+	var hole_pts: PackedVector2Array = PackedVector2Array()
+	for i in range(16):
+		var angle: float = float(i) * PI * 2.0 / 16.0
+		hole_pts.append(Vector2(cos(angle), sin(angle)) * 4.0)
+	keyhole_hole_top.polygon = hole_pts
+	keyhole_hole_top.color = Color(0.1, 0.1, 0.1)
+	keyhole_hole_top.position = Vector2(0, -2)
+	keyhole.add_child(keyhole_hole_top)
+	
+	var keyhole_hole_bot := ColorRect.new()
+	keyhole_hole_bot.size = Vector2(4, 6)
+	keyhole_hole_bot.position = Vector2(-2, 0)
+	keyhole_hole_bot.color = Color(0.1, 0.1, 0.1)
+	keyhole.add_child(keyhole_hole_bot)
+	
+	block.add_child(keyhole)
 
 	# Área para detectar toque
 	var area := Area2D.new()

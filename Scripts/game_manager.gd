@@ -15,6 +15,7 @@ var stars_total_game:    int        = 0   # soma de todas as fases
 var collected_ids:       Dictionary = {}  # chave "idx:starIdx" -> true
 var elapsed_time:        float      = 0.0
 var is_timer_active:     bool       = false
+var intros_shown:        Dictionary = {}  # chave "level_index" -> true
 
 var master_volume:       float      = 1.0
 var bgm_volume:          float      = 1.0
@@ -38,13 +39,13 @@ func _ready() -> void:
 	load_game()
 	
 	levels = [
-		Level1Data.get_data(),
-		Level2Data.get_data(),
-		Level3Data.get_data(),
+		#Level1Data.get_data(),
+		#Level2Data.get_data(),
+		#Level3Data.get_data(),
 		#Level4Data.get_data(),
 		#Level5Data.get_data(),
 		#Level6Data.get_data(),
-		#Level7Data.get_data(),
+		Level7Data.get_data(),
 		#Level8Data.get_data(),
 		#Level9Data.get_data(),
 		#Level10Data.get_data(),

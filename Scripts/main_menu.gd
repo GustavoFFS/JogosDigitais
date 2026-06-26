@@ -5,6 +5,25 @@ extends Control
 
 @export var background_image: Texture2D
 
+@export_group("Newspaper Settings")
+@export var newspaper_font: Font
+@export var newspaper_letter_spacing: int = 1
+@export var newspaper_line_spacing: int = 4
+@export var newspaper_title: String = "O DIÁRIO DA CIDADE"
+@export var newspaper_subtitle: String = "Edição Especial  ·  Cidade Urbana, 2026  ·  Número 4.521"
+@export var newspaper_headline: String = "GAROTO DESAPARECE APÓS TOMAR CHÁ MISTERIOSO"
+@export var newspaper_subheadline: String = "Jovem saiu do Café Loop completamente desorientado após receber chá de senhora misteriosa"
+@export var newspaper_author: String = "Por nosso correspondente especial  ·  Ontem, às 09h47"
+@export_multiline var newspaper_paragraphs: Array[String] = [
+	"Moradores da região ficaram surpresos ao ver o\njovem Loopy sair do tradicional Café Loop visivelmente\nconfuso, com olhar distante e passos completamente\nerrantes pelas ruas do bairro.",
+	"Segundo testemunhas, uma senhora de aparência\nincomum havia lhe servido um chá de ervas de origem\ndesconhecida, dizendo que era \"para clarear a mente\".\nNinguém sabe quem era a misteriosa mulher.",
+	"Loopy, normalmente bem-humorado e comunicativo,\ncaminhou pelas ruas sem destino aparente, ignorando\ncompletamente aqueles ao seu redor.\n\"Parecia estar em outro mundo\", disse uma moradora.",
+	"Seus amigos inseparáveis Rob e Bog, ao ficarem\nsabendo do ocorrido, partiram imediatamente em\nbusca do amigo perdido pelos bairros da cidade."
+]
+@export var newspaper_photo_caption: String = "Loopy, visto pela última vez saindo do Café Loop"
+@export var newspaper_box_title: String = "QUEM É LOOPY?"
+@export_multiline var newspaper_box_text: String = "Jovem de personalidade descontraída,\nconhecido pelo bom humor e pelo hábito\nde ler o jornal e tomar chá todas as manhãs\nno banco da praça em frente ao Café Loop."
+
 var title_label: Label
 var start_button: Button
 var new_game_button: Button
@@ -715,8 +734,21 @@ func _nl(parent: Node, txt: String, px: float, py: float, pw: float, ph: float,
 	l.text     = txt
 	l.position = Vector2(px, py)
 	l.size     = Vector2(pw, ph)
+	
+	var base_font: Font = newspaper_font
+	if base_font == null:
+		var sys_font = SystemFont.new()
+		sys_font.font_names = PackedStringArray(["Times New Roman", "Georgia", "Serif"])
+		base_font = sys_font
+		
+	var var_font = FontVariation.new()
+	var_font.base_font = base_font
+	var_font.spacing_glyph = newspaper_letter_spacing
+	
+	l.add_theme_font_override("font", var_font)
 	l.add_theme_font_size_override("font_size", fs)
 	l.add_theme_color_override("font_color", col)
+	l.add_theme_constant_override("line_spacing", newspaper_line_spacing)
 	l.horizontal_alignment = ha
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parent.add_child(l)
@@ -747,11 +779,33 @@ func _build_newspaper() -> void:
 	const PW: float = 1000.0
 	const PH: float = 606.0
 
-	var paper := ColorRect.new()
+	var paper_container = Control.new()
+	# Estilização: rotação leve para dar ar dinâmico
+	paper_container.rotation_degrees = -1.5
+	paper_container.position = Vector2(20, 20) # Ajuste de offset
+	center_box.add_child(paper_container)
+
+	# Sombra do jornal (múltiplas camadas para profundidade)
+	for i in range(5):
+		var shadow_layer := Panel.new()
+		var shadow_style := StyleBoxFlat.new()
+		shadow_style.bg_color = Color(0, 0, 0, 0.18 - i * 0.03)
+		shadow_style.corner_radius_bottom_left = 16
+		shadow_style.corner_radius_bottom_right = 16
+		shadow_layer.add_theme_stylebox_override("panel", shadow_style)
+		shadow_layer.position = Vector2(PX + 10 + i * 6, PY + 10 + i * 6)
+		shadow_layer.size     = Vector2(PW, PH)
+		paper_container.add_child(shadow_layer)
+
+	var paper := Panel.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.965, 0.930, 0.810)
+	style.corner_radius_bottom_left = 16
+	style.corner_radius_bottom_right = 16
+	paper.add_theme_stylebox_override("panel", style)
 	paper.position = Vector2(PX, PY)
 	paper.size     = Vector2(PW, PH)
-	paper.color    = Color(0.965, 0.930, 0.810)
-	center_box.add_child(paper)
+	paper_container.add_child(paper)
 
 	# Bordas laterais escuras (efeito envelhecido)
 	for xv in [PX, PX + PW - 6]:
@@ -759,18 +813,18 @@ func _build_newspaper() -> void:
 		edge.position = Vector2(xv, PY)
 		edge.size     = Vector2(6, PH)
 		edge.color    = Color(0.80, 0.74, 0.60, 0.4)
-		center_box.add_child(edge)
+		paper_container.add_child(edge)
 
 	# ---- Cabeçalho ----
 	var header := ColorRect.new()
 	header.position = Vector2(PX, PY)
 	header.size     = Vector2(PW, 70)
 	header.color    = Color(0.07, 0.05, 0.03)
-	center_box.add_child(header)
+	paper_container.add_child(header)
 
-	_nl(center_box, "O DIÁRIO DA CIDADE",
+	_nl(paper_container, newspaper_title,
 		PX, PY + 6, PW, 40, 36, Color(0.98, 0.96, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(center_box, "Edição Especial  ·  Cidade Urbana, 2026  ·  Número 4.521",
+	_nl(paper_container, newspaper_subtitle,
 		PX, PY + 48, PW, 18, 11, Color(0.68, 0.64, 0.52), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Fio separador superior
@@ -778,14 +832,14 @@ func _build_newspaper() -> void:
 	sep1.position = Vector2(PX, PY + 70)
 	sep1.size     = Vector2(PW, 3)
 	sep1.color    = Color(0.14, 0.11, 0.07)
-	center_box.add_child(sep1)
+	paper_container.add_child(sep1)
 
 	# ---- Manchete ----
-	_nl(center_box, "GAROTO DESAPARECE APÓS TOMAR CHÁ MISTERIOSO",
+	_nl(paper_container, newspaper_headline,
 		PX + 10, PY + 78, PW - 20, 50, 31,
 		Color(0.06, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 
-	_nl(center_box, "Jovem saiu do Café Loop completamente desorientado após receber chá de senhora misteriosa",
+	_nl(paper_container, newspaper_subheadline,
 		PX + 60, PY + 130, PW - 120, 22, 13,
 		Color(0.22, 0.18, 0.12), HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -794,29 +848,23 @@ func _build_newspaper() -> void:
 	sep2.position = Vector2(PX + 20, PY + 158)
 	sep2.size     = Vector2(PW - 40, 2)
 	sep2.color    = Color(0.22, 0.16, 0.08)
-	center_box.add_child(sep2)
+	paper_container.add_child(sep2)
 
 	# ---- Coluna esquerda: artigo ----
-	_nl(center_box, "Por nosso correspondente especial  ·  Ontem, às 09h47",
-		PX + 20, PY + 164, 590, 16, 10, Color(0.38, 0.32, 0.22))
+	_nl(paper_container, newspaper_author,
+		PX + 20, PY + 164, 590, 16, 10, Color(0.38, 0.32, 0.22), HORIZONTAL_ALIGNMENT_CENTER)
 
-	var paras: Array = [
-		"Moradores da região ficaram surpresos ao ver o\njovem Loopy sair do tradicional Café Loop visivelmente\nconfuso, com olhar distante e passos completamente\nerrantes pelas ruas do bairro.",
-		"Segundo testemunhas, uma senhora de aparência\nincomum havia lhe servido um chá de ervas de origem\ndesconhecida, dizendo que era \"para clarear a mente\".\nNinguém sabe quem era a misteriosa mulher.",
-		"Loopy, normalmente bem-humorado e comunicativo,\ncaminhou pelas ruas sem destino aparente, ignorando\ncompletamente aqueles ao seu redor.\n\"Parecia estar em outro mundo\", disse uma moradora.",
-		"Seus amigos inseparáveis Rob e Bog, ao ficarem\nsabendo do ocorrido, partiram imediatamente em\nbusca do amigo perdido pelos bairros da cidade.",
-	]
 	var ay: float = PY + 182.0
-	for p in paras:
-		_nl(center_box, p, PX + 20, ay, 600, 72, 13, Color(0.10, 0.09, 0.07))
-		ay += 76.0
+	for p in newspaper_paragraphs:
+		_nl(paper_container, p, PX + 20, ay, 600, 78, 14, Color(0.10, 0.09, 0.07), HORIZONTAL_ALIGNMENT_CENTER)
+		ay += 80.0
 
 	# Fio separador vertical entre colunas
 	var vsep := ColorRect.new()
 	vsep.position = Vector2(PX + 642, PY + 158)
 	vsep.size     = Vector2(2, 398)
 	vsep.color    = Color(0.28, 0.22, 0.12, 0.45)
-	center_box.add_child(vsep)
+	paper_container.add_child(vsep)
 
 	# ---- Coluna direita: foto + box ----
 	# Moldura externa (efeito de foto antiga em sépia)
@@ -824,23 +872,23 @@ func _build_newspaper() -> void:
 	photo_frame.position = Vector2(PX + 650, PY + 156)
 	photo_frame.size     = Vector2(332, 222)
 	photo_frame.color    = Color(0.18, 0.14, 0.08)
-	center_box.add_child(photo_frame)
+	paper_container.add_child(photo_frame)
 
 	var photo := ColorRect.new()
 	photo.position = Vector2(PX + 656, PY + 162)
 	photo.size     = Vector2(320, 210)
 	photo.color    = Color(0.82, 0.72, 0.52)  # fundo sépia claro
-	center_box.add_child(photo)
+	paper_container.add_child(photo)
 
 	# Chão da foto (tom mais escuro)
 	var photo_ground := ColorRect.new()
 	photo_ground.position = Vector2(PX + 656, PY + 340)
 	photo_ground.size     = Vector2(320, 32)
 	photo_ground.color    = Color(0.60, 0.48, 0.32)
-	center_box.add_child(photo_ground)
+	paper_container.add_child(photo_ground)
 
 	# Loopy detalhado (tons sépia para parecer foto de jornal)
-	_draw_loopy(center_box, PX + 816, PY + 355, 1.3, true)
+	_draw_loopy(paper_container, PX + 816, PY + 355, 1.3, true)
 
 	# Cantos da moldura (decoração de foto antiga)
 	for cx in [PX + 652, PX + 970]:
@@ -849,47 +897,51 @@ func _build_newspaper() -> void:
 			corner.position = Vector2(cx, cy)
 			corner.size     = Vector2(10, 10)
 			corner.color    = Color(0.10, 0.08, 0.05)
-			center_box.add_child(corner)
+			paper_container.add_child(corner)
 
-	_nl(center_box, "Loopy, visto pela última vez saindo do Café Loop",
-		PX + 656, PY + 374, 320, 18, 10,
+	_nl(paper_container, newspaper_photo_caption,
+		PX + 656, PY + 384, 320, 18, 10,
 		Color(0.28, 0.22, 0.14), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Box de destaque
 	var hl := ColorRect.new()
-	hl.position = Vector2(PX + 656, PY + 396)
+	hl.position = Vector2(PX + 656, PY + 412)
 	hl.size     = Vector2(320, 126)
 	hl.color    = Color(0.935, 0.875, 0.635)
-	center_box.add_child(hl)
+	paper_container.add_child(hl)
 
 	var hl_top := ColorRect.new()
-	hl_top.position = Vector2(PX + 656, PY + 396)
+	hl_top.position = Vector2(PX + 656, PY + 412)
 	hl_top.size     = Vector2(320, 3)
 	hl_top.color    = Color(0.16, 0.11, 0.05)
-	center_box.add_child(hl_top)
+	paper_container.add_child(hl_top)
 
-	_nl(center_box, "QUEM É LOOPY?",
-		PX + 656, PY + 402, 320, 20, 12,
+	_nl(paper_container, newspaper_box_title,
+		PX + 656, PY + 418, 320, 20, 12,
 		Color(0.07, 0.06, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 
-	_nl(center_box, "Jovem de personalidade descontraída,\nconhecido pelo bom humor e pelo hábito\nde ler o jornal e tomar chá todas as manhãs\nno banco da praça em frente ao Café Loop.",
-		PX + 666, PY + 424, 300, 96, 12, Color(0.14, 0.11, 0.07))
+	_nl(paper_container, newspaper_box_text,
+		PX + 666, PY + 440, 300, 96, 13, Color(0.14, 0.11, 0.07), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# ---- Rodapé ----
 	var sep_foot := ColorRect.new()
 	sep_foot.position = Vector2(PX, PY + PH - 50)
 	sep_foot.size     = Vector2(PW, 3)
 	sep_foot.color    = Color(0.14, 0.11, 0.07)
-	center_box.add_child(sep_foot)
+	paper_container.add_child(sep_foot)
 
-	_nl(center_box, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR A BUSCA  —",
+	_nl(paper_container, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR A BUSCA  —",
 		PX, PY + PH - 42, PW, 38, 16,
 		Color(0.07, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
 
-	# Animação fade-in
+	# Animação fade-in e scale para dar profundidade
 	root.modulate.a = 0.0
-	var tween := create_tween()
+	paper_container.pivot_offset = Vector2(PX + PW / 2.0, PY + PH / 2.0)
+	paper_container.scale = Vector2(0.92, 0.92)
+	
+	var tween := create_tween().set_parallel(true)
 	tween.tween_property(root, "modulate:a", 1.0, 0.55)
+	tween.tween_property(paper_container, "scale", Vector2(1.0, 1.0), 0.65).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	_newspaper_visible = true
 

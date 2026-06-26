@@ -12,7 +12,8 @@ static func get_data() -> Dictionary:
 		"ambient_type": "echo_urban",
 		"dialogues": [
 			{"speaker": "Bog", "text": "Esses becos são apertados..."},
-			{"speaker": "Rob", "text": "Pense antes de pular, o controle no ar é ruim!"},
+			{"speaker": "Rob", "text": "Pule com cuidado, não podemos perder o Loopy."},
+			{"speaker": "Rob", "text": "Venha comigo Bog!"},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/BecosEstreitos.png",
@@ -31,36 +32,30 @@ static func get_data() -> Dictionary:
 			[490,  455,  90, 18],
 			[650,  535, 110, 18],
 			[830,  455,  90, 18],
-			[990,  560, 200, 22],   # CHECKPOINT 1
-			[1270, 475, 100, 18],
-			[1450, 385,  90, 18],
-			[1620, 475, 100, 18],
-			[1800, 560, 200, 22],   # CHECKPOINT 2
-			[2080, 475, 100, 18],
+			[990,  620, 200, 22],   # CHECKPOINT 1
+			[1270, 570, 100, 18],
+			[1450, 470, 100, 18],
+			[1450, 270, 100, 18],
+			[1800, 320, 200, 22],   # CHECKPOINT 2
 			[2260, 385,  90, 18],
-			[2430, 480, 100, 18],
 			[2600, 560, 380, 28],
 		],
 		"checkpoints": [
-			[1050, 535],
-			[1860, 535],
+			[1050, 595],
+			[1860, 290],
 		],
-		"hazards": [
-			[ 430, 590,  50, 22],
-			[ 750, 590,  60, 22],
-			[1370, 590,  60, 22],
-			[1700, 540,  70, 22],
-			[2160, 540,  70, 22],
-			[2520, 540,  70, 22],
+		
+		"switches": [
+			[2, 1150, 608, 40, 12, true]
 		],
-		"pushable_blocks": [
-			[100, 580, 40, 40],
+		"gates": [
+			[2, 1310, 370, 20, 200]
 		],
+		
 		"stars": [
-			[400, 420],
-			[1490, 260],
-			[2330, 260],
-			[200, 445],   # Estrela do Bog
+			[200, 410],
+			[1500, 100],
+			[1675, 320],
 		],
 		"exit_pos":    [2900, 520],
 		"spawn_rob":   [50,   560],

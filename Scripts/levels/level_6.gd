@@ -28,11 +28,37 @@ static func get_data() -> Dictionary:
 		},
 		"platforms": [
 			[0,    620, 240, 28],
-			[640,  560, 200, 22],   # CHECKPOINT
-			[880,  480, 100, 18],
-			[1020, 390, 100, 18],
-			[1160, 480, 100, 18],
-			[1300, 620, 360, 28],
+			[640,  560, 200, 22],   # Checkpoint
+			[1000,  480, 140, 18],
+			[2200, 620, 100, 18],
+			[3400, 620, 360, 28],   # Final
+		],
+		"moving_platforms": [
+			{
+				"start_pos": Vector2(2500.0, 660.0),
+				"end_pos":   Vector2(2500.0, 420.0),
+				"w": 100.0,
+				"h": 18.0,
+				"speed": 100.0,
+				"to_end": true
+			},
+			{
+				"start_pos": Vector2(2850.0, 660.0),
+				"end_pos":   Vector2(2850.0, 420.0),
+				"w": 100.0,
+				"h": 18.0,
+				"speed": 130.0,
+				"to_end": true
+			},
+			{
+				"start_pos": Vector2(3200.0, 660.0),
+				"end_pos":   Vector2(3200.0, 420.0),
+				"w": 100.0,
+				"h": 18.0,
+				"speed": 160.0,
+				"to_end": true
+			},
+			
 		],
 		"crumbling_platforms": [
 			[280, 530, 80, 18],
@@ -41,30 +67,36 @@ static func get_data() -> Dictionary:
 		],
 		"checkpoints": [
 			[740, 535],
+			[2250, 590],
 		],
 		"hazards": [
 			[ 240, 590, 400, 22],
-			[ 980, 530,  40, 22],
-			[1260, 590,  40, 22],
+			[ 1000, 650,  2400, 22],
+			#[ 2300, 650, 1460, 22],
 		],
 		"pushable_blocks": [
-			[80, 580, 40, 40],
+			#[80, 580, 40, 40],
 		],
 		"levers": [
-			[1, 800, 540, 40, 40],
+			[1, 800, 520, 40, 40],
+		],
+		"speed_pads": [
+			[1300, 400, 40, 20, 2.0],
+			[1600, 420, 40, 20, 2.0],
+			[1900, 440, 40, 20, 2.0],
 		],
 		"gates": [
-			[1, 880, 410, 20, 70],
+			[1, 1000, 350, 20, 130],
 		],
 		"stars": [
-			[440, 380],   # Acima do percurso instável
+			#[440, 380],   # Acima do percurso instável
 			[1070, 310],  # Alto
-			[1210, 400],  # No pulo para o final
+			#[1210, 400],  # No pulo para o final
 			[160, 460],   # Estrela do Bog
 		],
-		"exit_pos":    [1580, 570],
+		"exit_pos":    [3680, 570],
 		"spawn_rob":   [40,   560],
 		"spawn_bog":   [130,  560],
-		"loopy_start": [1400, 572],
-		"loopy_end":   [1560, 572],
+		"loopy_start": [3500, 572],
+		"loopy_end":   [3660, 572],
 	}

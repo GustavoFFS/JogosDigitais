@@ -12,7 +12,7 @@ static func get_data() -> Dictionary:
 		"ambient_type": "wind_high",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Ele subiu pros telhados?!"},
-			{"speaker": "Bog", "text": "A gravidade tá estranha aqui em cima..."},
+			{"speaker": "Bog", "text": "Tô me sentindo mais leve aqui em cima..."},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/TelhadosdaCidade.png",
@@ -26,52 +26,53 @@ static func get_data() -> Dictionary:
 			"air_control":  1.0,
 		},
 		"platforms": [
-			[0,    620, 280, 28],
-			[360,  520, 120, 18],
-			[560,  420, 110, 18],
-			[760,  520, 120, 18],
-			[970,  420, 100, 18],
-			[1150, 545, 210, 22],   # CHECKPOINT
-			[1440, 440, 120, 18],
-			[1640, 340, 110, 18],
-			[1840, 440, 120, 18],
-			[2040, 545, 120, 18],
-			[2230, 620, 360, 28],
+			[0,    620, 280, 28],   # Início
+			[430,  460, 240, 18],
+			[1150, 545, 210, 22],   # Checkpoint
+			[1440, 440, 120, 18],   # Plataforma Alta
+			[1640, 340, 110, 18],   # Plataforma Alta
+			[1840, 440, 120, 18],   # Plataforma Alta
+			[1500, 640, 120, 18],   # Plataforma Baixa
+			[1780, 600, 120, 18],   # Plataforma Baixa
+			[2000, 680, 120, 18],   # Plataforma Baixa
+			[2230, 620, 360, 28],   # Final
+			[2230, 400, 18, 298],   # Parede Final
 		],
 		"checkpoints": [
 			[1210, 520],
 		],
 		"hazards": [
-			[ 300, 590,  50, 22],
-			[ 480, 510,  60, 22],
-			[1370, 590,  60, 22],
-			[1750, 510,  70, 22],
-			[2150, 540,  60, 22],
+			[ 1560, 436,  280, 22],
+			[ 2120, 676,  110, 22],
 		],
 		"crumbling_platforms": [
 			[ 890, 500,  60, 18],
 		],
 		"secret_exits": [
-			[ 880, 590,  80, 22, "Casa Misteriosa" ],
+			[ 880, 650,  80, 122, "Casa Misteriosa" ],
 		],
 		"pushable_blocks": [
 			[140, 580, 40, 40],
 		],
 		"keys": [
-			[1, 1180, 480],
+			[1, 2060, 600],
 		],
 		"locks": [
 			[1, 1680, 160, 30, 180],
 		],
 		"jump_pads": [
-			[240, 600, 30, 20],
-			[1500, 420, 30, 20],
+			[1930, 420, 30, 20],
 		],
+		
+		"speed_pads": [
+			[1100, 700, 40, 20, -2.0],   # Zona C — impulso horizontal para cruzar o gap
+		],
+		
 		"stars": [
-			[450, 385],
-			[1690, 220],
-			[2125, 415],
-			[220, 410],   # Estrela do Bog
+			[220, 410],   # OK
+			[1695, 220],   # OK
+			[2060, 449],   # OK
+			[2239, 300],   # OK
 		],
 		"exit_pos":    [2510, 572],
 		"spawn_rob":   [60,   560],

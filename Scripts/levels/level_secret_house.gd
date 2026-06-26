@@ -34,10 +34,10 @@ static func get_data() -> Dictionary:
 		],
 		"platforms": [
 			# Chão principal
-			[0,    620, 1400, 28],
+			[0,    620, 1420, 28],
 			# Paredes
-			[-20,    0,   20, 640],
-			[1400,   0,   20, 640],
+			[-20,    -400,   20, 1040],
+			[1400,   -400,   20, 1040],
 			# Prateleiras / andares
 			[200,  500, 200, 15],
 			[500,  400, 150, 15],
@@ -54,9 +54,9 @@ static func get_data() -> Dictionary:
 				"to_end": true
 			},
 			{
-				"start_pos": Vector2(420.0, 500.0),
-				"end_pos": Vector2(420.0, 400.0),
-				"w": 80.0,
+				"start_pos": Vector2(440.0, 500.0),
+				"end_pos": Vector2(440.0, 400.0),
+				"w": 50.0,
 				"h": 15.0,
 				"speed": 50.0,
 				"to_end": true
@@ -70,9 +70,9 @@ static func get_data() -> Dictionary:
 				"to_end": true
 			},
 			{
-				"start_pos": Vector2(1030.0, 300.0),
-				"end_pos": Vector2(1030.0, 450.0),
-				"w": 80.0,
+				"start_pos": Vector2(1060.0, 300.0),
+				"end_pos": Vector2(1060.0, 450.0),
+				"w": 50.0,
 				"h": 15.0,
 				"speed": 60.0,
 				"to_end": true
@@ -84,10 +84,16 @@ static func get_data() -> Dictionary:
 			[850, 250],
 			[1150, 400],
 		],
+		
+		"hazards" : [
+			[300, 610, 850, 38],
+		],
 		"spiders": [
 			[460, 100, 450, 140.0],
 			[750, 100, 450, 180.0],
-			[1060, 100, 450, 120.0]
+			[1000, 100, 450, 120.0],
+			[300, 100, 450, 120.0],
+			[1140, 100, 450, 140.0],
 		],
 		"exit_pos":    [1300, 570],
 		"spawn_rob":   [80,   560],
