@@ -12,7 +12,7 @@ static func get_data() -> Dictionary:
 		"ambient_type": "factory",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Tem portões trancados aqui..."},
-			{"speaker": "Bog", "text": "Deixa comigo, vou empurrar a caixa!"},
+			{"speaker": "Bog", "text": "Deixa comigo, vá na frente!"},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/FabricaAbandonada.png",
@@ -28,46 +28,61 @@ static func get_data() -> Dictionary:
 		},
 		"platforms": [
 			[0,    620, 280, 28],
-			[360,  560, 120, 18],   # Mais baixo (era 520)
-			[560,  480, 110, 18],   # Mais baixo (era 420)
-			[760,  530, 120, 18],   # Mais baixo (era 520)
-			[970,  460, 100, 18],   # Mais baixo (era 420)
-			[1150, 560, 210, 22],   # CHECKPOINT (era 545)
-			[1440, 500, 120, 18],   # Mais baixo (era 440)
-			[1640, 420, 110, 18],   # Mais baixo (era 340)
-			[1840, 500, 120, 18],   # Mais baixo (era 440)
-			[2040, 560, 120, 18],   # Mais baixo (era 545)
-			[2230, 620, 360, 28],
+			[1650,  460, 200, 18],   # Checkpoint
+			[2050, 560, 900, 18],   
+			[2950, 358, 18, 360],   
+			[1900, 700, 200, 18],
+			[2200, 700, 200, 18], 
+			[2500, 700, 200, 18], 
+			[2900, 700, 50, 18], 
+			#[2040, 560, 120, 18],  
+			#[2230, 620, 360, 28],
 		],
 		"checkpoints": [
-			[1210, 535],
+			[1750, 430],
 		],
+		
+		"keys": [
+			[1, 2900, 650],
+		],
+		"locks": [
+			[1, 2200, 380, 30, 180],
+		],
+		
+		"gravity_zones": [
+			[1900, 578, 200, 122],
+			#[2200, 578, 200, 122],
+			#[2500, 578, 200, 122],
+		],
+		
 		"hazards": [
-			[ 300, 600,  50, 22],   # Mais baixo
-			[ 480, 540,  60, 22],   # Reajustado
-			[ 880, 590,  70, 22],
-			[1370, 590,  60, 22],
-			[1750, 530,  70, 22],   # Reajustado
-			[2150, 580,  60, 22],   # Reajustado
-		],
-		"pushable_blocks": [
-			[140, 580, 40, 40],
+			[ 2200, 358, 750, 22],
+
 		],
 		"switches": [
 			[1, 230, 612, 40, 8],
 		],
 		"gates": [
-			[1, 410, 450, 16, 110],  # Reajustado para a nova altura de plat 2
+			[1, 1220, 250, 16, 150],  # Reajustado para a nova altura de plat 2
+		],
+		
+		
+		
+		"crumbling_platforms": [
+			[360, 560, 120, 18],
+			[560, 480, 110, 18],
+			[760, 530, 120, 18],
+			[960, 460, 120, 18],
+			[1160, 400, 120, 18]
 		],
 		"stars": [
-			[420, 430],   # Rebaixado (era 385)
-			[1690, 310],  # Rebaixado (era 220)
-			[2125, 470],  # Rebaixado (era 415)
-			[220, 440],   # Estrela do Bog (era 410)
+			[2850, 480],   # Rebaixado (era 385)
+			[615, 400],  # Rebaixado (era 220)
+			[2100, 350],  # Rebaixado (era 415)
 		],
-		"exit_pos":    [2510, 572],
+		"exit_pos":    [2510, 520],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [100,  560],
-		"loopy_start": [2360, 572],
-		"loopy_end":   [2510, 572],
+		"loopy_start": [2360, 520],
+		"loopy_end":   [2510, 520],
 	}

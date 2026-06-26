@@ -12,7 +12,10 @@ static func get_data() -> Dictionary:
 		"ambient_type": "wind_cold",
 		"dialogues": [
 			{"speaker": "Rob", "text": "Cuidado, o chão tá escorregando!"},
-			{"speaker": "Bog", "text": "Já percebi... quase caí!"},
+			{"speaker": "Bog", "text": "Já percebi... quase caí! Que frio!"},
+			{"speaker": "Rob", "text": "Vamos juntos, essa mochila pesada deve ajudar..."},
+			{"speaker": "Rob", "text": "Espera... O que é aquela ventania ali na frente?"},
+			{"speaker": "Bog", "text": "Vamos lá descobrir..."},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/PracaEscorregadia.png", # <--- ADICIONE AQUI
@@ -28,58 +31,54 @@ static func get_data() -> Dictionary:
 		},
 		"platforms": [
 			[0,    620, 320, 28],
-			[400,  550, 130, 18],
-			#[600,  465,  90, 18],
-			#[760,  545, 160, 18],
-			#[990,  455, 100, 18],
-			[1160, 560, 220, 22],   # CHECKPOINT
-			[1460, 475, 130, 18],
-			[1660, 385, 100, 18],
-			[1830, 480, 110, 18],
-			[2020, 560, 140, 18],
-			[2230, 620, 380, 28],   # Final
+			[580,  300, 130, 18],
+			[692,  300,  18, 318],
+			[910,  -300,  18, 700],
+			[710, 600,  350, 18],   # Checkpoint
+			[1550, 250, 220, 18],   
+			[2000, 310, 130, 18],
+			[2350, 440, 100, 18],
+			[2750, 600, 380, 18],   # Final
 		],
-
-			#[0,    620, 320, 28],   # Início — largo para aprender o gelo
-			#[400,  550,  70, 18],   # Primeiro gap — estreito, cuidado ao parar
-			#[560,  465,  68, 18],   # Sobe um pouco
-			#[710,  545,  72, 18],   # Pequeno respiro
-			#[860,  455,  68, 18],   # Salto sobre buraco largo
-			#[1060, 560, 200, 22],   # CHECKPOINT — largo, jogador respira
-			#[1340, 475,  70, 18],   # Retoma dificuldade
-			#[1490, 385,  68, 18],   # Alta — cuidado com o overshooting
-			#[1638, 475,  70, 18],   # Descida
-			#[1800, 555,  72, 18],   # Quase lá
-			#[1960, 620, 380, 28],   # Final
+			"moving_platforms": [
+				{ 
+					"start_pos": Vector2(460.0, 620.0), # Antigos x_min e y
+					"end_pos": Vector2(460.0, 300.0),   # Antigos x_max e y
+					"w": 110.0, 
+					"h": 18.0, 
+					"speed": 120.0,
+					"to_end": true 
+				},
+			],
 
 		"checkpoints": [
-			[1220, 535],
+			[885, 570],
 		],
 		"hazards": [
-			[ 340, 600,  50, 22],
-			#[ 710, 590,  30, 22],
-			#[ 920, 590,  60, 22],
-			[1380, 540,  60, 22],
-			[1740, 460,  60, 22],
-			[2160, 540,  50, 22],
+			[ 320, 610,  80, 38],
+			[ 1060, 590,  1690, 28],
 		],
-
+		
+		"breakable_blocks": [
+			[710, 300,  200, 28]
+		],
+		
 		"gravity_zones": [
-			[725, 435, 300, 130],   # Zona 1 — cobre plataformas de teto 1-3
+			[1150, 235, 300, 330],   # Zona 1 — cobre plataformas de teto 1-3
 		],
 
 		"pushable_blocks": [
 			[180, 580, 40, 40],
 		],
 		"stars": [
-			[510, 460],   # No gap deslizante após o início — escorregar e cair = morte
-			[1700, 290],  # Bem acima da plataforma 1640/380
-			[2160, 470],  # No gap final — desliza demais e cai no espinho
-			[280, 460],   # Estrela do Bog
+			[810, 150],   # No gap deslizante após o início — escorregar e cair = morte
+			[1300, 100],  # Bem acima da plataforma 1640/380
+			[200, 200],  # No gap final — desliza demais e cai no espinho
+			[2240, 220],   # Estrela do Bog
 		],
-		"exit_pos":    [2520, 580],
+		"exit_pos":    [3040, 560],
 		"spawn_rob":   [60,   560],
 		"spawn_bog":   [160,  560],
-		"loopy_start": [2360, 572],
-		"loopy_end":   [2540, 572],
+		"loopy_start": [2880, 552],
+		"loopy_end":   [3080, 552],
 	}

@@ -13,8 +13,10 @@ static func get_data() -> Dictionary:
 		"modifier_hint": "Exploração  ·  Relaxe e pegue as estrelas!",
 		"ambient_type": "echo_urban",
 		"dialogues": [
-			{"speaker": "Rob", "text": "Como viemos parar aqui dentro?"},
-			{"speaker": "Bog", "text": "Parece uma casa abandonada... e tem estrelas extras!"},
+			{"speaker": "Rob", "text": "Como viemos parar aqui dentro? Por que tá tão escuro?"},
+			{"speaker": "Bog", "text": "Parece uma casa abandonada... Tem uma placa aqui, espera..."},
+			{"speaker": "Bog", "text": "Parece ser de um tal de Wend-- Esquece, não conheço..."},
+			{"speaker": "Rob", "text": "Vamos pegar as estrelas e vazar antes que esse cara volte!"},
 		],
 		"bg_color":       Color(0.12, 0.11, 0.13),
 		"bg_size": [1600.0, 1080.0],
@@ -94,4 +96,3 @@ static func get_data() -> Dictionary:
 		"loopy_end":   [1300, 570],
 		"next_level_override": "Becos Estreitos"
 	}
-

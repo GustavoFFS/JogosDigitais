@@ -25,6 +25,7 @@ var air_control:  float = 1.0
 var is_locked:  bool  = false 
 var lock_timer: float = 0.0 
 var _was_on_floor: bool = true 
+var _is_blocked: bool = false # Bloqueio geral (ex: diálogo, cutscene)
 
 # Coyote time
 var coyote_timer: float = 0.0
@@ -81,21 +82,21 @@ func _game_loop_input() -> void:
 	_input_jump = false
 	_input_ability = false
 
+	_is_blocked = false
 	var main_scene = get_parent()
-	var blocked := false
 	if main_scene:
 		if "is_exiting" in main_scene and main_scene.is_exiting:
-			blocked = true
+			_is_blocked = true
 		if "hud" in main_scene and main_scene.hud:
 			var hud = main_scene.hud
 			if hud.showing_intro or hud.fading or hud.transitioning:
-				blocked = true
+				_is_blocked = true
 		if "_dialogue_system" in main_scene:
 			var ds = main_scene._dialogue_system
 			if ds and ds.is_active():
-				blocked = true
+				_is_blocked = true
 
-	if is_active and not blocked and not get_tree().paused:
+	if is_active and not _is_blocked and not get_tree().paused:
 		_input_direction = Input.get_axis("move_left", "move_right")
 		_input_jump = Input.is_action_just_pressed("jump")
 		_input_ability = Input.is_action_just_pressed("ability")
@@ -183,9 +184,6 @@ func _handle_jump() -> void:
 		coyote_timer      = 0.0
 		jump_buffer_timer = 0.0
 		SoundManager.play_sfx("jump")
-		var main_scene = get_parent()
-		if main_scene and main_scene.has_method("spawn_jump_particles"):
-			main_scene.spawn_jump_particles(global_position, character_name)
 
 func _on_land() -> void:
 	var main_scene = get_parent()
@@ -198,7 +196,23 @@ func _use_ability() -> void:
 func _apply_horizontal_movement(direction: float, delta: float) -> void:
 	if is_locked: return # Se estiver travado, ignora o atrito e mantém o voo
 	
-	var is_ice := friction < 0.2
+	if _is_blocked and is_on_floor():
+		velocity.x = 0.0
+		return
+	
+	var current_friction := 1.0
+	if friction < 0.2:
+		if is_on_floor():
+			for i in range(get_slide_collision_count()):
+				var col = get_slide_collision(i)
+				var collider = col.get_collider()
+				if collider and collider.is_in_group("ice_platforms"):
+					current_friction = friction
+					break
+		else:
+			current_friction = friction # Mantém no ar
+			
+	var is_ice := current_friction < 0.2
 	
 	if direction != 0:
 		var target := direction * get_speed()
@@ -206,17 +220,17 @@ func _apply_horizontal_movement(direction: float, delta: float) -> void:
 			if is_ice:
 				# Se estiver acelerando na direção do movimento, acelera um pouco mais rápido
 				if sign(direction) == sign(velocity.x) or abs(velocity.x) < 15.0:
-					velocity.x = lerp(velocity.x, target, friction * 1.2)
+					velocity.x = lerp(velocity.x, target, current_friction * 1.2)
 				else:
 					# Se estiver freando ou mudando de direção, desliza mais
-					velocity.x = lerp(velocity.x, target, friction * 0.4)
+					velocity.x = lerp(velocity.x, target, current_friction * 0.4)
 			else:
-				velocity.x = lerp(velocity.x, target, friction)
+				velocity.x = lerp(velocity.x, target, current_friction)
 		else:
 			if is_ice:
-				velocity.x = lerp(velocity.x, target, clamp(air_control * friction * 0.7, 0.01, 1.0))
+				velocity.x = lerp(velocity.x, target, clamp(air_control * current_friction * 0.7, 0.01, 1.0))
 			else:
-				velocity.x = lerp(velocity.x, target, clamp(air_control * friction, 0.02, 1.0))
+				velocity.x = lerp(velocity.x, target, clamp(air_control * current_friction, 0.02, 1.0))
 		if sprite:
 			sprite.flip_h = direction < 0
 	else:
@@ -225,18 +239,18 @@ func _apply_horizontal_movement(direction: float, delta: float) -> void:
 			if is_on_floor():
 				if is_ice:
 					# Desaceleração muito lenta no gelo (deslize longo)
-					velocity.x = lerp(velocity.x, 0.0, friction * 0.3)
+					velocity.x = lerp(velocity.x, 0.0, current_friction * 0.3)
 				else:
-					velocity.x = lerp(velocity.x, 0.0, friction)
+					velocity.x = lerp(velocity.x, 0.0, current_friction)
 			else:
 				velocity.x = lerp(velocity.x, 0.0, clamp(air_control * 0.5, 0.01, 1.0))
 		else:
 			# PERSONAGEM INATIVO: Física realista.
 			if is_on_floor():
 				if is_ice:
-					velocity.x = lerp(velocity.x, 0.0, friction * 0.3)
+					velocity.x = lerp(velocity.x, 0.0, current_friction * 0.3)
 				else:
-					velocity.x = lerp(velocity.x, 0.0, friction)
+					velocity.x = lerp(velocity.x, 0.0, current_friction)
 			else:
 				# NO AR: Comportamento Parabólico (mantém a inércia do arremesso do Bog)
 				velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)

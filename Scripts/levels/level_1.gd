@@ -11,8 +11,15 @@ static func get_data() -> Dictionary:
 		"modifier_hint": "Controles Normais  ·  Aprenda o básico!",
 		"ambient_type": "city",
 		"dialogues": [
-			{"speaker": "Rob", "text": "Viu pra onde o Loopy foi?"},
-			{"speaker": "Bog", "text": "Saiu correndo do café... vamos atrás!"},
+			{"speaker": "Bog", "text": "Viu pra onde o Loopy foi? Onde esse garoto foi se meter?"},
+			{"speaker": "Rob", "text": "Ele saiu correndo do café... vamos atrás, rápido!"},
+			{"speaker": "Bog", "text": "Calma, esse equipamento tá pesado..."},
+			{"speaker": "Rob", "text": "Droga, quem era aquela mulher e aquela... sopa?"},
+			{"speaker": "Bog", "text": "Isso não tá me cheirando bem..."},
+			{"speaker": "Bog", "text": "Posso utilizar a minha habilidade para te ajudar a alcançar aquela plataforma [Pulo + Z]."},
+			{"speaker": "Rob", "text": "Com a minha habilidade, vamos ainda mais longe [Pressione Z]."},
+			{"speaker": "Bog", "text": "Vá na frente Rob, eu já te alcanço!"},
+
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/cidade.png", # <--- ADICIONE AQUI
@@ -27,18 +34,12 @@ static func get_data() -> Dictionary:
 		},
 		# [x, y, largura, altura]
 		"platforms": [
-			[0,    620, 360, 28],
-			[440,  500, 130, 18],
-			[650,  460, 100, 18],
-			[820,  540, 140, 18],
-			[1030, 460, 110, 18],
-			[1210, 555, 200, 22],   # checkpoint
-			[1680, 375, 110, 18],
-			#[1860, 460, 110, 18],
-			[2050, 545, 140, 18],
-			[2260, 460, 100, 18],
-			[2430, 555, 160, 18],
-			[2620, 620, 420, 28],
+			[-200,    620, 560, 28],   # Plataforma Inicial
+			[580,  450, 180, 18],   # Grande Salto
+			[1150, 555, 200, 22],   # Checkpoint
+			[2380, 555, 160, 18],   # Pós Plataforma que Move
+			[2620, 350, 20, 298],   # Jump Pad
+			[2620, 620, 420, 28],   # Final
 		],
 		
 			"moving_platforms": [
@@ -52,39 +53,39 @@ static func get_data() -> Dictionary:
 			},
 			{ 
 				"start_pos": Vector2(1860.0, 465.0), # Antigos x_min e y
-				"end_pos": Vector2(1860.0, 400.0),   # Antigos x_max e y
+				"end_pos": Vector2(1860.0, 320.0),   # Antigos x_max e y
 				"w": 110.0, 
 				"h": 18.0, 
 				"speed": 120.0,
 				"to_end": true 
 			},
-			#{ "x_min": 1860.0, "x_max": 1860.0, "y": 465.0, "w": 110.0, "h": 18.0, "speed": 120.0 }
 		],
-
-		# [x, y] - topo da bandeira
 
 		"checkpoints": [
 			[1260, 530],
 		],
+		
+		"jump_pads": [
+			[2500, 542, 40, 12],
+		],
+		
 		"hazards": [
-			[ 380, 600,  50, 22],   # gap inicial
-			[ 770, 510,  40, 22],   # gap entre plataformas baixas
-			[1160, 540,  40, 22],   # antes do checkpoint
-			[1820, 440,  30, 22],   # após plataforma alta
-			[2380, 530,  40, 22],   # antes do salto final
+			[950, 555, 200, 22],   # Antes Plataforma Salto Longo
+			[1655, 456,  150, 22],   # Pós Plataforma que Move
+			[3040, 620,  350, 22],   # Pós Final
 		],
 		"pushable_blocks": [
-			[200, 580, 40, 40],
+			[0, 580, 40, 40],
 		],
 		"stars": [
+			[300, 360],   # Estrela do Bog — empurre o bloco para baixo dela
 			[970, 400],   # Sobre o gap, requer pulo preciso entre plataformas
-			[1705, 290],  # Bem acima da plataforma alta — exige pulo no limite
-			[2370, 410],  # No gap antes da saída
-			[300, 460],   # Estrela do Bog — empurre o bloco para baixo dela
+			[1875, 160],  # Bem acima da plataforma alta — exige pulo no limite
+			[2630, 230],  # No gap antes da saída
 		],
 		"exit_pos":    [2940, 580],
-		"spawn_rob":   [60,   560],
-		"spawn_bog":   [160,  560],
+		"spawn_rob":   [-140,   560],
+		"spawn_bog":   [-40,  560],
 		"loopy_start": [2780, 572],
 		"loopy_end":   [2960, 572],
 	}

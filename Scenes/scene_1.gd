@@ -220,6 +220,13 @@ func _open_pause() -> void:
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	btn_resume.pressed.connect(_close_pause)
+	
+	var resume_key = InputEventKey.new()
+	resume_key.keycode = KEY_ESCAPE
+	var resume_shortcut = Shortcut.new()
+	resume_shortcut.events = [resume_key]
+	btn_resume.shortcut = resume_shortcut
+	
 	_pause_overlay.get_node("CenterBox").add_child(btn_resume)
 
 	var btn_help := Button.new()
@@ -246,7 +253,7 @@ func _open_pause() -> void:
 	btn_menu.size     = Vector2(320, 44)
 	btn_menu.add_theme_font_size_override("font_size", 20)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	btn_menu.pressed.connect(_quit_to_menu)
+	btn_menu.pressed.connect(_show_quit_confirm)
 	_pause_overlay.get_node("CenterBox").add_child(btn_menu)
 
 	var hint := Label.new()
@@ -406,7 +413,96 @@ func _close_pause() -> void:
 	_pause_overlay = null
 	get_tree().paused = false
 
-func _quit_to_menu() -> void:
+var _quit_confirm_overlay: Control = null
+
+func _show_quit_confirm() -> void:
+	if _quit_confirm_overlay and is_instance_valid(_quit_confirm_overlay):
+		return
+
+	_quit_confirm_overlay = Control.new()
+	_quit_confirm_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_quit_confirm_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	hud.add_child(_quit_confirm_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.85)
+	_quit_confirm_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_quit_confirm_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(376, 224)
+	box.size     = Vector2(400, 200)
+	box.color    = Color(0.12, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var border := ColorRect.new()
+	border.position = Vector2(376, 224)
+	border.size     = Vector2(400, 4)
+	border.color    = Color(0.95, 0.35, 0.35, 0.9)
+	center_box.add_child(border)
+
+	var title := Label.new()
+	title.text = "VOLTAR AO MENU?"
+	title.position = Vector2(376, 250)
+	title.size = Vector2(400, 30)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	center_box.add_child(title)
+
+	var msg := Label.new()
+	msg.text = "O progresso não salvo será perdido."
+	msg.position = Vector2(376, 290)
+	msg.size = Vector2(400, 30)
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.add_theme_font_size_override("font_size", 14)
+	msg.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75))
+	center_box.add_child(msg)
+
+	var btn_yes := Button.new()
+	btn_yes.text = "Sim"
+	btn_yes.position = Vector2(406, 340)
+	btn_yes.size = Vector2(150, 42)
+	btn_yes.add_theme_font_size_override("font_size", 18)
+	btn_yes.add_theme_color_override("font_color", Color(0.95, 0.45, 0.45))
+	btn_yes.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_yes.pressed.connect(_do_quit_to_menu)
+	center_box.add_child(btn_yes)
+
+	var btn_no := Button.new()
+	btn_no.text = "Não"
+	btn_no.position = Vector2(596, 340)
+	btn_no.size = Vector2(150, 42)
+	btn_no.add_theme_font_size_override("font_size", 18)
+	btn_no.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_no.pressed.connect(func():
+		if _quit_confirm_overlay and is_instance_valid(_quit_confirm_overlay):
+			_quit_confirm_overlay.queue_free()
+		_quit_confirm_overlay = null
+	)
+	center_box.add_child(btn_no)
+
+func _do_quit_to_menu() -> void:
+	if _quit_confirm_overlay and is_instance_valid(_quit_confirm_overlay):
+		_quit_confirm_overlay.queue_free()
+	_quit_confirm_overlay = null
+	
+	if _pause_overlay and is_instance_valid(_pause_overlay):
+		_pause_overlay.queue_free()
+	_pause_overlay = null
+	
+	if _death_overlay and is_instance_valid(_death_overlay):
+		_death_overlay.queue_free()
+	_death_overlay = null
+	
 	get_tree().paused = false
 	SoundManager.stop_ambient()
 	GameManager.return_to_menu()
@@ -448,6 +544,13 @@ func _load_level() -> void:
 
 	var level := GameManager.get_current_level()
 	var idx   := GameManager.current_level_index
+
+	rob.scale = Vector2.ONE
+	bog.scale = Vector2.ONE
+	rob.collision_mask = 1
+	bog.collision_mask = 1
+	rob.process_mode = Node.PROCESS_MODE_INHERIT
+	bog.process_mode = Node.PROCESS_MODE_INHERIT
 
 	rob.apply_modifiers(level["modifiers"])
 	bog.apply_modifiers(level["modifiers"])
@@ -508,11 +611,16 @@ func _load_level() -> void:
 	else:
 		bg_texture.visible = false
 	
+	var plat_color: Color = level.get("platform_color", Color.WHITE)
+	var mods: Dictionary = level.get("modifiers", {})
+	if mods.get("friction", 1.0) < 1.0:
+		plat_color = Color(0.55, 0.85, 0.95, 0.9)
+	
 	for p in level.get("platforms", []):
-		_create_platform(p[0], p[1], p[2], p[3], level["platform_color"])
+		_create_platform(p[0], p[1], p[2], p[3], plat_color)
 	
 	for mp in level.get("moving_platforms", []):
-		_spawn_moving_platform(mp, level["platform_color"])
+		_spawn_moving_platform(mp, plat_color)
 				
 	for cp in level.get("checkpoints", []):
 		_create_checkpoint(cp[0], cp[1])
@@ -656,6 +764,7 @@ func _clear_level() -> void:
 func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
 	var body := StaticBody2D.new()
 	body.position = Vector2(x + w / 2.0, y + h / 2.0)
+	body.add_to_group("ice_platforms")
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
@@ -717,6 +826,7 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 	var body := AnimatableBody2D.new()
 	body.sync_to_physics = true
 	body.global_position = mp["start_pos"]
+	body.add_to_group("ice_platforms")
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
@@ -849,24 +959,31 @@ func _create_spider(x: float, y: float, range_y: float, speed: float) -> void:
 func _create_checkpoint(x: float, y: float) -> void:
 	var area := Area2D.new()
 	area.position = Vector2(x, y)
-	area.set_meta("activated", false)
+	
+	var is_active: bool = has_checkpoint and abs(x - (checkpoint_rob.x + 28.0)) < 1.0
+	area.set_meta("activated", is_active)
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
 	rect.size   = Vector2(28, 64)
 	shape.shape = rect
 	area.add_child(shape)
+	
+	area.z_index = -1
 
 	var pole := ColorRect.new()
-	pole.size     = Vector2(4, 58)
+	pole.size     = Vector2(4, 94)
 	pole.position = Vector2(-2, -62)
 	pole.color    = Color(0.75, 0.75, 0.78)
 	area.add_child(pole)
 
-	var flag := ColorRect.new()
-	flag.size     = Vector2(22, 14)
-	flag.position = Vector2(2, -62)
-	flag.color    = Color(0.92, 0.82, 0.12)
+	var flag := Polygon2D.new()
+	flag.polygon = PackedVector2Array([
+		Vector2(2, -60),
+		Vector2(24, -53),
+		Vector2(2, -46)
+	])
+	flag.color    = Color(0.20, 0.90, 0.35) if is_active else Color(0.92, 0.82, 0.12)
 	flag.name     = "Flag"
 	area.add_child(flag)
 
@@ -929,20 +1046,25 @@ func _create_hazard(x: float, y: float, w: float, h: float) -> void:
 	death_area.body_entered.connect(_on_hazard_entered)
 	static_body.add_child(death_area)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color    = Color(0.75, 0.10, 0.10, 0.82) 
-	static_body.add_child(visual)
-
-	var n_spikes := int(w / 16) 
+	var spike_poly: Polygon2D = Polygon2D.new()
+	var pts: PackedVector2Array = PackedVector2Array()
+	var spike_width: float = 16.0
+	var spike_height: float = 6.0
+	var n_spikes: int = int(max(1.0, w / spike_width))
+	var actual_w: float = w / float(n_spikes)
+	var start_x: float = -w / 2.0
+	var top_y: float = -h / 2.0
+	
+	pts.append(Vector2(start_x, top_y))
 	for i in range(n_spikes):
-		var sp := Label.new()
-		sp.text     = "▲" 
-		sp.position = Vector2(-w / 2.0 + i * 16, -h / 2.0 - 4) 
-		sp.add_theme_font_size_override("font_size", 13) 
-		sp.add_theme_color_override("font_color", Color(1.0, 0.30, 0.30)) 
-		static_body.add_child(sp)
+		pts.append(Vector2(start_x + i * actual_w + actual_w/2.0, top_y - spike_height))
+		pts.append(Vector2(start_x + (i + 1) * actual_w, top_y))
+	pts.append(Vector2(start_x + w, top_y + h))
+	pts.append(Vector2(start_x, top_y + h))
+	
+	spike_poly.polygon = pts
+	spike_poly.color = Color(0.75, 0.15, 0.15, 0.95)
+	static_body.add_child(spike_poly)
 
 	add_child(static_body)
 	level_nodes.append(static_body)
@@ -961,20 +1083,28 @@ func _create_level_exit(pos: Vector2) -> void:
 	area.position = pos
 	area.name     = "LevelExit"
 
-	area.body_entered.connect(_on_exit_body_entered)
+	area.body_entered.connect(_on_exit_body_entered.bind(area))
 
 	add_child(area)
 	level_nodes.append(area)
 
-func _on_exit_body_entered(body: Node) -> void:
+func _on_exit_body_entered(body: Node, exit_area: Area2D) -> void:
 	if body == current_character and not hud.fading and not is_exiting and not hud.transitioning:
 		is_exiting = true
 		if rob:
 			rob.velocity = Vector2.ZERO
+			rob.collision_mask = 0
 			rob.process_mode = Node.PROCESS_MODE_DISABLED
 		if bog:
 			bog.velocity = Vector2.ZERO
+			bog.collision_mask = 0
 			bog.process_mode = Node.PROCESS_MODE_DISABLED
+			
+		var char_tw = create_tween().set_parallel(true).bind_node(self)
+		char_tw.set_ignore_time_scale(true)
+		char_tw.tween_property(body, "global_position", exit_area.global_position, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		char_tw.tween_property(body, "scale", Vector2.ZERO, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
 		SoundManager.play_sfx("collect")
 		
 		# Efeito de câmera lenta e zoom usando Tween (ignora escala de tempo)
@@ -1139,37 +1269,42 @@ func _create_star(x: float, y: float, level_idx: int, star_idx: int) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 
-	var star_visual := Node2D.new()
+	var star_visual: Polygon2D = Polygon2D.new()
+	var pts: PackedVector2Array = PackedVector2Array()
+	var outer_radius: float = 14.0
+	var inner_radius: float = 6.0
+	for i in range(10):
+		var angle: float = float(i) * PI / 5.0 - PI / 2.0
+		var r: float = outer_radius if i % 2 == 0 else inner_radius
+		pts.append(Vector2(cos(angle), sin(angle)) * r)
+	star_visual.polygon = pts
+	star_visual.color = Color(1.0, 0.88, 0.30)
+	
+	# Efeito de raios brilhantes ao redor
+	var rays := Node2D.new()
+	rays.name = "Rays"
+	for i in range(8):
+		var ray := Line2D.new()
+		ray.width = 2.0
+		ray.default_color = Color(1.0, 0.9, 0.5, 0.6)
+		var angle: float = float(i) * PI / 4.0
+		var dir := Vector2(cos(angle), sin(angle))
+		ray.points = PackedVector2Array([dir * 18.0, dir * 28.0])
+		rays.add_child(ray)
+	star_visual.add_child(rays)
+	
 	area.add_child(star_visual)
-	var gold     := Color(1.0, 0.88, 0.30)
-	var gold_hi  := Color(1.0, 0.96, 0.55)
-	for v in [Vector2(-3, -12), Vector2(-3, 6), Vector2(-12, -3), Vector2(6, -3)]:
-		var arm := ColorRect.new()
-		arm.size     = Vector2(6, 6)
-		arm.position = v
-		arm.color    = gold
-		star_visual.add_child(arm)
-	var body := ColorRect.new()
-	body.size     = Vector2(12, 12)
-	body.position = Vector2(-6, -6)
-	body.color    = gold_hi
-	star_visual.add_child(body)
-	var inner := ColorRect.new()
-	inner.size     = Vector2(6, 6)
-	inner.position = Vector2(-3, -3)
-	inner.color    = Color(1.0, 1.0, 0.85)
-	star_visual.add_child(inner)
-
-	var glow := ColorRect.new()
-	glow.size     = Vector2(36, 36)
-	glow.position = Vector2(-18, -18)
-	glow.color    = Color(1.0, 0.88, 0.30, 0.18)
-	star_visual.add_child(glow)
-	star_visual.move_child(glow, 0)
 
 	var tw := area.create_tween().set_loops()
 	tw.tween_property(star_visual, "position:y", -6.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(star_visual, "position:y",  0.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	var ray_rot_tw := rays.create_tween().set_loops()
+	ray_rot_tw.tween_property(rays, "rotation", PI * 2.0, 5.0).from(0.0)
+	
+	var ray_scale_tw := rays.create_tween().set_loops()
+	ray_scale_tw.tween_property(rays, "scale", Vector2(1.2, 1.2), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	ray_scale_tw.tween_property(rays, "scale", Vector2(0.8, 0.8), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	area.collision_layer = 0
 	area.collision_mask  = 1
@@ -1442,7 +1577,7 @@ func _show_death_screen() -> void:
 	btn_menu.position = Vector2(326, 408)
 	btn_menu.size     = Vector2(500, 58)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	btn_menu.pressed.connect(_quit_to_menu_from_death)
+	btn_menu.pressed.connect(_show_quit_confirm)
 	_death_overlay.add_child(btn_menu)
 	
 	# Texto Principal do Botão Menu
@@ -1479,14 +1614,7 @@ func _retry_from_death() -> void:
 	get_tree().paused = false
 	hud.start_fade(1, _reload_current_level)
 
-func _quit_to_menu_from_death() -> void:
-	if _death_overlay and is_instance_valid(_death_overlay):
-		_death_overlay.queue_free()
-	_death_overlay = null
-	get_tree().paused = false
-	SoundManager.stop_ambient()
-	GameManager.return_to_menu()
-	get_tree().change_scene_to_file("res://Scenes/main_menu.tscn")
+
 
 func _go_to_menu() -> void:
 	SoundManager.stop_ambient()
@@ -1508,7 +1636,7 @@ func _check_dialogue_trigger() -> void:
 		return
 	if _dialogue_system and _dialogue_system.is_active():
 		return
-	if GameManager.current_level_index >= GameManager.get_level_count():
+	if GameManager.current_level_index >= GameManager.levels.size():
 		return
 	if _dialogue_shown_for_level == GameManager.current_level_index:
 		return
@@ -1557,6 +1685,11 @@ func _load_next_level() -> void:
 func _show_victory() -> void:
 	if victory_overlay:
 		return
+
+	if rob:
+		rob.process_mode = Node.PROCESS_MODE_DISABLED
+	if bog:
+		bog.process_mode = Node.PROCESS_MODE_DISABLED
 
 	SoundManager.play_sfx("victory")
 	victory_overlay       = Control.new()
@@ -1766,9 +1899,9 @@ func _add_reunion_scene(tier: int = 0) -> void:
 		title = "—  BOM REENCONTRO  —"
 	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
 
-	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 420.0, 570.0, 1.6)
+	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
 	_draw_loopy_full(scene, 576.0, 570.0, 1.3)
-	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 730.0, 570.0, 1.6)
+	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
 
 	_add_heart(scene, 400.0, 340.0)
 	_add_heart(scene, 750.0, 345.0)
@@ -1778,16 +1911,27 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
 
-func _add_character_sprite(parent: Node, path: String, feet_x: float, feet_y: float, scl: float) -> void:
+func _add_character_sprite(parent: Node, path: String, h_frames: int, crop_top: float, feet_x: float, feet_y: float, scl: float, flip: bool = false) -> void:
 	var sprite := Sprite2D.new()
 	var tex: Texture2D = load(path)
 	if tex == null:
 		return
 	sprite.texture  = tex
-	sprite.hframes  = 16
+	
+	var tex_w := tex.get_width()
+	var tex_h := tex.get_height()
+	
+	if crop_top > 0:
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0, crop_top, tex_w, tex_h - crop_top)
+		tex_h -= int(crop_top)
+
+	sprite.hframes  = h_frames
 	sprite.frame    = 0
 	sprite.scale    = Vector2(scl, scl)
-	var frame_h := tex.get_height()
+	sprite.flip_h   = flip
+	
+	var frame_h := float(tex_h)
 	sprite.position = Vector2(feet_x, feet_y - (frame_h * scl) * 0.5)
 	parent.add_child(sprite)
 
@@ -1956,11 +2100,11 @@ func _create_background() -> void:
 
 func spawn_jump_particles(pos: Vector2, character_name: String) -> void:
 	var color := Color(0.40, 0.75, 1.00) if character_name == "Rob" else Color(1.00, 0.60, 0.25)
-	_spawn_dust(pos + Vector2(0, 24), color, 8, -40.0)
+	_spawn_dust(pos + Vector2(0, 64), color, 8, -40.0)
 
 func spawn_land_particles(pos: Vector2, character_name: String) -> void:
 	var color := Color(0.40, 0.75, 1.00) if character_name == "Rob" else Color(1.00, 0.60, 0.25)
-	_spawn_dust(pos + Vector2(0, 24), color, 12, -20.0)
+	_spawn_dust(pos + Vector2(0, 64), color, 12, -20.0)
 	apply_shake(1.5)
 
 func _spawn_dust(pos: Vector2, color: Color, amount: int, _vel_y: float) -> void:
@@ -2092,24 +2236,41 @@ func _create_jump_pad(x: float, y: float, w: float, h: float) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 	
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.95, 0.22, 0.45, 0.85)
-	area.add_child(visual)
+	var pivot: Node2D = Node2D.new()
+	pivot.position = Vector2(0, h / 2.0)
 	
-	var top := ColorRect.new()
-	top.size = Vector2(w, 4)
-	top.position = Vector2(-w / 2.0, -h / 2.0)
-	top.color = Color(1.0, 0.90, 0.25)
-	area.add_child(top)
+	var visual: Node2D = Node2D.new()
+	visual.position = Vector2(-w / 2.0, -h)
 	
-	var arrow := Label.new()
-	arrow.text = "▲"
-	arrow.position = Vector2(-5, -h / 2.0 - 9)
-	arrow.add_theme_font_size_override("font_size", 10)
-	arrow.add_theme_color_override("font_color", Color(1.0, 0.90, 0.25))
-	area.add_child(arrow)
+	var base: ColorRect = ColorRect.new()
+	base.size = Vector2(w, h * 0.3)
+	base.position = Vector2(0, h * 0.7)
+	base.color = Color(0.3, 0.3, 0.35)
+	visual.add_child(base)
+	
+	var spring: Line2D = Line2D.new()
+	spring.width = 4.0
+	spring.default_color = Color(0.7, 0.75, 0.8)
+	var pts: PackedVector2Array = PackedVector2Array()
+	var start_y: float = h * 0.7
+	var end_y: float = 6.0
+	var num_coils: int = 3
+	var step_y: float = (start_y - end_y) / float(num_coils * 2)
+	for i in range(num_coils * 2 + 1):
+		var px: float = w * 0.2 if i % 2 == 0 else w * 0.8
+		var py: float = start_y - float(i) * step_y
+		pts.append(Vector2(px, py))
+	spring.points = pts
+	visual.add_child(spring)
+	
+	var pad: ColorRect = ColorRect.new()
+	pad.size = Vector2(w, 6)
+	pad.position = Vector2(0, 0)
+	pad.color = Color(0.95, 0.22, 0.45)
+	visual.add_child(pad)
+	
+	pivot.add_child(visual)
+	area.add_child(pivot)
 	
 	area.collision_layer = 0
 	area.collision_mask = 1
@@ -2125,9 +2286,8 @@ func _create_jump_pad(x: float, y: float, w: float, h: float) -> void:
 			apply_shake(4.5)
 			
 			var tw := area.create_tween()
-			visual.scale = Vector2(1.3, 0.4)
-			visual.pivot_offset = Vector2(w / 2.0, h / 2.0)
-			tw.tween_property(visual, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_ELASTIC)
+			pivot.scale = Vector2(1.3, 0.4)
+			tw.tween_property(pivot, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_ELASTIC)
 	)
 	
 	add_child(area)
@@ -2143,18 +2303,29 @@ func _create_speed_pad(x: float, y: float, w: float, h: float, dir_x: float) -> 
 	shape.shape = rect
 	area.add_child(shape)
 	
-	var visual := ColorRect.new()
+	var visual: ColorRect = ColorRect.new()
 	visual.size = Vector2(w, h)
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.20, 0.85, 0.60, 0.85)
+	visual.color = Color(0.15, 0.65, 0.45, 0.85)
 	area.add_child(visual)
 	
-	var arrow := Label.new()
-	arrow.text = ">>>" if dir_x > 0 else "<<<"
-	arrow.position = Vector2(-12, -h / 2.0 - 8)
-	arrow.add_theme_font_size_override("font_size", 9)
-	arrow.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
-	area.add_child(arrow)
+	var chevron_w: float = 6.0
+	var spacing: float = 12.0
+	var num_chev: int = 3
+	var start_x: float = (-spacing * float(num_chev)) / 2.0 + spacing / 2.0
+	
+	for i in range(num_chev):
+		var chev: Line2D = Line2D.new()
+		chev.width = 4.0
+		chev.default_color = Color(0.6, 1.0, 0.8)
+		var cx: float = start_x + float(i) * spacing
+		var sign_dir: float = 1.0 if dir_x > 0 else -1.0
+		chev.points = PackedVector2Array([
+			Vector2(cx - sign_dir * chevron_w, -h/2.0 + 6.0),
+			Vector2(cx + sign_dir * chevron_w, 0.0),
+			Vector2(cx - sign_dir * chevron_w, h/2.0 - 6.0)
+		])
+		area.add_child(chev)
 	
 	area.collision_layer = 0
 	area.collision_mask = 1
@@ -2209,40 +2380,43 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 	shape.shape = rect
 	area.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	var visual: Polygon2D = Polygon2D.new()
+	visual.polygon = PackedVector2Array([
+		Vector2(-w/2.0, h/2.0),
+		Vector2(w/2.0, h/2.0),
+		Vector2(w/2.0 - 4.0, -h/2.0 + 6.0),
+		Vector2(-w/2.0 + 4.0, -h/2.0 + 6.0)
+	])
 	visual.color = Color(0.25, 0.30, 0.45) if not is_heavy else Color(0.55, 0.20, 0.20)
 	visual.name = "Visual"
 	area.add_child(visual)
 
-	var top := ColorRect.new()
-	top.size = Vector2(w - 8, 4)
-	top.position = Vector2(-w / 2.0 + 4, -h / 2.0)
+	var top: Polygon2D = Polygon2D.new()
+	top.polygon = PackedVector2Array([
+		Vector2(-w/2.0 + 4.0, -h/2.0 + 6.0),
+		Vector2(w/2.0 - 4.0, -h/2.0 + 6.0),
+		Vector2(w/2.0 - 6.0, -h/2.0),
+		Vector2(-w/2.0 + 6.0, -h/2.0)
+	])
 	top.color = Color(0.4, 0.5, 0.7) if not is_heavy else Color(0.8, 0.3, 0.3)
 	top.name = "TopLine"
 	area.add_child(top)
 
+	var timer_bg: ColorRect = ColorRect.new()
+	timer_bg.size = Vector2(w, 4)
+	timer_bg.position = Vector2(-w / 2.0, -h / 2.0 - 10)
+	timer_bg.color = Color(0.15, 0.15, 0.20, 0.8)
+	timer_bg.visible = false
+	area.add_child(timer_bg)
+	
+	var timer_bar: ColorRect = ColorRect.new()
+	timer_bar.size = Vector2(w, 4)
+	timer_bar.position = Vector2(0, 0)
+	timer_bar.color = Color(1.0, 0.85, 0.3)
+	timer_bg.add_child(timer_bar)
+
 	if is_heavy:
-		var lbl := Label.new()
-		lbl.text = "HEAVY"
-		lbl.position = Vector2(-w / 2.0, -h / 2.0 - 20)
-		lbl.size = Vector2(w, 18)
-		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.add_theme_font_size_override("font_size", 10)
-		lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		area.add_child(lbl)
-		
-		var weight_hint := Label.new()
-		weight_hint.text = ""
-		weight_hint.name = "WeightHint"
-		weight_hint.position = Vector2(-80, -h / 2.0 - 40)
-		weight_hint.size = Vector2(160, 20)
-		weight_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		weight_hint.add_theme_font_size_override("font_size", 12)
-		weight_hint.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
-		weight_hint.modulate.a = 0.0
-		area.add_child(weight_hint)
+		pass
 
 	area.collision_layer = 0
 	area.collision_mask = 1
@@ -2250,18 +2424,12 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 	area.body_entered.connect(func(body):
 		if body is CharacterBase or body is RigidBody2D:
 			if is_heavy and body is CharacterBase and body.character_name == "Rob":
-				var hint = area.get_node_or_null("WeightHint")
-				if hint:
-					hint.text = "MUITO LEVE"
-					var tw = area.create_tween()
-					tw.tween_property(hint, "modulate:a", 1.0, 0.15)
-					tw.tween_interval(1.5)
-					tw.tween_property(hint, "modulate:a", 0.0, 0.25)
 				return
 				
 			var count: int = area.get_meta("active_bodies") + 1
 			area.set_meta("active_bodies", count)
 			if count == 1:
+				timer_bg.visible = false
 				if area.has_meta("close_tween"):
 					var active_tw = area.get_meta("close_tween")
 					if is_instance_valid(active_tw):
@@ -2270,6 +2438,7 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 				else:
 					visual.color = Color(0.25, 0.85, 0.45) if not is_heavy else Color(0.90, 0.60, 0.15)
 					top.color = Color(0.55, 1.0, 0.7) if not is_heavy else Color(1.0, 0.80, 0.40)
+					top.position.y = 6.0
 					SoundManager.play_sfx("switch")
 					_set_gates_active(id, true)
 	)
@@ -2284,11 +2453,15 @@ func _create_switch(id: int, x: float, y: float, w: float, h: float, is_heavy: b
 			if count == 0:
 				var close_tw = area.create_tween()
 				area.set_meta("close_tween", close_tw)
-				close_tw.tween_interval(3.0)
+				timer_bg.visible = true
+				timer_bar.size.x = w
+				close_tw.tween_property(timer_bar, "size:x", 0.0, 3.0)
 				close_tw.tween_callback(func():
 					if is_instance_valid(visual) and is_instance_valid(top) and is_instance_valid(area):
 						visual.color = Color(0.25, 0.30, 0.45) if not is_heavy else Color(0.55, 0.20, 0.20)
 						top.color = Color(0.4, 0.5, 0.7) if not is_heavy else Color(0.8, 0.3, 0.3)
+						top.position.y = 0.0
+						timer_bg.visible = false
 						SoundManager.play_sfx("switch")
 						_set_gates_active(id, false)
 						area.remove_meta("close_tween")
@@ -2321,22 +2494,40 @@ func _create_gate(switch_id: int, x: float, y: float, w: float, h: float) -> voi
 	shape.shape = rect
 	gate.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
-	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.95, 0.20, 0.25, 0.90)
+	var visual: Node2D = Node2D.new()
 	visual.name = "Visual"
 	gate.add_child(visual)
+
+	var frame_l: ColorRect = ColorRect.new()
+	frame_l.size = Vector2(6, h)
+	frame_l.position = Vector2(-w/2.0, -h/2.0)
+	frame_l.color = Color(0.25, 0.25, 0.3)
+	visual.add_child(frame_l)
+
+	var frame_r: ColorRect = ColorRect.new()
+	frame_r.size = Vector2(6, h)
+	frame_r.position = Vector2(w/2.0 - 6.0, -h/2.0)
+	frame_r.color = Color(0.25, 0.25, 0.3)
+	visual.add_child(frame_r)
+
+	var frame_t: ColorRect = ColorRect.new()
+	frame_t.size = Vector2(w - 12, 10)
+	frame_t.position = Vector2(-w/2.0 + 6.0, -h/2.0)
+	frame_t.color = Color(0.35, 0.35, 0.4)
+	visual.add_child(frame_t)
 	
-	for i in range(3):
-		var laser := ColorRect.new()
-		laser.size = Vector2(w, 2)
-		laser.position = Vector2(-w / 2.0, -h / 2.0 + 4 + i * (h / 4.0))
-		laser.color = Color(1.0, 0.6, 0.6, 0.95)
-		gate.add_child(laser)
+	var num_lasers: int = int(h / 16.0)
+	var max_l: float = float(max(1.0, float(num_lasers - 1)))
+	for i in range(num_lasers):
+		var laser: ColorRect = ColorRect.new()
+		laser.size = Vector2(w - 12, 4)
+		var l_y: float = -h/2.0 + 16.0 + float(i) * ((h - 20.0) / max_l)
+		laser.position = Vector2(-w/2.0 + 6.0, l_y)
+		laser.color = Color(0.95, 0.20, 0.25, 0.85)
+		visual.add_child(laser)
 
 	var gate_script = GDScript.new()
-	gate_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n\nfunc open_gate():\n	collision_layer = 0\n	collision_mask = 0\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 0.15, 0.25)\n\nfunc close_gate():\n	collision_layer = 1\n	collision_mask = 1\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 1.0, 0.25)"
+	gate_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n\nfunc open_gate():\n	collision_layer = 0\n	collision_mask = 0\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 0.0, 0.25)\n\nfunc close_gate():\n	collision_layer = 1\n	collision_mask = 1\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 1.0, 0.25)"
 	gate_script.reload()
 	gate.set_script(gate_script)
 
@@ -2358,21 +2549,45 @@ func _create_crumbling_platform(x: float, y: float, w: float, h: float) -> void:
 	shape.shape = rect
 	plat.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
+	var visual := Node2D.new()
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.70, 0.65, 0.55)
 	visual.name = "Visual"
 	plat.add_child(visual)
 
-	for i in range(2):
-		var crack := ColorRect.new()
-		crack.size = Vector2(4, h - 8)
-		crack.position = Vector2(-w / 4.0 + i * (w / 2.0), -h / 2.0 + 4)
-		crack.color = Color(0.45, 0.40, 0.35)
-		plat.add_child(crack)
+	var bg := ColorRect.new()
+	bg.size = Vector2(w, h)
+	bg.color = Color(0.65, 0.55, 0.45)
+	visual.add_child(bg)
+
+	var border := ReferenceRect.new()
+	border.size = Vector2(w, h)
+	border.border_color = Color(0.45, 0.35, 0.25)
+	border.border_width = 3.0
+	border.editor_only = false
+	visual.add_child(border)
+
+	var crack1 := Line2D.new()
+	crack1.points = PackedVector2Array([
+		Vector2(w * 0.3, 0),
+		Vector2(w * 0.4, h * 0.5),
+		Vector2(w * 0.35, h)
+	])
+	crack1.width = 3.0
+	crack1.default_color = Color(0.3, 0.2, 0.15)
+	visual.add_child(crack1)
+
+	var crack2 := Line2D.new()
+	crack2.points = PackedVector2Array([
+		Vector2(w * 0.7, 0),
+		Vector2(w * 0.65, h * 0.6),
+		Vector2(w * 0.75, h)
+	])
+	crack2.width = 3.0
+	crack2.default_color = Color(0.3, 0.2, 0.15)
+	visual.add_child(crack2)
 
 	var area := Area2D.new()
+	area.name = "Area"
 	var area_shape := CollisionShape2D.new()
 	var area_rect := RectangleShape2D.new()
 	area_rect.size = Vector2(w - 6, 8)
@@ -2384,7 +2599,7 @@ func _create_crumbling_platform(x: float, y: float, w: float, h: float) -> void:
 	plat.add_child(area)
 
 	var plat_script = GDScript.new()
-	plat_script.source_code = "extends StaticBody2D\n\nvar _start_pos: Vector2\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\nvar _area: Area2D\nvar _is_crumbling := false\n\nfunc _ready():\n	_start_pos = get_meta(\"start_pos\")\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	_area = get_child(4)\n	_area.body_entered.connect(_on_body_entered)\n\nfunc _on_body_entered(body):\n	if _is_crumbling or not (body is CharacterBase):\n		return\n	_is_crumbling = true\n	var shake_tw = create_tween()\n	for i in range(5):\n		var offset = Vector2(randf_range(-3, 3), randf_range(-1, 1))\n		shake_tw.tween_property(self, \"position\", _start_pos + offset, 0.05)\n	shake_tw.tween_property(self, \"position\", _start_pos, 0.05)\n	await get_tree().create_timer(0.6).timeout\n	collision_layer = 0\n	collision_mask = 0\n	var fall_tw = create_tween().set_parallel(true)\n	fall_tw.tween_property(self, \"position:y\", _start_pos.y + 120.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)\n	fall_tw.tween_property(self, \"modulate:a\", 0.0, 0.4)\n	await get_tree().create_timer(2.5).timeout\n	position = _start_pos\n	modulate.a = 1.0\n	collision_layer = 1\n	collision_mask = 1\n	_is_crumbling = false"
+	plat_script.source_code = "extends StaticBody2D\n\nvar _start_pos: Vector2\nvar _shape: CollisionShape2D\nvar _visual: Node2D\nvar _area: Area2D\nvar _is_crumbling := false\n\nfunc _ready():\n	_start_pos = get_meta(\"start_pos\")\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	_area = get_node(\"Area\")\n	_area.body_entered.connect(_on_body_entered)\n\nfunc _on_body_entered(body):\n	if _is_crumbling or not (body is CharacterBase):\n		return\n	_is_crumbling = true\n	var shake_tw = create_tween()\n	for i in range(5):\n		var offset = Vector2(randf_range(-3, 3), randf_range(-1, 1))\n		shake_tw.tween_property(self, \"position\", _start_pos + offset, 0.05)\n	shake_tw.tween_property(self, \"position\", _start_pos, 0.05)\n	await get_tree().create_timer(0.6).timeout\n	collision_layer = 0\n	collision_mask = 0\n	var fall_tw = create_tween().set_parallel(true)\n	fall_tw.tween_property(self, \"position:y\", _start_pos.y + 120.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)\n	fall_tw.tween_property(self, \"modulate:a\", 0.0, 0.4)\n	await get_tree().create_timer(2.5).timeout\n	position = _start_pos\n	modulate.a = 1.0\n	collision_layer = 1\n	collision_mask = 1\n	_is_crumbling = false"
 	plat_script.reload()
 	plat.set_script(plat_script)
 
@@ -2405,48 +2620,56 @@ func _create_breakable_block(x: float, y: float, w: float, h: float) -> void:
 	shape.shape = rect
 	block.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
+	var visual := Node2D.new()
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.42, 0.42, 0.46)
 	visual.name = "Visual"
 	block.add_child(visual)
 
-	var border := ColorRect.new()
-	border.size = Vector2(w, 2)
-	border.position = Vector2(-w / 2.0, -h / 2.0)
-	border.color = Color(0.6, 0.6, 0.65)
-	block.add_child(border)
+	var bg := ColorRect.new()
+	bg.size = Vector2(w, h)
+	bg.color = Color(0.38, 0.38, 0.42)
+	visual.add_child(bg)
 
-	var crack1 := ColorRect.new()
-	crack1.size = Vector2(2, h)
-	crack1.position = Vector2(-w / 6.0, -h / 2.0)
-	crack1.color = Color(0.2, 0.2, 0.22)
-	block.add_child(crack1)
+	var border := ReferenceRect.new()
+	border.size = Vector2(w, h)
+	border.border_color = Color(0.2, 0.2, 0.25)
+	border.border_width = 4.0
+	border.editor_only = false
+	visual.add_child(border)
 
-	var crack2 := ColorRect.new()
-	crack2.size = Vector2(w / 2.0, 2)
-	crack2.position = Vector2(-w / 4.0, 0)
-	crack2.color = Color(0.2, 0.2, 0.22)
-	block.add_child(crack2)
+	var crack1 := Line2D.new()
+	crack1.points = PackedVector2Array([
+		Vector2(w * 0.2, 0),
+		Vector2(w * 0.4, h * 0.3),
+		Vector2(w * 0.3, h * 0.6),
+		Vector2(w * 0.5, h)
+	])
+	crack1.width = 4.0
+	crack1.default_color = Color(0.15, 0.15, 0.18)
+	visual.add_child(crack1)
 
-	var crack3 := ColorRect.new()
-	crack3.size = Vector2(2, h / 2.0)
-	crack3.position = Vector2(w / 4.0, 0)
-	crack3.color = Color(0.2, 0.2, 0.22)
-	block.add_child(crack3)
-
-	var label := Label.new()
-	label.text = "CRACKED"
-	label.position = Vector2(-w / 2.0, -8)
-	label.size = Vector2(w, 16)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 10)
-	label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95, 0.8))
-	block.add_child(label)
+	var crack2 := Line2D.new()
+	crack2.points = PackedVector2Array([
+		Vector2(w * 0.8, 0),
+		Vector2(w * 0.6, h * 0.4),
+		Vector2(w * 0.7, h * 0.7),
+		Vector2(w * 0.9, h)
+	])
+	crack2.width = 4.0
+	crack2.default_color = Color(0.15, 0.15, 0.18)
+	visual.add_child(crack2)
+	
+	var crack3 := Line2D.new()
+	crack3.points = PackedVector2Array([
+		Vector2(0, h * 0.5),
+		Vector2(w * 0.3, h * 0.6)
+	])
+	crack3.width = 3.0
+	crack3.default_color = Color(0.15, 0.15, 0.18)
+	visual.add_child(crack3)
 
 	var block_script = GDScript.new()
-	block_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: ColorRect\nvar _broken := false\nvar main_scene: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	main_scene = get_parent()\n\nfunc break_block():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.5, 0.5, 0.55), 18, -30.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
+	block_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: Node2D\nvar _broken := false\nvar main_scene: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n	main_scene = get_parent()\n\nfunc break_block():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.5, 0.5, 0.55), 18, -30.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
 	block_script.reload()
 	block.set_script(block_script)
 
@@ -2554,18 +2777,37 @@ func _create_key(lock_id: int, x: float, y: float) -> void:
 	shape.shape = rect
 	area.add_child(shape)
 
-	var visual := Label.new()
-	visual.text = "🔑"
-	visual.position = Vector2(-12, -12)
-	visual.size = Vector2(24, 24)
-	visual.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	visual.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	visual.add_theme_font_size_override("font_size", 20)
+	var visual := Node2D.new()
+	visual.position = Vector2(-4, -6)
+	
+	var head := Polygon2D.new()
+	head.polygon = PackedVector2Array([Vector2(-4, -4), Vector2(4, -4), Vector2(4, 4), Vector2(-4, 4)])
+	head.color = Color(1.0, 0.85, 0.2)
+	visual.add_child(head)
+	
+	var shaft := Line2D.new()
+	shaft.points = PackedVector2Array([Vector2(4, 0), Vector2(16, 0)])
+	shaft.width = 4.0
+	shaft.default_color = Color(1.0, 0.85, 0.2)
+	visual.add_child(shaft)
+	
+	var teeth1 := Line2D.new()
+	teeth1.points = PackedVector2Array([Vector2(10, 0), Vector2(10, 6)])
+	teeth1.width = 3.0
+	teeth1.default_color = Color(1.0, 0.85, 0.2)
+	visual.add_child(teeth1)
+
+	var teeth2 := Line2D.new()
+	teeth2.points = PackedVector2Array([Vector2(14, 0), Vector2(14, 6)])
+	teeth2.width = 3.0
+	teeth2.default_color = Color(1.0, 0.85, 0.2)
+	visual.add_child(teeth2)
+	
 	area.add_child(visual)
 
 	var tw := area.create_tween().set_loops()
-	tw.tween_property(visual, "position:y", -18.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(visual, "position:y", -12.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(visual, "position:y", -6.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	area.collision_layer = 0
 	area.collision_mask = 1
@@ -2619,18 +2861,9 @@ func _create_lock(lock_id: int, x: float, y: float, w: float, h: float) -> void:
 	border.color = Color(0.60, 0.30, 0.30)
 	block.add_child(border)
 
-	var label := Label.new()
-	label.text = "🔒"
-	label.position = Vector2(-w / 2.0, -12)
-	label.size = Vector2(w, 24)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 18)
-	label.name = "LockIcon"
-	block.add_child(label)
-	
 	# Área para detectar toque
 	var area := Area2D.new()
+	area.name = "Area"
 	var area_shape := CollisionShape2D.new()
 	var area_rect := RectangleShape2D.new()
 	area_rect.size = Vector2(w + 4, h + 4)
@@ -2641,7 +2874,7 @@ func _create_lock(lock_id: int, x: float, y: float, w: float, h: float) -> void:
 	block.add_child(area)
 
 	var block_script = GDScript.new()
-	block_script.source_code = "extends StaticBody2D\n\nvar _broken := false\nvar main_scene: Node2D\nvar lock_id: int\n\nfunc _ready():\n	main_scene = get_parent()\n	lock_id = get_meta(\"lock_id\")\n	var area = get_child(4)\n	area.body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if _broken or not (body is CharacterBase):\n		return\n	if main_scene._collected_keys.has(lock_id):\n		open_lock()\n\nfunc open_lock():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.8, 0.7, 0.4), 24, -40.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
+	block_script.source_code = "extends StaticBody2D\n\nvar _broken := false\nvar main_scene: Node2D\nvar lock_id: int\n\nfunc _ready():\n	main_scene = get_parent()\n	lock_id = get_meta(\"lock_id\")\n	var area = get_node(\"Area\")\n	area.body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if _broken or not (body is CharacterBase):\n		return\n	if main_scene._collected_keys.has(lock_id):\n		open_lock()\n\nfunc open_lock():\n	if _broken:\n		return\n	_broken = true\n	collision_layer = 0\n	collision_mask = 0\n	SoundManager.play_sfx(\"impact\")\n	if main_scene and main_scene.has_method(\"apply_shake\"):\n		main_scene.apply_shake(6.0)\n	if main_scene and main_scene.has_method(\"_spawn_dust\"):\n		main_scene._spawn_dust(global_position, Color(0.8, 0.7, 0.4), 24, -40.0)\n	var tw = create_tween().set_parallel(true)\n	tw.tween_property(self, \"scale\", Vector2(1.3, 1.3), 0.15)\n	tw.tween_property(self, \"modulate:a\", 0.0, 0.15)\n	await get_tree().create_timer(0.15).timeout\n	queue_free()"
 	block_script.reload()
 	block.set_script(block_script)
 
@@ -2661,34 +2894,49 @@ func _create_lever(gate_id: int, x: float, y: float, w: float, h: float) -> void
 	shape.shape = rect
 	area.add_child(shape)
 
-	var bg := ColorRect.new()
-	bg.size = Vector2(w, h)
-	bg.position = Vector2(-w / 2.0, -h / 2.0)
-	bg.color = Color(0.15, 0.15, 0.20)
-	area.add_child(bg)
+	var visual: Node2D = Node2D.new()
+	visual.name = "Visual"
+	visual.position = Vector2(-w / 2.0, -h / 2.0)
+	area.add_child(visual)
 
-	var haste := ColorRect.new()
-	haste.size = Vector2(w / 2.0 - 4, h - 8)
-	haste.position = Vector2(-w / 2.0 + 4, -h / 2.0 + 4)
-	haste.color = Color(0.8, 0.2, 0.2)
-	haste.name = "Haste"
-	area.add_child(haste)
+	var base_rect: Polygon2D = Polygon2D.new()
+	base_rect.polygon = PackedVector2Array([
+		Vector2(0, h),
+		Vector2(w, h),
+		Vector2(w - 6.0, h * 0.6),
+		Vector2(6.0, h * 0.6)
+	])
+	base_rect.color = Color(0.25, 0.25, 0.3)
+	visual.add_child(base_rect)
+
+	var haste_pivot: Node2D = Node2D.new()
+	haste_pivot.name = "HastePivot"
+	haste_pivot.position = Vector2(w / 2.0, h * 0.7)
+	haste_pivot.rotation_degrees = -45.0
+	visual.add_child(haste_pivot)
+
+	var haste: Line2D = Line2D.new()
+	haste.width = 6.0
+	haste.default_color = Color(0.6, 0.6, 0.65)
+	haste.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -h * 0.6)])
+	haste_pivot.add_child(haste)
 	
-	var label := Label.new()
-	label.text = "OFF"
-	label.position = Vector2(-w / 2.0, -h / 2.0 - 18)
-	label.size = Vector2(w, 16)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 12)
-	label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-	label.name = "Label"
-	area.add_child(label)
+	var handle: Polygon2D = Polygon2D.new()
+	handle.name = "Handle"
+	var pts: PackedVector2Array = PackedVector2Array()
+	for i in range(12):
+		var ang: float = float(i) * PI / 6.0
+		pts.append(Vector2(cos(ang), sin(ang)) * 8.0)
+	handle.polygon = pts
+	handle.position = Vector2(0, -h * 0.6)
+	handle.color = Color(0.9, 0.2, 0.2)
+	haste_pivot.add_child(handle)
 
 	area.collision_layer = 0
 	area.collision_mask = 1
 
 	var lever_script = GDScript.new()
-	lever_script.source_code = "extends Area2D\n\nvar _is_on := false\nvar gate_id: int\nvar main_scene: Node2D\nvar haste: ColorRect\nvar label: Label\nvar cooldown := 0.0\nvar w: float\n\nfunc _ready():\n	main_scene = get_parent()\n	gate_id = get_meta(\"gate_id\")\n	w = get_meta(\"w\")\n	haste = get_node(\"Haste\")\n	label = get_node(\"Label\")\n	body_entered.connect(_on_body_entered)\n\nfunc _process(delta):\n	if cooldown > 0:\n		cooldown -= delta\n\nfunc _on_body_entered(body):\n	if not (body is CharacterBase) or cooldown > 0:\n		return\n	cooldown = 0.5\n	_is_on = not _is_on\n	SoundManager.play_sfx(\"switch\")\n	var tw = create_tween()\n	if _is_on:\n		tw.tween_property(haste, \"position:x\", 0.0, 0.15)\n		haste.color = Color(0.2, 0.8, 0.4)\n		label.text = \"ON\"\n		label.add_theme_color_override(\"font_color\", Color(0.4, 1.0, 0.4))\n	else:\n		tw.tween_property(haste, \"position:x\", -w/2.0 + 4.0, 0.15)\n		haste.color = Color(0.8, 0.2, 0.2)\n		label.text = \"OFF\"\n		label.add_theme_color_override(\"font_color\", Color(1.0, 0.4, 0.4))\n	if main_scene and main_scene.has_method(\"_set_gates_active\"):\n		main_scene._set_gates_active(gate_id, _is_on)"
+	lever_script.source_code = "extends Area2D\n\nvar _is_on := false\nvar gate_id: int\nvar main_scene: Node2D\nvar haste_pivot: Node2D\nvar handle: Polygon2D\nvar cooldown := 0.0\n\nfunc _ready():\n	main_scene = get_parent()\n	gate_id = get_meta(\"gate_id\")\n	haste_pivot = get_node(\"Visual/HastePivot\")\n	handle = haste_pivot.get_node(\"Handle\")\n	body_entered.connect(_on_body_entered)\n\nfunc _process(delta):\n	if cooldown > 0:\n		cooldown -= delta\n\nfunc _on_body_entered(body):\n	if not (body is CharacterBase) or cooldown > 0:\n		return\n	cooldown = 0.5\n	_is_on = not _is_on\n	SoundManager.play_sfx(\"switch\")\n	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)\n	if _is_on:\n		tw.tween_property(haste_pivot, \"rotation_degrees\", 45.0, 0.25)\n		handle.color = Color(0.2, 0.9, 0.3)\n	else:\n		tw.tween_property(haste_pivot, \"rotation_degrees\", -45.0, 0.25)\n		handle.color = Color(0.9, 0.2, 0.2)\n	if main_scene and main_scene.has_method(\"_set_gates_active\"):\n		main_scene._set_gates_active(gate_id, _is_on)"
 	lever_script.reload()
 	area.set_script(lever_script)
 
@@ -2747,31 +2995,56 @@ func _setup_dark_mode() -> void:
 func _create_light_switch(x: float, y: float, w: float, h: float) -> void:
 	var area = Area2D.new()
 	area.position = Vector2(x + w / 2.0, y + h / 2.0)
-	var shape = CollisionShape2D.new()
-	var rect = RectangleShape2D.new()
-	rect.size = Vector2(w, h)
+	
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w + 12, h + 12)
 	shape.shape = rect
 	area.add_child(shape)
-	
-	var visual = ColorRect.new()
-	visual.size = Vector2(w, h)
+
+	var visual: Node2D = Node2D.new()
+	visual.name = "Visual"
 	visual.position = Vector2(-w / 2.0, -h / 2.0)
-	visual.color = Color(0.1, 0.1, 0.1)
-	visual.name = "SwitchVisual"
 	area.add_child(visual)
+
+	var base_rect: Polygon2D = Polygon2D.new()
+	base_rect.polygon = PackedVector2Array([
+		Vector2(0, h),
+		Vector2(w, h),
+		Vector2(w - 6.0, h * 0.6),
+		Vector2(6.0, h * 0.6)
+	])
+	base_rect.color = Color(0.25, 0.25, 0.3)
+	visual.add_child(base_rect)
+
+	var haste_pivot: Node2D = Node2D.new()
+	haste_pivot.name = "HastePivot"
+	haste_pivot.position = Vector2(w / 2.0, h * 0.7)
+	haste_pivot.rotation_degrees = -45.0
+	visual.add_child(haste_pivot)
+
+	var haste: Line2D = Line2D.new()
+	haste.width = 6.0
+	haste.default_color = Color(0.6, 0.6, 0.65)
+	haste.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -h * 0.6)])
+	haste_pivot.add_child(haste)
 	
-	var btn = ColorRect.new()
-	btn.size = Vector2(w - 8, h - 8)
-	btn.position = Vector2(-w / 2.0 + 4, -h / 2.0 + 4)
-	btn.color = Color(0.8, 0.2, 0.2)
-	btn.name = "BtnVisual"
-	area.add_child(btn)
-	
+	var handle: Polygon2D = Polygon2D.new()
+	handle.name = "Handle"
+	var pts: PackedVector2Array = PackedVector2Array()
+	for i in range(12):
+		var ang: float = float(i) * PI / 6.0
+		pts.append(Vector2(cos(ang), sin(ang)) * 8.0)
+	handle.polygon = pts
+	handle.position = Vector2(0, -h * 0.6)
+	handle.color = Color(0.9, 0.2, 0.2)
+	haste_pivot.add_child(handle)
+
 	area.collision_layer = 0
 	area.collision_mask = 1
 	
 	var switch_script = GDScript.new()
-	switch_script.source_code = "extends Area2D\n\nvar main_scene: Node2D\nvar activated := false\n\nfunc _ready():\n	main_scene = get_parent()\n	body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if activated:\n		return\n	if (body == main_scene.rob or body == main_scene.bog):\n		activated = true\n		SoundManager.play_sfx(\"switch\")\n		get_node(\"BtnVisual\").color = Color(0.2, 0.8, 0.4)\n		if main_scene._canvas_mod:\n			var tw = main_scene.create_tween()\n			tw.tween_property(main_scene._canvas_mod, \"color\", Color.WHITE, 1.5)\n		for light in main_scene._character_lights:\n			if is_instance_valid(light):\n				var tw2 = main_scene.create_tween()\n				tw2.tween_property(light, \"energy\", 0.0, 1.5)\n"
+	switch_script.source_code = "extends Area2D\n\nvar main_scene: Node2D\nvar activated := false\nvar haste_pivot: Node2D\nvar handle: Polygon2D\n\nfunc _ready():\n	main_scene = get_parent()\n	haste_pivot = get_node(\"Visual/HastePivot\")\n	handle = haste_pivot.get_node(\"Handle\")\n	body_entered.connect(_on_touch)\n\nfunc _on_touch(body):\n	if activated:\n		return\n	if (body == main_scene.rob or body == main_scene.bog):\n		activated = true\n		SoundManager.play_sfx(\"switch\")\n		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)\n		tw.tween_property(haste_pivot, \"rotation_degrees\", 45.0, 0.25)\n		handle.color = Color(0.9, 0.9, 0.3)\n		if main_scene._canvas_mod:\n			var tw_c = main_scene.create_tween()\n			tw_c.tween_property(main_scene._canvas_mod, \"color\", Color.WHITE, 1.5)\n		for light in main_scene._character_lights:\n			if is_instance_valid(light):\n				var tw_l = main_scene.create_tween()\n				tw_l.tween_property(light, \"energy\", 0.0, 1.5)\n"
 	switch_script.reload()
 	area.set_script(switch_script)
 	

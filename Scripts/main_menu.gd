@@ -89,7 +89,7 @@ func _build_ui() -> void:
 	else:
 		start_button.text = "Jogar"
 	start_button.custom_minimum_size = Vector2(300, 55)
-	start_button.add_theme_font_size_override("font_size", 26)
+	start_button.add_theme_font_size_override("font_size", 36)
 	start_button.pressed.connect(_on_start)
 	btn_box.add_child(start_button)
 	_setup_button_sounds(start_button)
@@ -104,7 +104,7 @@ func _build_ui() -> void:
 		_setup_button_sounds(new_game_button)
 
 	var tips_button := Button.new()
-	tips_button.text = "?  Dicas"
+	tips_button.text = "Dicas"
 	tips_button.custom_minimum_size = Vector2(300, 45)
 	tips_button.add_theme_font_size_override("font_size", 20)
 	tips_button.pressed.connect(_show_menu_help)
@@ -135,23 +135,6 @@ func _build_ui() -> void:
 	btn_box.add_child(quit_button)
 	_setup_button_sounds(quit_button)
 
-	var controls := Label.new()
-	controls.text     = "Controles:\nA/D ou Setas = Mover  |  Espaço = Pular  |  TAB = Trocar  |  Z = Habilidade"
-	controls.position = Vector2(200, 520)
-	controls.size     = Vector2(760, 60)
-	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls.add_theme_font_size_override("font_size", 15)
-	controls.add_theme_color_override("font_color", Color(0.5, 0.5, 0.58))
-	center_box.add_child(controls)
-
-	var credits := Label.new()
-	credits.text     = "Lost & Loopy - Projeto Jogos Digitais 2026"
-	credits.position = Vector2(350, 610)
-	credits.size     = Vector2(460, 30)
-	credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	credits.add_theme_font_size_override("font_size", 12)
-	credits.add_theme_color_override("font_color", Color(0.35, 0.35, 0.4))
-	center_box.add_child(credits)
 
 # ============================================================
 # ACOES
@@ -167,7 +150,97 @@ func _on_start() -> void:
 	else:
 		_build_newspaper()
 
+var _confirm_overlay: Control = null
+
+func _show_confirm_overlay(title_text: String, msg_text: String, yes_callback: Callable) -> void:
+	if _confirm_overlay and is_instance_valid(_confirm_overlay):
+		return
+
+	_confirm_overlay = Control.new()
+	_confirm_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_confirm_overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.85)
+	_confirm_overlay.add_child(dim)
+
+	var center_box = Control.new()
+	center_box.set_anchors_preset(Control.PRESET_CENTER)
+	center_box.offset_left = -576
+	center_box.offset_top = -324
+	center_box.offset_right = 576
+	center_box.offset_bottom = 324
+	_confirm_overlay.add_child(center_box)
+
+	var box := ColorRect.new()
+	box.position = Vector2(376, 224)
+	box.size     = Vector2(400, 200)
+	box.color    = Color(0.12, 0.10, 0.16, 0.98)
+	center_box.add_child(box)
+
+	var border := ColorRect.new()
+	border.position = Vector2(376, 224)
+	border.size     = Vector2(400, 4)
+	border.color    = Color(0.95, 0.35, 0.35, 0.9)
+	center_box.add_child(border)
+
+	var title := Label.new()
+	title.text = title_text
+	title.position = Vector2(376, 250)
+	title.size = Vector2(400, 30)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
+	center_box.add_child(title)
+
+	var msg := Label.new()
+	msg.text = msg_text
+	msg.position = Vector2(376, 290)
+	msg.size = Vector2(400, 30)
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.add_theme_font_size_override("font_size", 14)
+	msg.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75))
+	center_box.add_child(msg)
+
+	var btn_yes := Button.new()
+	btn_yes.text = "Sim"
+	btn_yes.position = Vector2(406, 340)
+	btn_yes.size = Vector2(150, 42)
+	btn_yes.add_theme_font_size_override("font_size", 18)
+	btn_yes.add_theme_color_override("font_color", Color(0.95, 0.45, 0.45))
+	btn_yes.pressed.connect(func():
+		_close_confirm_overlay()
+		yes_callback.call()
+	)
+	center_box.add_child(btn_yes)
+	_setup_button_sounds(btn_yes)
+
+	var btn_no := Button.new()
+	btn_no.text = "Não"
+	btn_no.position = Vector2(596, 340)
+	btn_no.size = Vector2(150, 42)
+	btn_no.add_theme_font_size_override("font_size", 18)
+	btn_no.pressed.connect(_close_confirm_overlay)
+	
+	var resume_key = InputEventKey.new()
+	resume_key.keycode = KEY_ESCAPE
+	var resume_shortcut = Shortcut.new()
+	resume_shortcut.events = [resume_key]
+	btn_no.shortcut = resume_shortcut
+	
+	center_box.add_child(btn_no)
+	_setup_button_sounds(btn_no)
+
+func _close_confirm_overlay() -> void:
+	if _confirm_overlay and is_instance_valid(_confirm_overlay):
+		_confirm_overlay.queue_free()
+	_confirm_overlay = null
+
 func _on_new_game() -> void:
+	_show_confirm_overlay("NOVO JOGO?", "Todo o progresso atual será apagado.", _do_new_game)
+
+func _do_new_game() -> void:
 	start_button.disabled = true
 	if is_instance_valid(new_game_button):
 		new_game_button.disabled = true
@@ -176,6 +249,9 @@ func _on_new_game() -> void:
 	_build_newspaper()
 
 func _on_quit() -> void:
+	_show_confirm_overlay("SAIR DO JOGO?", "Deseja realmente fechar o jogo?", _do_quit)
+
+func _do_quit() -> void:
 	GameManager.save_game()
 	get_tree().quit()
 
@@ -519,7 +595,7 @@ func _build_character_intro() -> void:
 
 	var dim := ColorRect.new()
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.04, 0.05, 0.10, 0.97)
+	dim.color = Color(0.039, 0.051, 0.102, 1.0)
 	root.add_child(dim)
 
 	var center_box = Control.new()
@@ -540,11 +616,11 @@ func _build_character_intro() -> void:
 	var divider := ColorRect.new()
 	divider.position = Vector2(576, 130)
 	divider.size     = Vector2(2, 400)
-	divider.color    = Color(0.25, 0.30, 0.45, 0.45)
+	divider.color    = Color(0.251, 0.302, 0.451, 1.0)
 	center_box.add_child(divider)
 
 	# ---- ROB (lado esquerdo) ----
-	_build_hero_card(center_box, "res://Assets/Characters/Main_2/Idle.png",
+	_build_hero_card(center_box, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 112, # Mude o 0 para mover horizontalmente
 		70, "ROB", Color(0.30, 0.65, 1.00),
 		"Ágil e rápido",
 		[
@@ -556,7 +632,7 @@ func _build_character_intro() -> void:
 		])
 
 	# ---- BOG (lado direito) ----
-	_build_hero_card(center_box, "res://Assets/Characters/Main_1/Idle.png",
+	_build_hero_card(center_box, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 112, # Mude o 0 para mover horizontalmente
 		640, "BOG", Color(1.00, 0.60, 0.25),
 		"Forte e pesado",
 		[
@@ -571,7 +647,7 @@ func _build_character_intro() -> void:
 	var footer_bg := ColorRect.new()
 	footer_bg.position = Vector2(76, 540)
 	footer_bg.size     = Vector2(1000, 60)
-	footer_bg.color    = Color(0.10, 0.08, 0.04, 0.85)
+	footer_bg.color    = Color(0.102, 0.078, 0.039, 1.0)
 	center_box.add_child(footer_bg)
 
 	_nl(center_box, "CONTROLES  ·  A/D ou Setas = Mover   ·   ESPAÇO = Pular   ·   TAB = Trocar personagem   ·   Z = Habilidade   ·   ESC = Pausa",
@@ -589,7 +665,7 @@ func _build_character_intro() -> void:
 
 	_intro_visible = true
 
-func _build_hero_card(parent: Node, sprite_path: String,
+func _build_hero_card(parent: Node, sprite_path: String, h_frames: int, crop_top: float, offset_x: float,
 					  x: float, hero_name: String, color: Color,
 					  subtitle: String, bullets: Array) -> void:
 	# Retrato (sprite do jogo)
@@ -597,16 +673,19 @@ func _build_hero_card(parent: Node, sprite_path: String,
 	if tex != null:
 		var sprite := Sprite2D.new()
 		sprite.texture  = tex
-		sprite.hframes  = 16
+		if crop_top > 0:
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, crop_top, tex.get_width(), tex.get_height() - crop_top)
+		sprite.hframes  = h_frames
 		sprite.frame    = 0
 		sprite.scale    = Vector2(1.9, 1.9)
-		var frame_h := tex.get_height()
-		sprite.position = Vector2(x + 120, 170 + frame_h * 0.95)
+		var frame_h := tex.get_height() - crop_top
+		sprite.position = Vector2(x + 120 + offset_x, 170 + frame_h * 0.95)
 		parent.add_child(sprite)
 
 	# Moldura do retrato
 	var frame_bg := ColorRect.new()
-	frame_bg.position = Vector2(x + 20, 140)
+	frame_bg.position = Vector2(x + 20 + offset_x, 140)
 	frame_bg.size     = Vector2(200, 200)
 	frame_bg.color    = Color(color.r * 0.20, color.g * 0.20, color.b * 0.22, 0.50)
 	parent.add_child(frame_bg)

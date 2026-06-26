@@ -41,14 +41,14 @@ func _ready() -> void:
 		Level1Data.get_data(),
 		Level2Data.get_data(),
 		Level3Data.get_data(),
-		Level4Data.get_data(),
-		Level5Data.get_data(),
-		Level6Data.get_data(),
-		Level7Data.get_data(),
-		Level8Data.get_data(),
-		Level9Data.get_data(),
-		Level10Data.get_data(),
-		LevelSecretHouse.get_data(),
+		#Level4Data.get_data(),
+		#Level5Data.get_data(),
+		#Level6Data.get_data(),
+		#Level7Data.get_data(),
+		#Level8Data.get_data(),
+		#Level9Data.get_data(),
+		#Level10Data.get_data(),
+		#LevelSecretHouse.get_data(),
 	]
 	for lv in levels:
 		if not lv.get("is_secret", false):

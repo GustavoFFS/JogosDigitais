@@ -8,7 +8,7 @@ class_name GravityZone
 @export var height: float = 64.0
 
 var _time: float = 0.0
-var _arrows: Array[Label] = []
+var _wind_lines: Array[Dictionary] = []
 var _bg: ColorRect
 var _borders: Array[ColorRect] = []
 
@@ -61,71 +61,63 @@ func _setup_visuals() -> void:
 	add_child(border_r)
 	_borders.append(border_r)
 
-	# 3. Grid de setas indicativas que sobem continuamente
-	var col_spacing: float = 32.0
-	var row_spacing: float = 40.0
-	
-	var cols: int = int(max(1.0, floor(width / col_spacing)))
-	var rows: int = int(max(1.0, floor(height / row_spacing)))
-	
-	var actual_col_spacing: float = width / cols
-	var actual_row_spacing: float = height / rows
-
-	var arrow_char: String = "▲" if gravity_scale < 0 else "▼"
-
-	for c in range(cols):
-		for r in range(rows):
-			var arrow := Label.new()
-			arrow.text = arrow_char
-			arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			arrow.size = Vector2(24, 20)
-			
-			# Espaçamento e offset randômico para as setas fluírem organicamente
-			var px: float = -width / 2.0 + (c + 0.5) * actual_col_spacing - 12.0
-			var py: float = -height / 2.0 + (r + randf()) * actual_row_spacing - 10.0
-			arrow.position = Vector2(px, py)
-			
-			arrow.add_theme_font_size_override("font_size", 12)
-			arrow.add_theme_color_override("font_color", Color(0.85, 0.5, 1.0, 0.75))
-			
-			add_child(arrow)
-			_arrows.append(arrow)
+	# 3. Linhas de vento ondulantes desenhadas vetorialmente
+	var num_lines: int = int(max(2.0, width / 24.0))
+	for i in range(num_lines):
+		_wind_lines.append({
+			"x": -width / 2.0 + (i + 0.5) * (width / num_lines),
+			"y": randf() * height - height / 2.0,
+			"speed": randf_range(60.0, 120.0),
+			"phase": randf() * PI * 2.0,
+			"length": randf_range(15.0, 35.0)
+		})
 
 func _process(delta: float) -> void:
 	_time += delta
 
-	# Fundo pulsa suavemente
 	if _bg:
 		_bg.color.a = 0.20 + 0.08 * sin(_time * 4.0)
 
-	# Bordas pulsam com o campo de força
 	var border_alpha: float = 0.5 + 0.25 * sin(_time * 4.0)
 	for border in _borders:
 		border.color.a = border_alpha
 
-	# Movimento e fade suave das setas indicativas
-	# A velocidade de subida/descida é proporcional à escala da gravidade da zona
-	var scroll_speed: float = -gravity_scale * 120.0
+	var dir: float = -1.0 if gravity_scale < 0 else 1.0
 	var half_h: float = height / 2.0
-	var fade_dist: float = min(28.0, height * 0.35)
 
-	for arrow in _arrows:
-		arrow.position.y -= scroll_speed * delta
+	for line in _wind_lines:
+		line["y"] += dir * line["speed"] * delta
+		line["phase"] += delta * 5.0
 
-		# Loop infinito nas extremidades da área
-		if scroll_speed > 0: # Subindo
-			if arrow.position.y < -half_h - 15:
-				arrow.position.y = half_h
-		else: # Descendo
-			if arrow.position.y > half_h:
-				arrow.position.y = -half_h - 15
+		if dir < 0 and line["y"] < -half_h - 20:
+			line["y"] = half_h + 20
+		elif dir > 0 and line["y"] > half_h + 20:
+			line["y"] = -half_h - 20
 
-		# Fade suave próximo aos limites superior/inferior
-		var local_y: float = arrow.position.y + 10.0
-		var dist_to_edge: float = half_h - abs(local_y)
-		var alpha: float = clamp(dist_to_edge / fade_dist, 0.0, 1.0) * 0.75
-		arrow.modulate.a = alpha
+	queue_redraw()
+
+func _draw() -> void:
+	var color := Color(0.85, 0.5, 1.0, 0.6)
+	var half_h: float = height / 2.0
+	
+	for line in _wind_lines:
+		var line_pts: PackedVector2Array = PackedVector2Array()
+		var segments: int = 8
+		for i in range(segments):
+			var t: float = float(i) / float(segments - 1)
+			var y_offset: float = float(line["length"]) * t
+			var x_offset: float = sin(float(line["phase"]) + t * PI) * 5.0
+			var pt_y: float = float(line["y"]) - y_offset * (-1.0 if gravity_scale > 0 else 1.0)
+			line_pts.append(Vector2(float(line["x"]) + x_offset, pt_y))
+		
+		var local_y: float = float(line["y"]) - float(line["length"])/2.0 * (-1.0 if gravity_scale > 0 else 1.0)
+		var dist_to_edge: float = half_h - float(abs(local_y))
+		var fade_dist: float = min(28.0, height * 0.35)
+		var alpha: float = clamp(dist_to_edge / fade_dist, 0.0, 1.0) * 0.8
+		color.a = alpha
+		
+		for i in range(segments - 1):
+			draw_line(line_pts[i], line_pts[i+1], color, 2.0, true)
 
 func _on_body_entered(body: Node) -> void:
 	if body is CharacterBase:
