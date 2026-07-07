@@ -219,7 +219,7 @@ func _open_pause() -> void:
 	btn_resume.size     = Vector2(320, 44)
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	btn_resume.pressed.connect(_close_pause)
+	btn_resume.pressed.connect(_handle_resume_or_esc)
 	
 	var resume_key = InputEventKey.new()
 	resume_key.keycode = KEY_ESCAPE
@@ -412,6 +412,17 @@ func _close_pause() -> void:
 		_pause_overlay.queue_free()
 	_pause_overlay = null
 	get_tree().paused = false
+
+func _handle_resume_or_esc() -> void:
+	if _options_overlay and is_instance_valid(_options_overlay):
+		_close_options_menu()
+	elif _quit_confirm_overlay and is_instance_valid(_quit_confirm_overlay):
+		_quit_confirm_overlay.queue_free()
+		_quit_confirm_overlay = null
+	elif hud.is_help_visible():
+		hud._close_help()
+	else:
+		_close_pause()
 
 var _quit_confirm_overlay: Control = null
 

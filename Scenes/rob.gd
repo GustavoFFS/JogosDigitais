@@ -15,7 +15,7 @@ func _ready() -> void:
 	base_jump_velocity = -420.0
 	can_push           = false
 	anim_suffix        = "_2"
-	ability_cooldown   = 0.0
+	ability_cooldown   = 1.2
 
 # ============================================================
 # GAME LOOP (INPUT -> UPDATE -> RENDER)

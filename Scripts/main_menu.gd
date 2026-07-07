@@ -34,6 +34,10 @@ var _newspaper_visible: bool = false
 var _intro_visible: bool = false
 
 func _ready() -> void:
+	var custom_font = load("res://Assets/Fonts/LilitaOne-Regular.ttf")
+	if custom_font:
+		ThemeDB.fallback_font = custom_font
+
 	_build_ui()
 	SoundManager.play_bgm("res://backgroundmusicforvideos-gaming-game-minecraft-background-music-372242.ogg")
 
@@ -42,6 +46,19 @@ func _process(delta: float) -> void:
 	if title_label:
 		title_label.rotation = sin(time * 1.5) * 0.03
 		title_label.position.y = 100 + sin(time * 2.0) * 5.0
+		
+	# Verifica se apertou ESC para fechar as janelas (Dicas, Opções, Créditos)
+	if Input.is_action_just_pressed("ui_cancel") or Input.is_action_just_pressed("pause"):
+		if _menu_help_overlay and is_instance_valid(_menu_help_overlay):
+			_close_menu_help()
+			return
+		elif _options_overlay and is_instance_valid(_options_overlay):
+			_close_options_menu()
+			return
+		elif _credits_overlay and is_instance_valid(_credits_overlay):
+			_close_credits_menu()
+			return
+
 	if _newspaper_visible:
 		if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("ui_accept"):
 			_newspaper_visible = false
@@ -315,7 +332,7 @@ func _show_menu_help() -> void:
 	center_box.add_child(top)
 
 	_menu_help_lbl("DICAS", 0, 82, 1152, 38, 28, Color(1.0, 0.85, 0.30), true)
-	_menu_help_lbl("Tudo o que você precisa saber para resgatar o Loopy",
+	_menu_help_lbl("Tudo o que você precisa saber para resgatar o Loopy!!!",
 				   0, 120, 1152, 22, 13, Color(0.60, 0.65, 0.78), true)
 
 	# Colunas Rob / Bog
@@ -324,7 +341,7 @@ func _show_menu_help() -> void:
 				   180, 196, 360, 110, 14, Color(0.88, 0.90, 0.98))
 
 	_menu_help_lbl("BOG   — Forte", 612, 160, 380, 28, 20, Color(1.00, 0.60, 0.25), true)
-	_menu_help_lbl("• Mais lento, pulo menor\n• [Z] IMPACTO — chão: empurrão  ·  ar: queda\n• Empurra caixas de madeira\n   (basta caminhar contra elas — sem botão)",
+	_menu_help_lbl("• Mais lento, pulo menor\n• [Pulo + Z] IMPACTO — queda brusca\n• Empurra caixas de madeira\n   (basta caminhar contra elas)",
 				   632, 196, 360, 110, 14, Color(0.88, 0.90, 0.98))
 
 	var sep := ColorRect.new()
@@ -334,11 +351,11 @@ func _show_menu_help() -> void:
 	_menu_help_overlay.get_node("CenterBox").add_child(sep)
 
 	_menu_help_lbl("CONTROLES", 0, 330, 1152, 24, 16, Color(0.50, 0.88, 0.55), true)
-	_menu_help_lbl("A/D ou ←/→  mover   ·   ESPAÇO  pular   ·   TAB  trocar personagem   ·   Z  habilidade   ·   ESC  pausa",
+	_menu_help_lbl("A/D ou ←/→ - MOVER   ·   ESPAÇO ou ↑ - PULAR   ·   TAB - TROCAR PERSONAGEM   ·   Z - HABILIDADE   ·   ESC - PAUSA",
 				   0, 358, 1152, 22, 14, Color(0.88, 0.90, 0.98), true)
 
 	_menu_help_lbl("★ ESTRELAS", 0, 400, 1152, 24, 16, Color(1.0, 0.85, 0.30), true)
-	_menu_help_lbl("3 estrelas normais + 1 estrela do Bog (alta — empurre a caixa de madeira para usar como degrau)",
+	_menu_help_lbl("Colete as estrelas.",
 				   0, 428, 1152, 22, 13, Color(0.95, 0.85, 0.40), true)
 
 	var btn_close := Button.new()
@@ -626,16 +643,19 @@ func _build_character_intro() -> void:
 	root.add_child(center_box)
 
 	# Título
-	_nl(center_box, "CONHEÇA SEUS HERÓIS",
-		0, 32, 1152, 50, 34, Color(0.95, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	var title = _nl(center_box, "CONHEÇA SEUS HERÓIS",
+		0, 30, 1152, 50, 38, Color(1.0, 1.0, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_shadow_color", Color(0.2, 0.4, 0.8, 0.5))
+	title.add_theme_constant_override("shadow_offset_y", 3)
+	
 	_nl(center_box, "Dois amigos em busca de Loopy  ·  cada um com um jeito",
-		0, 78, 1152, 24, 14, Color(0.60, 0.65, 0.80), HORIZONTAL_ALIGNMENT_CENTER)
+		0, 78, 1152, 24, 16, Color(0.65, 0.70, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Linha divisória
 	var divider := ColorRect.new()
-	divider.position = Vector2(576, 130)
-	divider.size     = Vector2(2, 400)
-	divider.color    = Color(0.251, 0.302, 0.451, 1.0)
+	divider.position = Vector2(575, 140)
+	divider.size     = Vector2(2, 380)
+	divider.color    = Color(0.3, 0.4, 0.6, 0.4)
 	center_box.add_child(divider)
 
 	# ---- ROB (lado esquerdo) ----
@@ -663,15 +683,28 @@ func _build_character_intro() -> void:
 		])
 
 	# ---- Rodapé: controles gerais ----
-	var footer_bg := ColorRect.new()
+	var footer_bg := Panel.new()
 	footer_bg.position = Vector2(76, 540)
 	footer_bg.size     = Vector2(1000, 60)
-	footer_bg.color    = Color(0.102, 0.078, 0.039, 1.0)
+	var f_style = StyleBoxFlat.new()
+	f_style.bg_color = Color(0.12, 0.09, 0.05, 0.95)
+	f_style.border_width_top = 2
+	f_style.border_width_bottom = 2
+	f_style.border_width_left = 2
+	f_style.border_width_right = 2
+	f_style.border_color = Color(0.85, 0.78, 0.40, 0.4)
+	f_style.corner_radius_top_left = 12
+	f_style.corner_radius_top_right = 12
+	f_style.corner_radius_bottom_left = 12
+	f_style.corner_radius_bottom_right = 12
+	f_style.shadow_color = Color(0, 0, 0, 0.5)
+	f_style.shadow_size = 12
+	footer_bg.add_theme_stylebox_override("panel", f_style)
 	center_box.add_child(footer_bg)
 
 	_nl(center_box, "CONTROLES  ·  A/D ou Setas = Mover   ·   ESPAÇO = Pular   ·   TAB = Trocar personagem   ·   Z = Habilidade   ·   ESC = Pausa",
 		76, 552, 1000, 18, 13, Color(0.85, 0.78, 0.40), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(center_box, "Colete ★ estrelas pelo caminho — algumas só se alcançam com o bloco do Bog como degrau",
+	_nl(center_box, "Colete ★ estrelas pelo caminho",
 		76, 574, 1000, 18, 11, Color(1.0, 0.85, 0.35), HORIZONTAL_ALIGNMENT_CENTER)
 
 	_nl(center_box, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR  —",
@@ -703,15 +736,31 @@ func _build_hero_card(parent: Node, sprite_path: String, h_frames: int, crop_top
 		parent.add_child(sprite)
 
 	# Moldura do retrato
-	var frame_bg := ColorRect.new()
-	frame_bg.position = Vector2(x + 20 + offset_x, 140)
-	frame_bg.size     = Vector2(200, 200)
-	frame_bg.color    = Color(color.r * 0.20, color.g * 0.20, color.b * 0.22, 0.50)
+	var frame_bg := Panel.new()
+	frame_bg.position = Vector2(x + 20 + offset_x, 120)
+	frame_bg.size     = Vector2(200, 220)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(color.r * 0.15, color.g * 0.15, color.b * 0.20, 0.8)
+	style.border_width_top = 3
+	style.border_width_bottom = 3
+	style.border_width_left = 3
+	style.border_width_right = 3
+	style.border_color = Color(color.r * 0.7, color.g * 0.7, color.b * 0.7, 0.9)
+	style.corner_radius_top_left = 16
+	style.corner_radius_top_right = 16
+	style.corner_radius_bottom_left = 16
+	style.corner_radius_bottom_right = 16
+	style.shadow_color = Color(color.r, color.g, color.b, 0.25)
+	style.shadow_size = 20
+	frame_bg.add_theme_stylebox_override("panel", style)
 	parent.add_child(frame_bg)
 	parent.move_child(frame_bg, parent.get_child_count() - 2)  # atrás do sprite
 
 	# Nome grande
-	_nl(parent, hero_name, x, 130, 470, 52, 44, color, HORIZONTAL_ALIGNMENT_CENTER)
+	var lbl_name = _nl(parent, hero_name, x, 130, 470, 52, 44, color, HORIZONTAL_ALIGNMENT_CENTER)
+	lbl_name.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	lbl_name.add_theme_constant_override("shadow_offset_x", 2)
+	lbl_name.add_theme_constant_override("shadow_offset_y", 2)
 
 	# Subtítulo
 	_nl(parent, subtitle, x, 350, 470, 24, 16,
@@ -721,8 +770,8 @@ func _build_hero_card(parent: Node, sprite_path: String, h_frames: int, crop_top
 	# Bullets de habilidades
 	var y_start: float = 384
 	for i in range(bullets.size()):
-		_nl(parent, bullets[i], x + 40, y_start + i * 24, 430, 22, 14,
-			Color(0.88, 0.90, 0.95))
+		_nl(parent, bullets[i], x + 40, y_start + i * 26, 430, 22, 15,
+			Color(0.9, 0.92, 0.98))
 
 # ============================================================
 # JORNAL (CUTSCENE PRE-JOGO)
@@ -774,165 +823,32 @@ func _build_newspaper() -> void:
 	root.add_child(center_box)
 
 	# --- Papel do jornal ---
-	const PX: float = 76.0
-	const PY: float = 22.0
-	const PW: float = 1000.0
-	const PH: float = 606.0
+	const PX: float = 176.0
+	const PY: float = 12.0
+	const PW: float = 800.0
+	const PH: float = 580.0
 
 	var paper_container = Control.new()
 	# Estilização: rotação leve para dar ar dinâmico
 	paper_container.rotation_degrees = -1.5
-	paper_container.position = Vector2(20, 20) # Ajuste de offset
+	paper_container.position = Vector2(0, 0)
 	center_box.add_child(paper_container)
 
-	# Sombra do jornal (múltiplas camadas para profundidade)
-	for i in range(5):
-		var shadow_layer := Panel.new()
-		var shadow_style := StyleBoxFlat.new()
-		shadow_style.bg_color = Color(0, 0, 0, 0.18 - i * 0.03)
-		shadow_style.corner_radius_bottom_left = 16
-		shadow_style.corner_radius_bottom_right = 16
-		shadow_layer.add_theme_stylebox_override("panel", shadow_style)
-		shadow_layer.position = Vector2(PX + 10 + i * 6, PY + 10 + i * 6)
-		shadow_layer.size     = Vector2(PW, PH)
-		paper_container.add_child(shadow_layer)
-
-	var paper := Panel.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.965, 0.930, 0.810)
-	style.corner_radius_bottom_left = 16
-	style.corner_radius_bottom_right = 16
-	paper.add_theme_stylebox_override("panel", style)
-	paper.position = Vector2(PX, PY)
-	paper.size     = Vector2(PW, PH)
-	paper_container.add_child(paper)
-
-	# Bordas laterais escuras (efeito envelhecido)
-	for xv in [PX, PX + PW - 6]:
-		var edge := ColorRect.new()
-		edge.position = Vector2(xv, PY)
-		edge.size     = Vector2(6, PH)
-		edge.color    = Color(0.80, 0.74, 0.60, 0.4)
-		paper_container.add_child(edge)
-
-	# ---- Cabeçalho ----
-	var header := ColorRect.new()
-	header.position = Vector2(PX, PY)
-	header.size     = Vector2(PW, 70)
-	header.color    = Color(0.07, 0.05, 0.03)
-	paper_container.add_child(header)
-
-	_nl(paper_container, newspaper_title,
-		PX, PY + 6, PW, 40, 36, Color(0.98, 0.96, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
-	_nl(paper_container, newspaper_subtitle,
-		PX, PY + 48, PW, 18, 11, Color(0.68, 0.64, 0.52), HORIZONTAL_ALIGNMENT_CENTER)
-
-	# Fio separador superior
-	var sep1 := ColorRect.new()
-	sep1.position = Vector2(PX, PY + 70)
-	sep1.size     = Vector2(PW, 3)
-	sep1.color    = Color(0.14, 0.11, 0.07)
-	paper_container.add_child(sep1)
-
-	# ---- Manchete ----
-	_nl(paper_container, newspaper_headline,
-		PX + 10, PY + 78, PW - 20, 50, 31,
-		Color(0.06, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
-
-	_nl(paper_container, newspaper_subheadline,
-		PX + 60, PY + 130, PW - 120, 22, 13,
-		Color(0.22, 0.18, 0.12), HORIZONTAL_ALIGNMENT_CENTER)
-
-	# Fio separador sub-manchete
-	var sep2 := ColorRect.new()
-	sep2.position = Vector2(PX + 20, PY + 158)
-	sep2.size     = Vector2(PW - 40, 2)
-	sep2.color    = Color(0.22, 0.16, 0.08)
-	paper_container.add_child(sep2)
-
-	# ---- Coluna esquerda: artigo ----
-	_nl(paper_container, newspaper_author,
-		PX + 20, PY + 164, 590, 16, 10, Color(0.38, 0.32, 0.22), HORIZONTAL_ALIGNMENT_CENTER)
-
-	var ay: float = PY + 182.0
-	for p in newspaper_paragraphs:
-		_nl(paper_container, p, PX + 20, ay, 600, 78, 14, Color(0.10, 0.09, 0.07), HORIZONTAL_ALIGNMENT_CENTER)
-		ay += 80.0
-
-	# Fio separador vertical entre colunas
-	var vsep := ColorRect.new()
-	vsep.position = Vector2(PX + 642, PY + 158)
-	vsep.size     = Vector2(2, 398)
-	vsep.color    = Color(0.28, 0.22, 0.12, 0.45)
-	paper_container.add_child(vsep)
-
-	# ---- Coluna direita: foto + box ----
-	# Moldura externa (efeito de foto antiga em sépia)
-	var photo_frame := ColorRect.new()
-	photo_frame.position = Vector2(PX + 650, PY + 156)
-	photo_frame.size     = Vector2(332, 222)
-	photo_frame.color    = Color(0.18, 0.14, 0.08)
-	paper_container.add_child(photo_frame)
-
-	var photo := ColorRect.new()
-	photo.position = Vector2(PX + 656, PY + 162)
-	photo.size     = Vector2(320, 210)
-	photo.color    = Color(0.82, 0.72, 0.52)  # fundo sépia claro
-	paper_container.add_child(photo)
-
-	# Chão da foto (tom mais escuro)
-	var photo_ground := ColorRect.new()
-	photo_ground.position = Vector2(PX + 656, PY + 340)
-	photo_ground.size     = Vector2(320, 32)
-	photo_ground.color    = Color(0.60, 0.48, 0.32)
-	paper_container.add_child(photo_ground)
-
-	# Loopy detalhado (tons sépia para parecer foto de jornal)
-	_draw_loopy(paper_container, PX + 816, PY + 355, 1.3, true)
-
-	# Cantos da moldura (decoração de foto antiga)
-	for cx in [PX + 652, PX + 970]:
-		for cy in [PY + 158, PY + 368]:
-			var corner := ColorRect.new()
-			corner.position = Vector2(cx, cy)
-			corner.size     = Vector2(10, 10)
-			corner.color    = Color(0.10, 0.08, 0.05)
-			paper_container.add_child(corner)
-
-	_nl(paper_container, newspaper_photo_caption,
-		PX + 656, PY + 384, 320, 18, 10,
-		Color(0.28, 0.22, 0.14), HORIZONTAL_ALIGNMENT_CENTER)
-
-	# Box de destaque
-	var hl := ColorRect.new()
-	hl.position = Vector2(PX + 656, PY + 412)
-	hl.size     = Vector2(320, 126)
-	hl.color    = Color(0.935, 0.875, 0.635)
-	paper_container.add_child(hl)
-
-	var hl_top := ColorRect.new()
-	hl_top.position = Vector2(PX + 656, PY + 412)
-	hl_top.size     = Vector2(320, 3)
-	hl_top.color    = Color(0.16, 0.11, 0.05)
-	paper_container.add_child(hl_top)
-
-	_nl(paper_container, newspaper_box_title,
-		PX + 656, PY + 418, 320, 20, 12,
-		Color(0.07, 0.06, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
-
-	_nl(paper_container, newspaper_box_text,
-		PX + 666, PY + 440, 300, 96, 13, Color(0.14, 0.11, 0.07), HORIZONTAL_ALIGNMENT_CENTER)
+	# Imagem do jornal (jornal.png)
+	var tex_rect = TextureRect.new()
+	tex_rect.texture = load("res://Assets/jornal.png")
+	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.position = Vector2(PX, PY)
+	tex_rect.size = Vector2(PW, PH)
+	# Aplica um filtro para deixá-la mais escura (tom levemente envelhecido)
+	tex_rect.modulate = Color(0.82, 0.80, 0.76)
+	paper_container.add_child(tex_rect)
 
 	# ---- Rodapé ----
-	var sep_foot := ColorRect.new()
-	sep_foot.position = Vector2(PX, PY + PH - 50)
-	sep_foot.size     = Vector2(PW, 3)
-	sep_foot.color    = Color(0.14, 0.11, 0.07)
-	paper_container.add_child(sep_foot)
-
 	_nl(paper_container, "—  PRESSIONE  ESPAÇO  PARA COMEÇAR A BUSCA  —",
-		PX, PY + PH - 42, PW, 38, 16,
-		Color(0.07, 0.05, 0.04), HORIZONTAL_ALIGNMENT_CENTER)
+		PX, PY + PH + 10, PW, 38, 16,
+		Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
 
 	# Animação fade-in e scale para dar profundidade
 	root.modulate.a = 0.0

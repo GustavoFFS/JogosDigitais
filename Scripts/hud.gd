@@ -11,8 +11,8 @@ var _lbl_phase:    Label
 var _lbl_name:     Label
 var _lbl_modifier: Label
 var _dots:         Array = []   # 5 Labels de progresso
-var _rob_bg:       ColorRect
-var _bog_bg:       ColorRect
+var _rob_bg:       Panel
+var _bog_bg:       Panel
 var _lbl_rob:      Label
 var _lbl_bog:      Label
 var _lbl_deaths:   Label        # contador de mortes (sem game over)
@@ -64,6 +64,11 @@ const COLOR_GOLD := Color(1.00, 0.85, 0.25)
 
 func _ready() -> void:
 	layer = 10
+	
+	var custom_font = load("res://Assets/Fonts/LilitaOne-Regular.ttf")
+	if custom_font:
+		ThemeDB.fallback_font = custom_font
+		
 	_build_top_panel()
 	_build_intro_overlay()
 	_build_fade()
@@ -80,24 +85,23 @@ func _process(delta: float) -> void:
 # ============================================================
 
 func _build_top_panel() -> void:
-	var bg := ColorRect.new()
+	var bg := Panel.new()
 	bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	bg.offset_bottom = 68
-	bg.color    = Color(0.04, 0.05, 0.10, 0.93)
+	bg.offset_bottom = 72
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.06, 0.08, 0.14, 0.95)
+	bg_style.border_width_bottom = 3
+	bg_style.border_color = Color(0.20, 0.30, 0.50, 0.8)
+	bg_style.shadow_color = Color(0, 0, 0, 0.6)
+	bg_style.shadow_size = 12
+	bg.add_theme_stylebox_override("panel", bg_style)
 	add_child(bg)
-
-	var border := ColorRect.new()
-	border.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	border.offset_top = 66
-	border.offset_bottom = 68
-	border.color    = Color(0.20, 0.25, 0.45, 0.80)
-	add_child(border)
 
 	var center_container = Control.new()
 	center_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	center_container.offset_left = -576
 	center_container.offset_right = 576
-	center_container.offset_bottom = 68
+	center_container.offset_bottom = 72
 	center_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center_container)
 
@@ -111,21 +115,26 @@ func _build_top_panel() -> void:
 
 	# ---- Fase (esquerda) ----
 	_lbl_phase = Label.new()
-	_lbl_phase.position = Vector2(14, 5)
-	_lbl_phase.add_theme_font_size_override("font_size", 11)
-	_lbl_phase.add_theme_color_override("font_color", Color(0.45, 0.70, 1.0))
+	_lbl_phase.position = Vector2(18, 8)
+	_lbl_phase.add_theme_font_size_override("font_size", 12)
+	_lbl_phase.add_theme_color_override("font_color", Color(0.50, 0.80, 1.0))
+	_lbl_phase.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	add_child(_lbl_phase)
 
 	_lbl_name = Label.new()
-	_lbl_name.position = Vector2(14, 20)
-	_lbl_name.add_theme_font_size_override("font_size", 24)
-	_lbl_name.add_theme_color_override("font_color", Color(0.95, 0.95, 1.0))
+	_lbl_name.position = Vector2(16, 22)
+	_lbl_name.add_theme_font_size_override("font_size", 26)
+	_lbl_name.add_theme_color_override("font_color", Color(0.98, 0.98, 1.0))
+	_lbl_name.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	_lbl_name.add_theme_constant_override("shadow_offset_x", 1)
+	_lbl_name.add_theme_constant_override("shadow_offset_y", 2)
 	add_child(_lbl_name)
 
 	_lbl_modifier = Label.new()
-	_lbl_modifier.position = Vector2(14, 48)
-	_lbl_modifier.add_theme_font_size_override("font_size", 12)
+	_lbl_modifier.position = Vector2(18, 52)
+	_lbl_modifier.add_theme_font_size_override("font_size", 13)
 	_lbl_modifier.add_theme_color_override("font_color", COLOR_GOLD)
+	_lbl_modifier.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
 	add_child(_lbl_modifier)
 
 	# ---- Progresso (centro) ----
@@ -166,130 +175,158 @@ func _build_top_panel() -> void:
 	# ---- Personagens (direita) ----
 	var lbl_char := Label.new()
 	lbl_char.text                 = "P E R S O N A G E M"
-	lbl_char.position             = Vector2(685, 5)
-	lbl_char.size                 = Vector2(220, 18)
+	lbl_char.position             = Vector2(675, 6)
+	lbl_char.size                 = Vector2(230, 18)
 	lbl_char.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_char.add_theme_font_size_override("font_size", 9)
-	lbl_char.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
+	lbl_char.add_theme_font_size_override("font_size", 10)
+	lbl_char.add_theme_color_override("font_color", Color(0.40, 0.40, 0.50))
 	center_container.add_child(lbl_char)
 
-	_rob_bg = ColorRect.new()
-	_rob_bg.size     = Vector2(96, 30)
-	_rob_bg.position = Vector2(685, 24)
-	_rob_bg.color    = Color(0.08, 0.16, 0.28)
+	_rob_bg = Panel.new()
+	_rob_bg.size     = Vector2(104, 34)
+	_rob_bg.position = Vector2(681, 24)
+	var rob_sb := StyleBoxFlat.new()
+	rob_sb.bg_color = Color(0.08, 0.16, 0.28)
+	rob_sb.corner_radius_top_left = 6
+	rob_sb.corner_radius_top_right = 6
+	rob_sb.corner_radius_bottom_left = 6
+	rob_sb.corner_radius_bottom_right = 6
+	rob_sb.shadow_color = Color(0, 0, 0, 0.4)
+	rob_sb.shadow_size = 2
+	_rob_bg.add_theme_stylebox_override("panel", rob_sb)
 	center_container.add_child(_rob_bg)
 
 	_lbl_rob = Label.new()
 	_lbl_rob.text                 = "ROB"
-	_lbl_rob.position             = Vector2(685, 24)
-	_lbl_rob.size                 = Vector2(96, 30)
+	_lbl_rob.position             = Vector2(681, 24)
+	_lbl_rob.size                 = Vector2(104, 34)
 	_lbl_rob.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_rob.add_theme_font_size_override("font_size", 16)
+	_lbl_rob.add_theme_font_size_override("font_size", 17)
 	_lbl_rob.add_theme_color_override("font_color", COLOR_ROB)
 	center_container.add_child(_lbl_rob)
 
-	_bog_bg = ColorRect.new()
-	_bog_bg.size     = Vector2(96, 30)
-	_bog_bg.position = Vector2(789, 24)
-	_bog_bg.color    = Color(0.08, 0.22, 0.12)
+	_bog_bg = Panel.new()
+	_bog_bg.size     = Vector2(104, 34)
+	_bog_bg.position = Vector2(795, 24)
+	var bog_sb := StyleBoxFlat.new()
+	bog_sb.bg_color = Color(0.08, 0.22, 0.12)
+	bog_sb.corner_radius_top_left = 6
+	bog_sb.corner_radius_top_right = 6
+	bog_sb.corner_radius_bottom_left = 6
+	bog_sb.corner_radius_bottom_right = 6
+	bog_sb.shadow_color = Color(0, 0, 0, 0.4)
+	bog_sb.shadow_size = 2
+	_bog_bg.add_theme_stylebox_override("panel", bog_sb)
 	center_container.add_child(_bog_bg)
 
 	_lbl_bog = Label.new()
 	_lbl_bog.text                 = "BOG"
-	_lbl_bog.position             = Vector2(789, 24)
-	_lbl_bog.size                 = Vector2(96, 30)
+	_lbl_bog.position             = Vector2(795, 24)
+	_lbl_bog.size                 = Vector2(104, 34)
 	_lbl_bog.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_bog.add_theme_font_size_override("font_size", 16)
+	_lbl_bog.add_theme_font_size_override("font_size", 17)
 	_lbl_bog.add_theme_color_override("font_color", COLOR_BOG)
 	center_container.add_child(_lbl_bog)
 
 	var lbl_tab := Label.new()
 	lbl_tab.text                 = "[ TAB ] trocar   [ Z ] habilidade"
-	lbl_tab.position             = Vector2(685, 55)
-	lbl_tab.size                 = Vector2(200, 14)
+	lbl_tab.position             = Vector2(675, 60)
+	lbl_tab.size                 = Vector2(230, 14)
 	lbl_tab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_tab.add_theme_font_size_override("font_size", 9)
-	lbl_tab.add_theme_color_override("font_color", Color(0.28, 0.28, 0.34))
+	lbl_tab.add_theme_color_override("font_color", Color(0.35, 0.35, 0.45))
 	center_container.add_child(lbl_tab)
 
-	# Barras de cooldown da habilidade (abaixo dos boxes)
+	# Barras de cooldown da habilidade
 	# ROB
 	_rob_ability_bg        = ColorRect.new()
-	_rob_ability_bg.size   = Vector2(96, 4)
-	_rob_ability_bg.position = Vector2(685, 62)
+	_rob_ability_bg.size   = Vector2(104, 5)
+	_rob_ability_bg.position = Vector2(681, 62)
 	_rob_ability_bg.color  = Color(0.12, 0.12, 0.16)
 	center_container.add_child(_rob_ability_bg)
 
 	_rob_ability_fill        = ColorRect.new()
-	_rob_ability_fill.size   = Vector2(96, 4)
-	_rob_ability_fill.position = Vector2(685, 62)
+	_rob_ability_fill.size   = Vector2(104, 5)
+	_rob_ability_fill.position = Vector2(681, 62)
 	_rob_ability_fill.color  = Color(0.25, 0.88, 1.0)
 	center_container.add_child(_rob_ability_fill)
 
 	# BOG
 	_bog_ability_bg        = ColorRect.new()
-	_bog_ability_bg.size   = Vector2(96, 4)
-	_bog_ability_bg.position = Vector2(789, 62)
+	_bog_ability_bg.size   = Vector2(104, 5)
+	_bog_ability_bg.position = Vector2(795, 62)
 	_bog_ability_bg.color  = Color(0.12, 0.12, 0.16)
 	center_container.add_child(_bog_ability_bg)
 
 	_bog_ability_fill        = ColorRect.new()
-	_bog_ability_fill.size   = Vector2(96, 4)
-	_bog_ability_fill.position = Vector2(789, 62)
+	_bog_ability_fill.size   = Vector2(104, 5)
+	_bog_ability_fill.position = Vector2(795, 62)
 	_bog_ability_fill.color  = Color(1.0, 0.62, 0.22)
 	center_container.add_child(_bog_ability_fill)
 
 	# ---- Mortes (sem limite — só contador) ----
 	var sep_deaths := ColorRect.new()
-	sep_deaths.size     = Vector2(1, 50)
+	sep_deaths.size     = Vector2(1, 54)
 	sep_deaths.position = Vector2(908, 9)
 	sep_deaths.color    = Color(0.20, 0.22, 0.35, 0.60)
 	right_container.add_child(sep_deaths)
 
 	var lbl_deaths_caption := Label.new()
 	lbl_deaths_caption.text                 = "M O R T E S"
-	lbl_deaths_caption.position             = Vector2(916, 5)
+	lbl_deaths_caption.position             = Vector2(916, 8)
 	lbl_deaths_caption.size                 = Vector2(228, 18)
 	lbl_deaths_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_deaths_caption.add_theme_font_size_override("font_size", 9)
-	lbl_deaths_caption.add_theme_color_override("font_color", Color(0.30, 0.30, 0.38))
+	lbl_deaths_caption.add_theme_font_size_override("font_size", 10)
+	lbl_deaths_caption.add_theme_color_override("font_color", Color(0.40, 0.40, 0.50))
 	right_container.add_child(lbl_deaths_caption)
 
 	_lbl_deaths = Label.new()
 	_lbl_deaths.text                 = "💀  0"
-	_lbl_deaths.position             = Vector2(916, 22)
+	_lbl_deaths.position             = Vector2(916, 24)
 	_lbl_deaths.size                 = Vector2(228, 36)
 	_lbl_deaths.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_deaths.add_theme_font_size_override("font_size", 26)
-	_lbl_deaths.add_theme_color_override("font_color", Color(0.92, 0.30, 0.40))
+	_lbl_deaths.add_theme_font_size_override("font_size", 28)
+	_lbl_deaths.add_theme_color_override("font_color", Color(1.0, 0.35, 0.45))
+	_lbl_deaths.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	_lbl_deaths.add_theme_constant_override("shadow_offset_x", 1)
+	_lbl_deaths.add_theme_constant_override("shadow_offset_y", 2)
 	right_container.add_child(_lbl_deaths)
 
 	# ---- Estrelas coletadas (abaixo do painel, canto esquerdo) ----
 	_lbl_stars = Label.new()
 	_lbl_stars.text     = "★ 0 / 0"
-	_lbl_stars.position = Vector2(14, 76)
+	_lbl_stars.position = Vector2(18, 80)
 	_lbl_stars.size     = Vector2(200, 26)
-	_lbl_stars.add_theme_font_size_override("font_size", 18)
+	_lbl_stars.add_theme_font_size_override("font_size", 20)
 	_lbl_stars.add_theme_color_override("font_color", COLOR_GOLD)
+	_lbl_stars.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	_lbl_stars.add_theme_constant_override("shadow_offset_x", 1)
+	_lbl_stars.add_theme_constant_override("shadow_offset_y", 2)
 	add_child(_lbl_stars)
 
 	# ---- Chaves coletadas (abaixo do painel, ao lado das estrelas) ----
 	_lbl_keys = Label.new()
 	_lbl_keys.text     = ""
-	_lbl_keys.position = Vector2(140, 76)
+	_lbl_keys.position = Vector2(150, 80)
 	_lbl_keys.size     = Vector2(200, 26)
-	_lbl_keys.add_theme_font_size_override("font_size", 18)
+	_lbl_keys.add_theme_font_size_override("font_size", 20)
 	_lbl_keys.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
+	_lbl_keys.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	_lbl_keys.add_theme_constant_override("shadow_offset_x", 1)
+	_lbl_keys.add_theme_constant_override("shadow_offset_y", 2)
 	add_child(_lbl_keys)
 
 	# ---- Cronômetro (abaixo do painel, canto direito) ----
 	_lbl_timer = Label.new()
 	_lbl_timer.text     = "⏱  00:00.000"
-	_lbl_timer.position = Vector2(938, 76)
+	_lbl_timer.position = Vector2(938, 80)
 	_lbl_timer.size     = Vector2(200, 26)
 	_lbl_timer.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_lbl_timer.add_theme_font_size_override("font_size", 18)
-	_lbl_timer.add_theme_color_override("font_color", Color(0.85, 0.88, 1.0))
+	_lbl_timer.add_theme_font_size_override("font_size", 20)
+	_lbl_timer.add_theme_color_override("font_color", Color(0.9, 0.92, 1.0))
+	_lbl_timer.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	_lbl_timer.add_theme_constant_override("shadow_offset_x", 1)
+	_lbl_timer.add_theme_constant_override("shadow_offset_y", 2)
 	right_container.add_child(_lbl_timer)
 
 func _on_pause_pressed() -> void:
@@ -388,16 +425,6 @@ func _show_help() -> void:
 	lbl_close_main.add_theme_font_size_override("font_size", 18)
 	btn_close.add_child(lbl_close_main)
 
-	# Subtítulo do Botão Fechar
-	var lbl_close_sub := Label.new()
-	lbl_close_sub.text = "[ ESC ]"
-	lbl_close_sub.position = Vector2(0, 30)
-	lbl_close_sub.size = Vector2(280, 20)
-	lbl_close_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_close_sub.add_theme_font_size_override("font_size", 13)
-	lbl_close_sub.add_theme_color_override("font_color", Color(0.65, 0.65, 0.72))
-	btn_close.add_child(lbl_close_sub)
-
 	# Atalho Fechar (ESC)
 	var close_key = InputEventKey.new()
 	close_key.keycode = KEY_ESCAPE
@@ -480,8 +507,8 @@ func update_level_info(level: Dictionary, idx: int, total: int) -> void:
 			dot.add_theme_color_override("font_color", COLOR_DIM)
 
 func update_ability(rob_ratio: float, bog_ratio: float) -> void:
-	_rob_ability_fill.size.x = 96.0 * clamp(rob_ratio, 0.0, 1.0)
-	_bog_ability_fill.size.x = 96.0 * clamp(bog_ratio, 0.0, 1.0)
+	_rob_ability_fill.size.x = 104.0 * clamp(rob_ratio, 0.0, 1.0)
+	_bog_ability_fill.size.x = 104.0 * clamp(bog_ratio, 0.0, 1.0)
 
 	var rob_ready := rob_ratio >= 1.0
 	var bog_ready := bog_ratio >= 1.0
@@ -512,20 +539,32 @@ func update_ability(rob_ratio: float, bog_ratio: float) -> void:
 	_bog_was_ready = bog_ready
 	
 func update_character(rob_active: bool) -> void:
+	var rob_sb := _rob_bg.get_theme_stylebox("panel") as StyleBoxFlat
+	var bog_sb := _bog_bg.get_theme_stylebox("panel") as StyleBoxFlat
 	if rob_active:
-		_rob_bg.color = Color(0.10, 0.22, 0.40)
-		_bog_bg.color = Color(0.06, 0.10, 0.07)
+		rob_sb.bg_color = Color(0.12, 0.28, 0.50)
+		rob_sb.border_width_bottom = 3
+		rob_sb.border_color = Color(0.3, 0.6, 1.0)
+		bog_sb.bg_color = Color(0.06, 0.10, 0.07)
+		bog_sb.border_width_bottom = 0
 		_lbl_rob.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		_lbl_rob.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 		_lbl_bog.add_theme_color_override("font_color", Color(0.28, 0.42, 0.30))
+		_lbl_bog.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	else:
-		_rob_bg.color = Color(0.06, 0.10, 0.18)
-		_bog_bg.color = Color(0.10, 0.28, 0.16)
+		rob_sb.bg_color = Color(0.06, 0.10, 0.18)
+		rob_sb.border_width_bottom = 0
+		bog_sb.bg_color = Color(0.12, 0.35, 0.20)
+		bog_sb.border_width_bottom = 3
+		bog_sb.border_color = Color(0.4, 0.9, 0.5)
 		_lbl_rob.add_theme_color_override("font_color", Color(0.28, 0.38, 0.55))
+		_lbl_rob.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 		_lbl_bog.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		_lbl_bog.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 		
 	# Efeito visual de escala (Tween) na troca de personagem
-	_rob_bg.pivot_offset = Vector2(48, 15)
-	_bog_bg.pivot_offset = Vector2(48, 15)
+	_rob_bg.pivot_offset = Vector2(52, 17)
+	_bog_bg.pivot_offset = Vector2(52, 17)
 	var tw := create_tween().set_parallel(true)
 	if rob_active:
 		tw.tween_property(_rob_bg, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

@@ -19,7 +19,7 @@ func _ready() -> void:
 	can_push           = true
 	push_force         = 120.0
 	anim_suffix        = ""
-	ability_cooldown   = 0.1
+	ability_cooldown   = 2.0
 
 # ============================================================
 # GAME LOOP (INPUT -> UPDATE -> RENDER)
