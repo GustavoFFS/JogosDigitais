@@ -1357,6 +1357,7 @@ func _create_loopy(pos: Vector2) -> void:
 	visual.hframes = 6
 	visual.scale = Vector2(0.2, 0.2)
 	visual.position = Vector2(0, 20)
+	visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	loopy_body.add_child(visual)
 
 	var name_lbl := Label.new()
