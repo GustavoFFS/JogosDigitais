@@ -45,10 +45,10 @@ func _ready() -> void:
 		Level4Data.get_data(),
 		Level5Data.get_data(),
 		Level6Data.get_data(),
-		#Level7Data.get_data(),
-		#Level8Data.get_data(),
-		#Level9Data.get_data(),
-		#Level10Data.get_data(),
+		Level7Data.get_data(),
+		Level8Data.get_data(),
+		Level9Data.get_data(),
+		Level10Data.get_data(),
 		LevelSecretHouse.get_data(),
 	]
 	for lv in levels:
