@@ -219,7 +219,7 @@ func _open_pause() -> void:
 	btn_resume.size     = Vector2(320, 44)
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	btn_resume.pressed.connect(_handle_resume_or_esc)
+	btn_resume.pressed.connect(_close_pause)
 	
 	var resume_key = InputEventKey.new()
 	resume_key.keycode = KEY_ESCAPE
@@ -412,17 +412,6 @@ func _close_pause() -> void:
 		_pause_overlay.queue_free()
 	_pause_overlay = null
 	get_tree().paused = false
-
-func _handle_resume_or_esc() -> void:
-	if _options_overlay and is_instance_valid(_options_overlay):
-		_close_options_menu()
-	elif _quit_confirm_overlay and is_instance_valid(_quit_confirm_overlay):
-		_quit_confirm_overlay.queue_free()
-		_quit_confirm_overlay = null
-	elif hud.is_help_visible():
-		hud._close_help()
-	else:
-		_close_pause()
 
 var _quit_confirm_overlay: Control = null
 
@@ -1362,18 +1351,13 @@ func _create_loopy(pos: Vector2) -> void:
 	shape.position = Vector2(0, 25)
 	loopy_body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size     = Vector2(24, 50)
-	visual.position = Vector2(-12, 0)
-	visual.color    = Color(0.9, 0.7, 0.2, 0.9)
+	var visual := Sprite2D.new()
+	visual.name = "Sprite"
+	visual.texture = load("res://Assets/Characters/loopy_walk2_transparent.png")
+	visual.hframes = 6
+	visual.scale = Vector2(0.2, 0.2)
+	visual.position = Vector2(0, 20)
 	loopy_body.add_child(visual)
-
-	var question := Label.new()
-	question.text     = "?"
-	question.position = Vector2(-6, -22)
-	question.add_theme_font_size_override("font_size", 22)
-	question.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
-	loopy_body.add_child(question)
 
 	var name_lbl := Label.new()
 	name_lbl.text     = "Loopy"
@@ -1407,6 +1391,18 @@ func _update_loopy(delta: float) -> void:
 		if not loopy_body.is_on_floor():
 			loopy_body.velocity += loopy_body.get_gravity() * delta
 		loopy_body.move_and_slide()
+
+	if loopy_body:
+		var sprite = loopy_body.get_node_or_null("Sprite") as Sprite2D
+		if sprite:
+			if loopy_body.velocity.x > 1.0:
+				sprite.flip_h = false
+			elif loopy_body.velocity.x < -1.0:
+				sprite.flip_h = true
+
+			var anim_speed = 12.0 if loopy_fleeing else 4.0
+			var frame_index = int(Time.get_ticks_msec() * 0.001 * anim_speed) % sprite.hframes
+			sprite.frame = frame_index
 
 # ============================================================
 # CAMERA
