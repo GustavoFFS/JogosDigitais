@@ -1908,7 +1908,12 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
 
 	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
-	_draw_loopy_full(scene, 576.0, 570.0, 1.3)
+	var loopy_sprite := Sprite2D.new()
+	loopy_sprite.texture = load("res://Assets/Characters/loopy.png")
+	loopy_sprite.scale = Vector2(0.15, 0.15)
+	loopy_sprite.position = Vector2(576.0, 570.0 - 473.0 * 0.15)
+	loopy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(loopy_sprite)
 	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
 
 	_add_heart(scene, 400.0, 340.0)
