@@ -1851,18 +1851,22 @@ func _add_victory_sky(tier: int = 0) -> void:
 	glow.color    = glow_col
 	victory_overlay.get_node("CenterBox").add_child(glow)
 
-	if tier == 3:
-		for i in range(40):
-			var sx: float = 30.0 + (i * 67) % 1100
-			var sy: float = 240.0 + (i * 31) % 70
-			var twk := ColorRect.new()
-			twk.position = Vector2(sx, sy)
-			twk.size     = Vector2(3, 3)
-			twk.color    = Color(1.0, 0.95, 0.70)
-			victory_overlay.get_node("CenterBox").add_child(twk)
-			var tw := create_tween().set_loops()
-			tw.tween_property(twk, "modulate:a", 0.3, 0.6 + (i % 5) * 0.15)
-			tw.tween_property(twk, "modulate:a", 1.0, 0.6 + (i % 5) * 0.15)
+	var star_count := 10
+	if tier == 1:   star_count = 15
+	elif tier == 2: star_count = 25
+	elif tier == 3: star_count = 40
+
+	for i in range(star_count):
+		var sx: float = 30.0 + (i * 67) % 1100
+		var sy: float = 240.0 + (i * 31) % 70
+		var twk := ColorRect.new()
+		twk.position = Vector2(sx, sy)
+		twk.size     = Vector2(3, 3)
+		twk.color    = Color(1.0, 0.95, 0.70)
+		victory_overlay.get_node("CenterBox").add_child(twk)
+		var tw := create_tween().set_loops()
+		tw.tween_property(twk, "modulate:a", 0.3, 0.6 + (i % 5) * 0.15)
+		tw.tween_property(twk, "modulate:a", 1.0, 0.6 + (i % 5) * 0.15)
 
 func _add_reunion_scene(tier: int = 0) -> void:
 	var scene := Control.new()
@@ -1907,28 +1911,79 @@ func _add_reunion_scene(tier: int = 0) -> void:
 		title = "—  BOM REENCONTRO  —"
 	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
 
-	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
+	# --- Personagens com animação idle ---
+	var rob_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
 	var loopy_sprite := Sprite2D.new()
-	loopy_sprite.texture = load("res://Assets/Characters/loopy.png")
-	loopy_sprite.scale = Vector2(0.11, 0.11)
-	loopy_sprite.position = Vector2(576.0, 570.0 - 473.0 * 0.11)
+	loopy_sprite.texture = load("res://Assets/Characters/loopy_idle3_transparent.png")
+	loopy_sprite.hframes = 6
+	loopy_sprite.frame = 0
+	loopy_sprite.scale = Vector2(0.1865, 0.1865)
+	loopy_sprite.position = Vector2(576.0, 570.0 - 283.0 * 0.1865)
 	loopy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	scene.add_child(loopy_sprite)
-	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
+	var bog_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
 
-	_add_heart(scene, 400.0, 340.0)
-	_add_heart(scene, 750.0, 345.0)
-	_v_label(scene, "♪", 485.0, 335.0, 30, Color(1.0, 0.85, 0.45))
-	_v_label(scene, "♫", 650.0, 340.0, 30, Color(1.0, 0.75, 0.35))
+	# 1) Ciclo de idle do Rob (7 frames)
+	if rob_sprite:
+		var rob_tw := create_tween().set_loops()
+		for f in range(7):
+			rob_tw.tween_property(rob_sprite, "frame", f, 0.14)
+
+	# 2) Ciclo de idle do Bog (6 frames)
+	if bog_sprite:
+		var bog_tw := create_tween().set_loops()
+		for f in range(6):
+			bog_tw.tween_property(bog_sprite, "frame", f, 0.16)
+
+	# 3) Ciclo de idle do Loopy (6 frames)
+	var loopy_tw := create_tween().set_loops()
+	for f in range(6):
+		loopy_tw.tween_property(loopy_sprite, "frame", f, 0.35)
+
+	# --- Corações com flutuação ---
+	var heart1 := _add_heart(scene, 400.0, 340.0)
+	var heart2 := _add_heart(scene, 750.0, 345.0)
+
+	# 4) Animação de flutuação e pulso nos corações
+	var h1_tw := create_tween().set_loops()
+	h1_tw.tween_property(heart1, "position:y", 334.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	h1_tw.tween_property(heart1, "position:y", 346.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var h2_tw := create_tween().set_loops()
+	h2_tw.tween_property(heart2, "position:y", 339.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	h2_tw.tween_property(heart2, "position:y", 351.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	# --- Notas musicais com flutuação ---
+	var note1 := Label.new()
+	note1.text = "♪"
+	note1.position = Vector2(485.0, 335.0)
+	note1.add_theme_font_size_override("font_size", 30)
+	note1.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45))
+	scene.add_child(note1)
+
+	var note2 := Label.new()
+	note2.text = "♫"
+	note2.position = Vector2(650.0, 340.0)
+	note2.add_theme_font_size_override("font_size", 30)
+	note2.add_theme_color_override("font_color", Color(1.0, 0.75, 0.35))
+	scene.add_child(note2)
+
+	var n1_tw := create_tween().set_loops()
+	n1_tw.tween_property(note1, "position:y", 329.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	n1_tw.tween_property(note1, "position:y", 341.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var n2_tw := create_tween().set_loops()
+	n2_tw.tween_property(note2, "position:y", 334.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	n2_tw.tween_property(note2, "position:y", 346.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
 
-func _add_character_sprite(parent: Node, path: String, h_frames: int, crop_top: float, feet_x: float, feet_y: float, scl: float, flip: bool = false) -> void:
+func _add_character_sprite(parent: Node, path: String, h_frames: int, crop_top: float, feet_x: float, feet_y: float, scl: float, flip: bool = false) -> Sprite2D:
 	var sprite := Sprite2D.new()
 	var tex: Texture2D = load(path)
 	if tex == null:
-		return
+		return null
 	sprite.texture  = tex
 	
 	var tex_w := tex.get_width()
@@ -1947,6 +2002,7 @@ func _add_character_sprite(parent: Node, path: String, h_frames: int, crop_top: 
 	var frame_h := float(tex_h)
 	sprite.position = Vector2(feet_x, feet_y - (frame_h * scl) * 0.5)
 	parent.add_child(sprite)
+	return sprite
 
 func _v_rect(parent: Node, x: float, y: float, w: float, h: float, col: Color) -> void:
 	var r := ColorRect.new()
@@ -1967,12 +2023,17 @@ func _v_label(parent: Node, txt: String, x: float, y: float, fs: int, col: Color
 	l.add_theme_color_override("font_color", col)
 	parent.add_child(l)
 
-func _add_heart(parent: Node, x: float, y: float) -> void:
+func _add_heart(parent: Node, x: float, y: float) -> Control:
+	var container := Control.new()
+	container.position = Vector2(x, y)
+	container.size = Vector2(22, 24)
+	parent.add_child(container)
 	var red := Color(1.0, 0.35, 0.45)
-	_v_rect(parent, x,      y,      10, 14, red)
-	_v_rect(parent, x + 12, y,      10, 14, red)
-	_v_rect(parent, x + 2,  y + 12, 18, 8,  red)
-	_v_rect(parent, x + 6,  y + 18, 10, 6,  red)
+	_v_rect(container, 0,   0,  10, 14, red)
+	_v_rect(container, 12,  0,  10, 14, red)
+	_v_rect(container, 2,  12,  18, 8,  red)
+	_v_rect(container, 6,  18,  10, 6,  red)
+	return container
 
 func _pr(parent: Node, cx: float, cy: float, s: float,
 		 dx: float, dy: float, w: float, h: float, col: Color) -> void:
