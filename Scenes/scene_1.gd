@@ -1910,8 +1910,8 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	_add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
 	var loopy_sprite := Sprite2D.new()
 	loopy_sprite.texture = load("res://Assets/Characters/loopy.png")
-	loopy_sprite.scale = Vector2(0.15, 0.15)
-	loopy_sprite.position = Vector2(576.0, 570.0 - 473.0 * 0.15)
+	loopy_sprite.scale = Vector2(0.1, 0.1)
+	loopy_sprite.position = Vector2(576.0, 570.0 - 473.0 * 0.1)
 	loopy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	scene.add_child(loopy_sprite)
 	_add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
