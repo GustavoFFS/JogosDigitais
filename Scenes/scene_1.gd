@@ -1978,6 +1978,36 @@ func _add_reunion_scene(tier: int = 0) -> void:
 
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
+	
+	# --- 1. Efeito sonoro de comemoração ao abrir o reencontro ---
+	SoundManager.play_sfx("victory")
+
+	# --- 2. Efeito de Confetes / Chuva de Brilhos para Tier 2 e Tier 3 ---
+	if tier >= 2:
+		var confetti := CPUParticles2D.new()
+		confetti.position = Vector2(576, -20) # Topo centralizado
+		confetti.amount = 45 if tier == 3 else 28
+		confetti.lifetime = 4.0
+		confetti.preprocess = 1.0
+		confetti.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+		confetti.emission_rect_extents = Vector2(600, 10)
+		confetti.direction = Vector2(0, 1) # Para baixo
+		confetti.spread = 15.0
+		confetti.gravity = Vector2(0, 60.0)
+		confetti.initial_velocity_min = 40.0
+		confetti.initial_velocity_max = 90.0
+		confetti.angular_velocity_min = -120.0
+		confetti.angular_velocity_max = 120.0
+		confetti.scale_amount_min = 3.0
+		confetti.scale_amount_max = 6.0
+		# Gradiente celebratório dourado/rosado/branco
+		var grad := Gradient.new()
+		grad.set_color(0, Color(1.0, 0.95, 0.4, 0.9)) # Dourado
+		grad.add_point(0.4, Color(1.0, 0.65, 0.8, 0.85)) # Rosado
+		grad.add_point(0.7, Color(0.6, 0.9, 1.0, 0.8)) # Ciano suave
+		grad.set_color(grad.get_point_count() - 1, Color(1.0, 1.0, 1.0, 0.0)) # Desaparece suavemente no chão
+		confetti.color_ramp = grad
+		scene.add_child(confetti)
 
 func _add_character_sprite(parent: Node, path: String, h_frames: int, crop_top: float, feet_x: float, feet_y: float, scl: float, flip: bool = false) -> Sprite2D:
 	var sprite := Sprite2D.new()
