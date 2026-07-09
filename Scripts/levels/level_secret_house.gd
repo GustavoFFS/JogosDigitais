@@ -15,7 +15,7 @@ static func get_data() -> Dictionary:
 		"dialogues": [
 			{"speaker": "Rob", "text": "Como viemos parar aqui dentro? Por que tá tão escuro?"},
 			{"speaker": "Bog", "text": "Parece uma casa abandonada... Tem uma placa aqui, espera..."},
-			{"speaker": "Bog", "text": "Parece ser de um tal de Wend-- Esquece, não conheço..."},
+			{"speaker": "Bog", "text": "Parece ser de um tal de Wendell. Esquece, não conheço..."},
 			{"speaker": "Rob", "text": "Vamos pegar as estrelas e vazar antes que esse cara volte!"},
 		],
 		"bg_color":       Color(0.12, 0.11, 0.13),

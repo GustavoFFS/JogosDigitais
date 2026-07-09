@@ -41,11 +41,13 @@ const DEATH_Y: float = 950.0
 # Estrelas
 var _stars_left_in_level: int = 0
 var _collected_keys: Array = []
+var _stars_collected_this_run: Array = []
 
 # Blocos empurráveis (para mostrar dica de proximidade)
 var _pushable_blocks: Array = []
 var _gates: Array = []
 var _switches: Array = []
+var _hints_data: Array = []
 
 # Pause overlay
 var _pause_overlay: Control = null
@@ -116,6 +118,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("switch_character") and not get_tree().paused and not hud.showing_intro and not hud.fading and not is_exiting and not hud.transitioning and not rob.is_dead and not bog.is_dead:
 		_switch_character()
+	if victory_overlay and victory_overlay.has_meta("ready_to_skip"):
+		if (event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton) and event.is_pressed() and not event.is_echo():
+			_go_to_menu()
+			return
+
 	if event.is_action_pressed("pause") and not hud.showing_intro and victory_overlay == null and not is_exiting and not hud.transitioning:
 		# Bloqueia pause se tela de morte estiver ativa
 		if _death_overlay and is_instance_valid(_death_overlay):
@@ -139,6 +146,7 @@ func _game_loop_update(delta: float) -> void:
 	_check_death()
 	_check_pushable_blocks_bounds()
 	_update_pushable_hints_logic()
+	_update_hints()
 
 ## Plataformas móveis precisam rodar no mesmo passo da física para que
 ## o personagem em cima receba o platform_velocity sincronizado com seu
@@ -184,20 +192,20 @@ func _open_pause() -> void:
 	_pause_overlay.add_child(center_box)
 
 	var box := ColorRect.new()
-	box.size     = Vector2(440, 430)
-	box.position = Vector2(356, 144)
+	box.size     = Vector2(440, 484)
+	box.position = Vector2(356, 120)
 	box.color    = Color(0.10, 0.12, 0.20, 0.98)
 	center_box.add_child(box)
 
 	var border := ColorRect.new()
 	border.size     = Vector2(440, 4)
-	border.position = Vector2(356, 144)
+	border.position = Vector2(356, 120)
 	border.color    = Color(0.30, 0.75, 1.0, 0.9)
 	_pause_overlay.get_node("CenterBox").add_child(border)
 
 	var title := Label.new()
 	title.text     = "— PAUSA —"
-	title.position = Vector2(356, 166)
+	title.position = Vector2(356, 142)
 	title.size     = Vector2(440, 44)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
@@ -206,7 +214,7 @@ func _open_pause() -> void:
 
 	var info := Label.new()
 	info.text     = "★  Estrelas: %d / %d" % [GameManager.stars_collected, GameManager.stars_total_game]
-	info.position = Vector2(356, 214)
+	info.position = Vector2(356, 190)
 	info.size     = Vector2(440, 24)
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.add_theme_font_size_override("font_size", 16)
@@ -215,7 +223,7 @@ func _open_pause() -> void:
 
 	var btn_resume := Button.new()
 	btn_resume.text = "Continuar"
-	btn_resume.position = Vector2(416, 256)
+	btn_resume.position = Vector2(416, 232)
 	btn_resume.size     = Vector2(320, 44)
 	btn_resume.add_theme_font_size_override("font_size", 20)
 	btn_resume.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -229,9 +237,18 @@ func _open_pause() -> void:
 	
 	_pause_overlay.get_node("CenterBox").add_child(btn_resume)
 
+	var btn_restart := Button.new()
+	btn_restart.text = "Voltar ao Checkpoint"
+	btn_restart.position = Vector2(416, 286)
+	btn_restart.size     = Vector2(320, 44)
+	btn_restart.add_theme_font_size_override("font_size", 20)
+	btn_restart.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	btn_restart.pressed.connect(_restart_level_from_pause)
+	_pause_overlay.get_node("CenterBox").add_child(btn_restart)
+
 	var btn_help := Button.new()
 	btn_help.text = "Dicas"
-	btn_help.position = Vector2(416, 310)
+	btn_help.position = Vector2(416, 340)
 	btn_help.size     = Vector2(320, 44)
 	btn_help.add_theme_font_size_override("font_size", 19)
 	btn_help.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -240,7 +257,7 @@ func _open_pause() -> void:
 
 	var btn_options := Button.new()
 	btn_options.text = "Opções"
-	btn_options.position = Vector2(416, 364)
+	btn_options.position = Vector2(416, 394)
 	btn_options.size     = Vector2(320, 44)
 	btn_options.add_theme_font_size_override("font_size", 20)
 	btn_options.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -249,7 +266,7 @@ func _open_pause() -> void:
 
 	var btn_menu := Button.new()
 	btn_menu.text = "Voltar ao Menu"
-	btn_menu.position = Vector2(416, 418)
+	btn_menu.position = Vector2(416, 448)
 	btn_menu.size     = Vector2(320, 44)
 	btn_menu.add_theme_font_size_override("font_size", 20)
 	btn_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -258,7 +275,7 @@ func _open_pause() -> void:
 
 	var hint := Label.new()
 	hint.text     = "ESC  para continuar"
-	hint.position = Vector2(356, 484)
+	hint.position = Vector2(356, 514)
 	hint.size     = Vector2(440, 24)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 12)
@@ -406,6 +423,10 @@ func _close_options_menu() -> void:
 	if _options_overlay and is_instance_valid(_options_overlay):
 		_options_overlay.queue_free()
 	_options_overlay = null
+
+func _restart_level_from_pause() -> void:
+	_close_pause()
+	hud.start_fade(1, _reload_current_level)
 
 func _close_pause() -> void:
 	if _pause_overlay and is_instance_valid(_pause_overlay):
@@ -665,6 +686,8 @@ func _load_level() -> void:
 		_create_secret_exit(se[0], se[1], se[2], se[3], se[4])
 	for ls in level.get("light_switches", []):
 		_create_light_switch(ls[0], ls[1], ls[2], ls[3])
+	for h in level.get("hints", []):
+		_create_hint(h[0], h[1], h[2])
 
 	if level.get("dark_mode", false):
 		_setup_dark_mode()
@@ -741,6 +764,7 @@ func _clear_level() -> void:
 	_gates.clear()
 	_switches.clear()
 	_collected_keys.clear()
+	_hints_data.clear()
 	for light in _character_lights:
 		if is_instance_valid(light):
 			light.queue_free()
@@ -846,7 +870,11 @@ func _spawn_moving_platform(mp: Dictionary, color: Color) -> void:
 		"speed":     mp["speed"],
 		"w":         w,
 		"h":         h,
-		"to_end":    true
+		"to_end":    true,
+		"trigger_dist": mp.get("trigger_dist", 0.0),
+		"one_way":   mp.get("one_way", false),
+		"triggered": false,
+		"done":      false
 	})
 
 func _update_moving_platforms(delta: float) -> void:
@@ -856,13 +884,29 @@ func _update_moving_platforms(delta: float) -> void:
 			continue
 
 		var prev_pos: Vector2 = platform_node.global_position
-		var is_to_end: bool = mp.get("to_end", true)
-		var target_pos: Vector2 = mp.get("end_pos") if is_to_end else mp.get("start_pos")
-
-		platform_node.global_position = prev_pos.move_toward(target_pos, mp.get("speed", 100.0) * delta)
-
-		if platform_node.global_position.distance_to(target_pos) < 0.1:
-			mp["to_end"] = not is_to_end
+		
+		var can_move = true
+		if mp.get("done", false):
+			can_move = false
+		elif mp.get("trigger_dist", 0.0) > 0.0 and not mp.get("triggered", false):
+			can_move = false
+			if current_character:
+				var dist = current_character.global_position.distance_to(platform_node.global_position)
+				if dist <= mp["trigger_dist"]:
+					mp["triggered"] = true
+					can_move = true
+					
+		if can_move:
+			var is_to_end: bool = mp.get("to_end", true)
+			var target_pos: Vector2 = mp.get("end_pos") if is_to_end else mp.get("start_pos")
+	
+			platform_node.global_position = prev_pos.move_toward(target_pos, mp.get("speed", 100.0) * delta)
+	
+			if platform_node.global_position.distance_to(target_pos) < 0.1:
+				if mp.get("one_way", false) and is_to_end:
+					mp["done"] = true
+				else:
+					mp["to_end"] = not is_to_end
 
 		var platform_velocity: Vector2 = (platform_node.global_position - prev_pos) / delta
 
@@ -1010,6 +1054,7 @@ func _on_checkpoint_entered(body: Node, area: Area2D) -> void:
 	checkpoint_rob = Vector2(area.global_position.x - 28, safe_y)
 	checkpoint_bog = Vector2(area.global_position.x + 28, safe_y)
 	has_checkpoint = true
+	_stars_collected_this_run.clear() # Salva definitivamente as estrelas pegas até aqui
 	print("[DEBUG] Checkpoint entered! flag_y=", area.global_position.y, ", safe_y=", safe_y, ", checkpoint_rob=", checkpoint_rob, ", checkpoint_bog=", checkpoint_bog)
 
 	var flag := area.get_node_or_null("Flag")
@@ -1323,6 +1368,7 @@ func _on_star_body_entered(body: Node, area: Area2D) -> void:
 	if GameManager.is_star_collected(li, si):
 		return
 	GameManager.collect_star(li, si)
+	_stars_collected_this_run.append({"li": li, "si": si})
 	_stars_left_in_level -= 1
 	hud.update_stars(GameManager.stars_collected, GameManager.stars_total_game)
 	hud.flash_star()
@@ -1343,6 +1389,8 @@ func _on_star_body_entered(body: Node, area: Area2D) -> void:
 func _create_loopy(pos: Vector2) -> void:
 	loopy_body          = CharacterBody2D.new()
 	loopy_body.position = pos
+	loopy_body.collision_layer = 0
+	loopy_body.collision_mask = 1
 
 	var shape := CollisionShape2D.new()
 	var rect  := RectangleShape2D.new()
@@ -1467,6 +1515,14 @@ func _on_player_died() -> void:
 	_show_death_screen()
 
 func _reload_current_level() -> void:
+	if _stars_collected_this_run.size() > 0:
+		for s in _stars_collected_this_run:
+			var key = "%d:%d" % [s["li"], s["si"]]
+			GameManager.collected_ids.erase(key)
+			GameManager.stars_collected -= 1
+		_stars_collected_this_run.clear()
+		GameManager.save_game()
+	
 	_load_level()
 
 # ============================================================
@@ -1667,6 +1723,7 @@ func _on_dialogue_finished() -> void:
 # ============================================================
 
 func _complete_level() -> void:
+	_stars_collected_this_run.clear()
 	var current_level_data := GameManager.get_current_level()
 	var from_name: String = current_level_data.get("name", "")
 	
@@ -1720,18 +1777,41 @@ func _show_victory() -> void:
 
 	_run_victory_sequence()
 
-func _add_victory_label(txt: String, y: float, fs: int, col: Color) -> void:
+func _add_victory_label(txt: String, y: float, fs: int, col: Color, has_bg: bool = false) -> void:
+	var center_cont := CenterContainer.new()
+	center_cont.position = Vector2(0, y + 10.0)
+	center_cont.size = Vector2(1152, 58)
+	center_cont.modulate.a = 0.0
+
 	var lbl := Label.new()
-	lbl.text                 = txt
-	lbl.position            = Vector2(80, y)
-	lbl.size                 = Vector2(992, 58)
+	lbl.text = txt
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", fs)
 	lbl.add_theme_color_override("font_color", col)
-	lbl.modulate.a = 0.0
-	victory_overlay.get_node("CenterBox").add_child(lbl)
-	var tw := create_tween()
-	tw.tween_property(lbl, "modulate:a", 1.0, 0.55)
+	lbl.add_theme_constant_override("outline_size", max(4, int(fs / 4.0)))
+	lbl.add_theme_color_override("font_outline_color", Color(0.03, 0.03, 0.05, 0.95))
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	lbl.add_theme_constant_override("shadow_offset_x", 3)
+	lbl.add_theme_constant_override("shadow_offset_y", 3)
+	
+	if has_bg:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0.5)
+		style.content_margin_left = 20
+		style.content_margin_right = 20
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
+		style.corner_radius_top_left = 12
+		style.corner_radius_top_right = 12
+		style.corner_radius_bottom_left = 12
+		style.corner_radius_bottom_right = 12
+		lbl.add_theme_stylebox_override("normal", style)
+	
+	center_cont.add_child(lbl)
+	victory_overlay.get_node("CenterBox").add_child(center_cont)
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(center_cont, "modulate:a", 1.0, 0.65).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(center_cont, "position:y", y, 0.65).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _run_victory_sequence() -> void:
 	var total: int = GameManager.stars_total_game
@@ -1756,20 +1836,20 @@ func _run_victory_sequence() -> void:
 	_add_victory_label("Seus olhos focam lentamente...", 136, 20, Color(0.78, 0.78, 0.90))
 	await get_tree().create_timer(1.3).timeout
 
-	_add_victory_label("— Rob?  Bog?  O que aconteceu?  Onde eu estava? —",
-					   166, 20, Color(1.0, 0.92, 0.38))
+	_add_victory_label("Rob? Bog? O que aconteceu? Onde eu estava?",
+					   166, 20, Color(1.0, 0.92, 0.38), true)
 	await get_tree().create_timer(1.5).timeout
 
 	match tier:
 		3:
-			_add_victory_label("— Vocês me trouxeram TODAS as estrelas?! Que jornada lendária! —",
-							   200, 17, Color(1.0, 0.88, 0.30))
+			_add_victory_label("Vocês me trouxeram TODAS as estrelas?! Que jornada lendária!",
+							   200, 17, Color(1.0, 0.88, 0.30), true)
 		2:
-			_add_victory_label("— Olha quantas estrelas! Vocês brilharam de verdade. —",
-							   200, 17, Color(0.95, 0.85, 0.45))
+			_add_victory_label("Olha quantas estrelas! Vocês brilharam de verdade.",
+							   200, 17, Color(0.95, 0.85, 0.45), true)
 		1:
-			_add_victory_label("— Voltaram com algumas estrelas... bom resgate, amigos. —",
-							   200, 17, Color(0.85, 0.85, 0.95))
+			_add_victory_label("Voltaram com algumas estrelas... bom resgate, amigos.",
+							   200, 17, Color(0.85, 0.85, 0.95), true)
 		_:
 			_add_victory_label("O efeito do chá foi embora.",
 							   200, 17, Color(0.70, 0.70, 0.82))
@@ -1784,27 +1864,97 @@ func _run_victory_sequence() -> void:
 	var msec := int(fmod(t, 1.0) * 1000.0)
 	var time_str := "%02d:%02d.%03d" % [minutes, seconds, msec]
 
-	var stats_msg := "★  %d / %d   ·   💀  %d morte%s   ·   ⏱  %s" % [
+	var stats_msg := "%d / %d   ·   %d morte%s   ·   %s" % [
 		got, total, GameManager.deaths,
 		"" if GameManager.deaths == 1 else "s",
 		time_str
 	]
-	_add_victory_label(stats_msg, 588, 18, _tier_color(tier))
-	await get_tree().create_timer(0.8).timeout
+	
+	var final_box := CenterContainer.new()
+	final_box.position = Vector2(0, 520)
+	final_box.size = Vector2(1152, 100)
+	final_box.modulate.a = 0.0
+	
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.5)
+	style.content_margin_left = 30
+	style.content_margin_right = 30
+	style.content_margin_top = 15
+	style.content_margin_bottom = 15
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12
+	style.corner_radius_bottom_right = 12
+	panel.add_theme_stylebox_override("panel", style)
+	
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 42)
+	panel.add_child(vbox)
+	final_box.add_child(panel)
+	
+	var add_lbl = func(txt, fs, col):
+		var lbl = Label.new()
+		lbl.text = txt
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", fs)
+		lbl.add_theme_color_override("font_color", col)
+		lbl.add_theme_constant_override("outline_size", max(4, int(fs / 4.0)))
+		lbl.add_theme_color_override("font_outline_color", Color(0.03, 0.03, 0.05, 0.95))
+		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+		lbl.add_theme_constant_override("shadow_offset_x", 3)
+		lbl.add_theme_constant_override("shadow_offset_y", 3)
+		vbox.add_child(lbl)
+		
+	var stats_hbox = HBoxContainer.new()
+	stats_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	stats_hbox.add_theme_constant_override("separation", 10)
+	
+	var star_ctrl = Control.new()
+	star_ctrl.custom_minimum_size = Vector2(24, 24)
+	var star_visual = Polygon2D.new()
+	var pts: PackedVector2Array = PackedVector2Array()
+	var outer_radius: float = 11.0
+	var inner_radius: float = 4.5
+	for i in range(10):
+		var angle: float = float(i) * PI / 5.0 - PI / 2.0
+		var r: float = outer_radius if i % 2 == 0 else inner_radius
+		pts.append(Vector2(cos(angle), sin(angle)) * r)
+	star_visual.polygon = pts
+	star_visual.color = Color(1.0, 0.88, 0.30)
+	star_visual.position = Vector2(12, 12)
+	star_ctrl.add_child(star_visual)
+	stats_hbox.add_child(star_ctrl)
+	
+	var lbl_stats = Label.new()
+	lbl_stats.text = stats_msg
+	lbl_stats.add_theme_font_size_override("font_size", 18)
+	lbl_stats.add_theme_color_override("font_color", _tier_color(tier))
+	lbl_stats.add_theme_constant_override("outline_size", max(4, int(18 / 4.0)))
+	lbl_stats.add_theme_color_override("font_outline_color", Color(0.03, 0.03, 0.05, 0.95))
+	lbl_stats.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	lbl_stats.add_theme_constant_override("shadow_offset_x", 3)
+	lbl_stats.add_theme_constant_override("shadow_offset_y", 3)
+	stats_hbox.add_child(lbl_stats)
+	
+	vbox.add_child(stats_hbox)
+	
+	add_lbl.call(_tier_title(tier), 24, _tier_color(tier))
+	add_lbl.call("Pressione  QUALQUER BOTÃO  para voltar", 13, Color(0.55, 0.55, 0.65))
+	
+	victory_overlay.get_node("CenterBox").add_child(final_box)
+	
+	var tw := create_tween()
+	tw.tween_property(final_box, "modulate:a", 1.0, 1.2).set_trans(Tween.TRANS_SINE)
 
-	_add_victory_label(_tier_title(tier), 612, 24, _tier_color(tier))
-	await get_tree().create_timer(0.9).timeout
-
-	_add_victory_label("Pressione  ESPAÇO  para voltar ao menu",
-					   636, 13, Color(0.55, 0.55, 0.65))
-
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(1.2).timeout
 	_wait_for_menu_input()
 
 func _tier_title(tier: int) -> String:
 	match tier:
-		3: return "★  FINAL LENDÁRIO  ·  Os três heróis brilham para sempre  ★"
-		2: return "✦  Final Brilhante  ·  Um resgate cheio de glória"
+		3: return "FINAL LENDÁRIO  ·  Os três heróis brilham para sempre"
+		2: return "Final Brilhante  ·  Um resgate cheio de glória"
 		1: return "Bom resgate!  Os três amigos estão juntos novamente"
 		_: return "Resgate concluído  ·  Loopy está em casa"
 
@@ -1820,53 +1970,82 @@ func _tier_color(tier: int) -> Color:
 # ============================================================
 
 func _add_victory_sky(tier: int = 0) -> void:
-	var sky_col   := Color(0.18, 0.12, 0.28)
-	var dusk_col  := Color(0.85, 0.45, 0.30)
-	var glow_col  := Color(0.98, 0.72, 0.35)
-	if tier == 1:
-		dusk_col = Color(0.90, 0.55, 0.30)
-		glow_col = Color(1.00, 0.78, 0.40)
-	elif tier == 2:
-		sky_col  = Color(0.22, 0.14, 0.34)
-		dusk_col = Color(1.00, 0.62, 0.30)
-		glow_col = Color(1.00, 0.86, 0.45)
-	elif tier == 3:
-		sky_col  = Color(0.30, 0.18, 0.45)
-		dusk_col = Color(1.00, 0.70, 0.30)
-		glow_col = Color(1.00, 0.94, 0.55)
+	var bg_tex := TextureRect.new()
+	var tex = load("res://Assets/Backgrounds/EncontroFinal.png")
+	if tex:
+		bg_tex.texture = tex
+		bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		bg_tex.position = Vector2(0, 0)
+		bg_tex.size = Vector2(1152, 648)
+		
+		var tint := Color(1.0, 1.0, 1.0)
+		if tier == 1: tint = Color(0.85, 0.85, 0.95)
+		elif tier == 2: tint = Color(1.0, 0.92, 0.85)
+		elif tier == 3: tint = Color(1.1, 1.0, 0.95)
+		bg_tex.modulate = Color(tint.r, tint.g, tint.b, 0.0)
+		victory_overlay.get_node("CenterBox").add_child(bg_tex)
+		
+		var tw_bg := create_tween()
+		tw_bg.tween_property(bg_tex, "modulate:a", 1.0, 2.5).set_trans(Tween.TRANS_SINE)
+	else:
+		var sky_col   := Color(0.18, 0.12, 0.28)
+		var dusk_col  := Color(0.85, 0.45, 0.30)
+		var glow_col  := Color(0.98, 0.72, 0.35)
+		if tier == 1:
+			dusk_col = Color(0.90, 0.55, 0.30)
+			glow_col = Color(1.00, 0.78, 0.40)
+		elif tier == 2:
+			sky_col  = Color(0.22, 0.14, 0.34)
+			dusk_col = Color(1.00, 0.62, 0.30)
+			glow_col = Color(1.00, 0.86, 0.45)
+		elif tier == 3:
+			sky_col  = Color(0.30, 0.18, 0.45)
+			dusk_col = Color(1.00, 0.70, 0.30)
+			glow_col = Color(1.00, 0.94, 0.55)
 
-	var sky := ColorRect.new()
-	sky.position = Vector2(0, 230)
-	sky.size     = Vector2(1152, 80)
-	sky.color    = sky_col
-	victory_overlay.get_node("CenterBox").add_child(sky)
-	var dusk := ColorRect.new()
-	dusk.position = Vector2(0, 310)
-	dusk.size     = Vector2(1152, 80)
-	dusk.color    = dusk_col
-	victory_overlay.get_node("CenterBox").add_child(dusk)
-	var glow := ColorRect.new()
-	glow.position = Vector2(0, 390)
-	glow.size     = Vector2(1152, 80)
-	glow.color    = glow_col
-	victory_overlay.get_node("CenterBox").add_child(glow)
+		var sky := ColorRect.new()
+		sky.position = Vector2(0, 230)
+		sky.size     = Vector2(1152, 80)
+		sky.color    = sky_col
+		victory_overlay.get_node("CenterBox").add_child(sky)
+		var dusk := ColorRect.new()
+		dusk.position = Vector2(0, 310)
+		dusk.size     = Vector2(1152, 80)
+		dusk.color    = dusk_col
+		victory_overlay.get_node("CenterBox").add_child(dusk)
+		var glow := ColorRect.new()
+		glow.position = Vector2(0, 390)
+		glow.size     = Vector2(1152, 80)
+		glow.color    = glow_col
+		victory_overlay.get_node("CenterBox").add_child(glow)
 
 	var star_count := 10
 	if tier == 1:   star_count = 15
-	elif tier == 2: star_count = 25
-	elif tier == 3: star_count = 40
+	elif tier == 2: star_count = 35
+	elif tier == 3: star_count = 60
 
 	for i in range(star_count):
-		var sx: float = 30.0 + (i * 67) % 1100
-		var sy: float = 240.0 + (i * 31) % 70
+		var sx: float = randf_range(20.0, 1130.0)
+		var sy: float = randf_range(20.0, 600.0) if tex else 240.0 + (i * 31) % 70
 		var twk := ColorRect.new()
 		twk.position = Vector2(sx, sy)
-		twk.size     = Vector2(3, 3)
-		twk.color    = Color(1.0, 0.95, 0.70)
+		var size = randf_range(2.0, 5.0)
+		twk.size = Vector2(size, size)
+		twk.color = Color(1.0, 0.95, 0.70, 0.0)
+		var twk_glow = ColorRect.new()
+		twk_glow.position = Vector2(-size, -size)
+		twk_glow.size = Vector2(size*3, size*3)
+		twk_glow.color = Color(1.0, 0.95, 0.70, 0.15)
+		twk.add_child(twk_glow)
+		
 		victory_overlay.get_node("CenterBox").add_child(twk)
+		var delay = randf_range(0.0, 2.0)
+		var dur = randf_range(0.8, 2.0)
 		var tw := create_tween().set_loops()
-		tw.tween_property(twk, "modulate:a", 0.3, 0.6 + (i % 5) * 0.15)
-		tw.tween_property(twk, "modulate:a", 1.0, 0.6 + (i % 5) * 0.15)
+		tw.tween_interval(delay)
+		tw.tween_property(twk, "modulate:a", 1.0, dur).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(twk, "modulate:a", 0.1, dur).set_trans(Tween.TRANS_SINE)
 
 func _add_reunion_scene(tier: int = 0) -> void:
 	var scene := Control.new()
@@ -1875,106 +2054,89 @@ func _add_reunion_scene(tier: int = 0) -> void:
 	scene.modulate.a = 0.0
 	victory_overlay.get_node("CenterBox").add_child(scene)
 
-	if tier >= 2:
-		var halo := ColorRect.new()
-		halo.position = Vector2(388, 380)
-		halo.size     = Vector2(376, 220)
-		halo.color    = Color(1.0, 0.88, 0.30, 0.18 if tier == 2 else 0.30)
+	if tier >= 1:
+		var grad := GradientTexture2D.new()
+		grad.gradient = Gradient.new()
+		var center_col = Color(1.0, 0.88, 0.30, 0.15) if tier == 1 else Color(1.0, 0.88, 0.30, 0.35 if tier >= 3 else 0.25)
+		grad.gradient.set_color(0, center_col)
+		grad.gradient.set_color(1, Color(1.0, 0.88, 0.30, 0.0))
+		grad.fill = GradientTexture2D.FILL_RADIAL
+		grad.fill_from = Vector2(0.5, 0.5)
+		grad.fill_to = Vector2(0.8, 0.8)
+		var halo := TextureRect.new()
+		halo.texture = grad
+		halo.position = Vector2(276, 250)
+		halo.size = Vector2(600, 400)
 		scene.add_child(halo)
 
-	for i in range(9):
-		var bx: float = 40.0 + i * 130.0
-		var bh: float = 60.0 + ((i * 37) % 50)
-		_v_rect(scene, bx, 430.0 - bh, 110.0, bh, Color(0.18, 0.14, 0.26))
-		for jy in range(3):
-			for jx in range(3):
-				if (i + jx + jy) % 3 == 0:
-					_v_rect(scene, bx + 12.0 + jx * 30, 430.0 - bh + 10.0 + jy * 16,
-							10.0, 8.0, Color(1.0, 0.85, 0.45, 0.9))
+	var floor_grad := GradientTexture2D.new()
+	floor_grad.gradient = Gradient.new()
+	floor_grad.gradient.set_color(0, Color(0.05, 0.03, 0.08, 0.0))
+	floor_grad.gradient.set_color(1, Color(0.03, 0.02, 0.05, 0.95))
+	floor_grad.fill_from = Vector2(0.5, 0.0)
+	floor_grad.fill_to = Vector2(0.5, 1.0)
+	var floor_rect := TextureRect.new()
+	floor_rect.texture = floor_grad
+	floor_rect.position = Vector2(0, 420)
+	floor_rect.size = Vector2(1152, 228)
+	scene.add_child(floor_rect)
 
-	_v_rect(scene, 540.0, 345.0, 72.0, 72.0, Color(1.0, 0.78, 0.35))
-	_v_rect(scene, 510.0, 395.0, 132.0, 26.0, Color(1.0, 0.58, 0.28, 0.55))
-
-	_v_rect(scene, 0.0, 470.0, 1152.0, 115.0, Color(0.22, 0.16, 0.14))
-	_v_rect(scene, 0.0, 470.0, 1152.0, 4.0,   Color(0.12, 0.09, 0.06))
-	_v_rect(scene, 0.0, 540.0, 1152.0, 2.0, Color(0.35, 0.28, 0.20))
-
-	var title := "— REENCONTRO —"
+	var title := "REENCONTRO"
 	var title_col := Color(1.0, 0.90, 0.50)
 	if tier == 3:
-		title = "★  REENCONTRO LENDÁRIO  ★"
+		title = "REENCONTRO LENDÁRIO"
 		title_col = Color(1.0, 0.92, 0.40)
 	elif tier == 2:
-		title = "✦  REENCONTRO BRILHANTE  ✦"
+		title = "REENCONTRO BRILHANTE"
 		title_col = Color(1.0, 0.88, 0.50)
 	elif tier == 1:
-		title = "—  BOM REENCONTRO  —"
-	_v_label(scene, title, 0.0, 255.0, 24, title_col, true)
+		title = "BOM REENCONTRO"
+		
+	var title_cc := CenterContainer.new()
+	title_cc.position = Vector2(0, 245)
+	title_cc.size = Vector2(1152, 50)
+	
+	var title_panel := PanelContainer.new()
+	var title_style := StyleBoxFlat.new()
+	title_style.bg_color = Color(0, 0, 0, 0.5)
+	title_style.content_margin_left = 40
+	title_style.content_margin_right = 40
+	title_style.content_margin_top = 10
+	title_style.content_margin_bottom = 10
+	title_style.corner_radius_top_left = 12
+	title_style.corner_radius_top_right = 12
+	title_style.corner_radius_bottom_left = 12
+	title_style.corner_radius_bottom_right = 12
+	title_panel.add_theme_stylebox_override("panel", title_style)
+	
+	var title_lbl := Label.new()
+	title_lbl.text = title
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_font_size_override("font_size", 24)
+	title_lbl.add_theme_color_override("font_color", title_col)
+	title_lbl.add_theme_constant_override("outline_size", 4)
+	title_lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.9))
+	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	title_lbl.add_theme_constant_override("shadow_offset_x", 2)
+	title_lbl.add_theme_constant_override("shadow_offset_y", 2)
+	
+	title_panel.add_child(title_lbl)
+	title_cc.add_child(title_panel)
+	scene.add_child(title_cc)
 
 	# --- Personagens com animação idle ---
-	var rob_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 570.0, 1.6, false)
+	var rob_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_2/Idle.png", 7, 50, 420.0, 500.0, 1.6, false)
 	var loopy_sprite := Sprite2D.new()
-	loopy_sprite.texture = load("res://Assets/Characters/loopy_idle3_transparent.png")
-	loopy_sprite.hframes = 6
-	loopy_sprite.frame = 0
-	loopy_sprite.scale = Vector2(0.1865, 0.1865)
-	loopy_sprite.position = Vector2(576.0, 570.0 - 283.0 * 0.1865)
-	loopy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var loopy_tex = load("res://Assets/Characters/loopy_idle_new.png")
+	loopy_sprite.texture = loopy_tex
+	var scl = 1.6
+	loopy_sprite.scale = Vector2(scl, scl)
+	loopy_sprite.position = Vector2(576.0, 550.0 - (loopy_tex.get_height() * scl) * 0.5)
+	
 	scene.add_child(loopy_sprite)
-	var bog_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 570.0, 1.6, true)
+	var bog_sprite := _add_character_sprite(scene, "res://Assets/Characters/Main_1/Idle.png", 6, 50, 730.0, 500.0, 1.6, true)
 
-	# 1) Ciclo de idle do Rob (7 frames)
-	if rob_sprite:
-		var rob_tw := create_tween().set_loops()
-		for f in range(7):
-			rob_tw.tween_property(rob_sprite, "frame", f, 0.14)
-
-	# 2) Ciclo de idle do Bog (6 frames)
-	if bog_sprite:
-		var bog_tw := create_tween().set_loops()
-		for f in range(6):
-			bog_tw.tween_property(bog_sprite, "frame", f, 0.16)
-
-	# 3) Ciclo de idle do Loopy (6 frames)
-	var loopy_tw := create_tween().set_loops()
-	for f in range(6):
-		loopy_tw.tween_property(loopy_sprite, "frame", f, 0.35)
-
-	# --- Corações com flutuação ---
-	var heart1 := _add_heart(scene, 400.0, 340.0)
-	var heart2 := _add_heart(scene, 750.0, 345.0)
-
-	# 4) Animação de flutuação e pulso nos corações
-	var h1_tw := create_tween().set_loops()
-	h1_tw.tween_property(heart1, "position:y", 334.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	h1_tw.tween_property(heart1, "position:y", 346.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	var h2_tw := create_tween().set_loops()
-	h2_tw.tween_property(heart2, "position:y", 339.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	h2_tw.tween_property(heart2, "position:y", 351.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	# --- Notas musicais com flutuação ---
-	var note1 := Label.new()
-	note1.text = "♪"
-	note1.position = Vector2(485.0, 335.0)
-	note1.add_theme_font_size_override("font_size", 30)
-	note1.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45))
-	scene.add_child(note1)
-
-	var note2 := Label.new()
-	note2.text = "♫"
-	note2.position = Vector2(650.0, 340.0)
-	note2.add_theme_font_size_override("font_size", 30)
-	note2.add_theme_color_override("font_color", Color(1.0, 0.75, 0.35))
-	scene.add_child(note2)
-
-	var n1_tw := create_tween().set_loops()
-	n1_tw.tween_property(note1, "position:y", 329.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	n1_tw.tween_property(note1, "position:y", 341.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	var n2_tw := create_tween().set_loops()
-	n2_tw.tween_property(note2, "position:y", 334.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	n2_tw.tween_property(note2, "position:y", 346.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# Os personagens agora ficam estáticos (frame 0 padrão)
 
 	var tw := create_tween()
 	tw.tween_property(scene, "modulate:a", 1.0, 0.85)
@@ -2167,11 +2329,8 @@ func _draw_bog_sil(parent: Node, cx: float, cy: float, s: float) -> void:
 	_v_label(parent, "Bog", cx - 24.0, cy + 14.0, 14, Color(1.0, 0.65, 0.30))
 
 func _wait_for_menu_input() -> void:
-	while true:
-		await get_tree().process_frame
-		if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("ui_accept"):
-			_go_to_menu()
-			return
+	if victory_overlay:
+		victory_overlay.set_meta("ready_to_skip", true)
 
 # ============================================================
 # BACKGROUND
@@ -2646,7 +2805,7 @@ func _create_gate(switch_id: int, x: float, y: float, w: float, h: float) -> voi
 		visual.add_child(laser)
 
 	var gate_script = GDScript.new()
-	gate_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n\nfunc open_gate():\n	collision_layer = 0\n	collision_mask = 0\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 0.0, 0.25)\n\nfunc close_gate():\n	collision_layer = 1\n	collision_mask = 1\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 1.0, 0.25)"
+	gate_script.source_code = "extends StaticBody2D\n\nvar _shape: CollisionShape2D\nvar _visual: Node2D\n\nfunc _ready():\n	_shape = get_child(0)\n	_visual = get_node(\"Visual\")\n\nfunc open_gate():\n	collision_layer = 0\n	collision_mask = 0\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 0.25, 0.25)\n\nfunc close_gate():\n	collision_layer = 1\n	collision_mask = 1\n	var tw = create_tween()\n	tw.tween_property(_visual, \"modulate:a\", 1.0, 0.25)"
 	gate_script.reload()
 	gate.set_script(gate_script)
 
@@ -3206,3 +3365,58 @@ func _create_light_switch(x: float, y: float, w: float, h: float) -> void:
 	
 	add_child(area)
 	level_nodes.append(area)
+
+func _create_hint(x: float, y: float, text: String) -> void:
+	var bob := Node2D.new()
+	bob.position = Vector2(x, y)
+	
+	var rtl := RichTextLabel.new()
+	rtl.bbcode_enabled = true
+	rtl.text = "[center][wave amp=20.0 freq=2.0 connected=1]" + text + "[/wave][/center]"
+	rtl.position = Vector2(-300, -50)
+	rtl.size = Vector2(600, 100)
+	rtl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rtl.add_theme_font_size_override("normal_font_size", 16)
+	rtl.add_theme_color_override("default_color", Color(1.0, 1.0, 1.0, 0.85))
+	rtl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	rtl.add_theme_constant_override("shadow_offset_x", 1)
+	rtl.add_theme_constant_override("shadow_offset_y", 1)
+	
+	bob.add_child(rtl)
+	bob.modulate.a = 0.0 # Começa invisível
+	add_child(bob)
+	level_nodes.append(bob)
+	
+	var tw := create_tween().set_loops()
+	tw.tween_property(bob, "position:y", y - 8.0, 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(bob, "position:y", y + 8.0, 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	_hints_data.append({
+		"node": bob,
+		"pos": Vector2(x, y),
+		"visible": false,
+		"tw": null
+	})
+
+func _update_hints() -> void:
+	if not current_character:
+		return
+	
+	var p_pos = current_character.global_position
+	for h in _hints_data:
+		var dist = p_pos.distance_to(h["pos"])
+		var should_be_visible = (dist < 250.0)
+		
+		if should_be_visible and not h["visible"]:
+			h["visible"] = true
+			if h["tw"] and h["tw"].is_valid():
+				h["tw"].kill()
+			h["tw"] = create_tween()
+			h["tw"].tween_property(h["node"], "modulate:a", 1.0, 0.4)
+			
+		elif not should_be_visible and h["visible"]:
+			h["visible"] = false
+			if h["tw"] and h["tw"].is_valid():
+				h["tw"].kill()
+			h["tw"] = create_tween()
+			h["tw"].tween_property(h["node"], "modulate:a", 0.0, 0.4)

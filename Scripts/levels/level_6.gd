@@ -43,11 +43,11 @@ static func get_data() -> Dictionary:
 				"to_end": true
 			},
 			{
-				"start_pos": Vector2(2850.0, 660.0),
-				"end_pos":   Vector2(2850.0, 420.0),
+				"start_pos": Vector2(2850.0, 420.0),
+				"end_pos":   Vector2(2850.0, 660.0),
 				"w": 100.0,
 				"h": 18.0,
-				"speed": 130.0,
+				"speed": 100.0,
 				"to_end": true
 			},
 			{
@@ -55,7 +55,7 @@ static func get_data() -> Dictionary:
 				"end_pos":   Vector2(3200.0, 420.0),
 				"w": 100.0,
 				"h": 18.0,
-				"speed": 160.0,
+				"speed": 100.0,
 				"to_end": true
 			},
 			

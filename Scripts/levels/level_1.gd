@@ -42,18 +42,18 @@ static func get_data() -> Dictionary:
 			[2620, 620, 420, 28],   # Final
 		],
 		
-			"moving_platforms": [
+		"moving_platforms": [
 			{ 
-				"start_pos": Vector2(1400.0, 470.0), # Antigos x_min e y
-				"end_pos": Vector2(1600.0, 470.0),   # Antigos x_max e y
+				"start_pos": Vector2(1400.0, 470.0), 
+				"end_pos": Vector2(1600.0, 470.0),   
 				"w": 110.0, 
 				"h": 18.0, 
 				"speed": 120.0,
 				"to_end": true 
 			},
 			{ 
-				"start_pos": Vector2(1860.0, 465.0), # Antigos x_min e y
-				"end_pos": Vector2(1860.0, 320.0),   # Antigos x_max e y
+				"start_pos": Vector2(1860.0, 465.0), 
+				"end_pos": Vector2(1860.0, 320.0),   
 				"w": 110.0, 
 				"h": 18.0, 
 				"speed": 120.0,
@@ -76,6 +76,10 @@ static func get_data() -> Dictionary:
 		],
 		"pushable_blocks": [
 			[0, 580, 40, 40],
+		],
+		"hints": [
+			[220, 460, "Parece que Rob não consegue alcançar aquela plataforma. \nUtilize a habilidade de Bog para que Rob alcance plataformas mais altas. \n A caixa é sua amiga. Pressione [Pulo] + [Z]."],
+			[970, 360, "Sabia que Rob também tem uma habilidade? Tente-a. \nCuidado com o tempo de recarga. Pressione [Z]."]
 		],
 		"stars": [
 			[300, 360],   # Estrela do Bog — empurre o bloco para baixo dela

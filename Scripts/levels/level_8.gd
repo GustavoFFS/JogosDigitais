@@ -12,7 +12,8 @@ static func get_data() -> Dictionary:
 		"ambient_type": "park_wind",
 		"dialogues": [
 			{"speaker": "Rob", "text": "O parque congelou também?"},
-			{"speaker": "Bog", "text": "Pelo menos tem botões pra ajudar."},
+			{"speaker": "Bog", "text": "Tem um botão ali, deixe comigo."},
+			{"speaker": "Rob", "text": "Vá Bog, pegue aquele garoto encrenqueiro."},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/ParqueCentral.png",
@@ -26,36 +27,28 @@ static func get_data() -> Dictionary:
 			"air_control":  0.70,
 		},
 		"platforms": [
-			[0,    620, 360, 28],
-			[460,  520, 130, 18],
-			[650,  440, 120, 18],
-			[850,  545, 200, 22],   # CHECKPOINT
-			[1120, 460, 120, 18],
-			[1320, 540, 100, 18],
+			[0,    620, 200, 28],
+			[380,  620, 100, 28],
+			[660,  620, 100, 28],
+			[940,  620, 100, 28],   # CHECKPOINT
+			[1220, 620, 200, 28],
+			#[1320, 540, 100, 18],
 			[1500, 620, 360, 28],
 		],
-		"pushable_blocks": [
-			[220, 580, 40, 40],
+		"breakable_blocks": [
+			[1250, 570,  140, 50]
 		],
 		"switches": [
-			[1, 300, 612, 40, 8],
+			[1, 1300, 612, 40, 8, true],
 		],
 		"gates": [
-			[1, 520, 420, 16, 100],
-		],
-		"checkpoints": [
-			[950, 520],
-		],
-		"hazards": [
-			[ 360, 590, 100, 22],
-			[ 770, 590,  80, 22],
-			[1050, 590, 450, 22],
+			[1, 1500, 320, 22, 300],
 		],
 		"stars": [
-			[520, 340],   # Acima do portão de energia
-			[710, 320],   # Pulo alto
-			[1220, 380],  # No gap escorregadio
-			[280, 440],   # Estrela do Bog
+			[150, 450],   
+			[1320, 400],   
+			[850, 500],  
+			#[280, 440],   
 		],
 		"exit_pos":    [1750, 570],
 		"spawn_rob":   [60,   560],

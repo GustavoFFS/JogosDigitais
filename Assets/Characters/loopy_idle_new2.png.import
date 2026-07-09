@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://55igc3kgf5hc"
-path="res://.godot/imported/menu_background.png-d64cae7cc8f978a8be62b0db69d93fa5.ctex"
+uid="uid://c8ek2olm883gq"
+path="res://.godot/imported/loopy_idle_new2.png-950b923d3070494db89b5511629fe09b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Backgrounds/menu_background.png"
-dest_files=["res://.godot/imported/menu_background.png-d64cae7cc8f978a8be62b0db69d93fa5.ctex"]
+source_file="res://Assets/Characters/loopy_idle_new2.png"
+dest_files=["res://.godot/imported/loopy_idle_new2.png-950b923d3070494db89b5511629fe09b.ctex"]
 
 [params]
 

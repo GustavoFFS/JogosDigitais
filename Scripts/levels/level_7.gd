@@ -11,8 +11,9 @@ static func get_data() -> Dictionary:
 		"modifier_hint": "Gravidade Reduzida  ·  Calcule a inércia móvel!",
 		"ambient_type": "construction",
 		"dialogues": [
-			{"speaker": "Bog", "text": "Olha esses andaimes balançando!"},
-			{"speaker": "Rob", "text": "Calcula o tempo do pulo!"},
+			{"speaker": "Bog", "text": "Olha esse chão balançando!"},
+			{"speaker": "Rob", "text": "Vá com calma, me siga."},
+			{"speaker": "Bog", "text": "O que é aquele mecanismo ali?"},
 		],
 		"bg_color":       Color(0.742, 0.81, 0.794, 1.0),
 		"bg_image": "res://Assets/Backgrounds/CanteirodeObras.png",
@@ -29,8 +30,9 @@ static func get_data() -> Dictionary:
 		"platforms": [
 			[0,    620, 240, 28],
 			[600,  440, 100, 18],
-			[950,  460, 180, 22],   # CHECKPOINT
-			[1550, 620, 320, 28],
+			[850,  460, 280, 22],   # CHECKPOINT
+			[1900, 200, 18, 280],
+			[3600, 540, 420, 28],
 		],
 		"moving_platforms": [
 			{
@@ -41,46 +43,56 @@ static func get_data() -> Dictionary:
 				"speed": 100.0,
 				"to_end": true
 			},
-			{
-				"start_pos": Vector2(800.0, 520.0),
-				"end_pos":   Vector2(800.0, 340.0),
-				"w": 90.0,
-				"h": 18.0,
-				"speed": 120.0,
-				"to_end": true
-			},
-			{
-				"start_pos": Vector2(1180.0, 480.0),
-				"end_pos":   Vector2(1440.0, 480.0),
-				"w": 100.0,
-				"h": 18.0,
-				"speed": 140.0,
-				"to_end": true
+						{ 
+				"start_pos": Vector2(1300.0, 480.0), 
+				"end_pos": Vector2(3400.0, 480.0),   
+				"w": 110.0, 
+				"h": 18.0, 
+				"speed": 180.0,
+				"trigger_dist": 160.0,
+				"one_way": true
 			}
 		],
 		"jump_pads": [
 			[200, 600, 30, 20],
+			[2050, 560, 30, 20],
 		],
 		"checkpoints": [
-			[1040, 435],
 		],
+		"speed_pads": [
+			[1800, 560, 40, 20, 2.0],   # Zona C — impulso horizontal para cruzar o gap
+		],
+		
+		
 		"hazards": [
-			[ 240, 590, 360, 22],
-			[ 720, 590, 230, 22],
-			[1130, 590, 420, 22],
+			[ 240, 620, 5360, 28],
+			[ 2500, 470, 100, 28],
+			[ 3200, 470, 100, 28],
 		],
-		"pushable_blocks": [
-			[100, 580, 40, 40],
+
+		"switches": [
+			[6, 850, 448, 40, 12, true],
+			[5, 910, 448, 40, 12, true],
+			[6, 970, 448, 40, 12, true],
+			[6, 1030, 448, 40, 12, true],
+			[6, 1090, 448, 40, 12, true],
 		],
+		"gates": [
+			[5, 2980, 280, 20, 200],
+			[6, 2980, 1000, 20, 200]
+		],
+		"hints": [
+			[990, 350, "Escolha com sabedoria, somente um levará à vitória."],
+		],
+
 		"stars": [
-			[410, 300],
-			[845, 220],
+			[410, 250],
 			[1310, 340],
-			[200, 420],   # Estrela do Bog (flutuante sob a mola)
+			[20, 360],   
 		],
-		"exit_pos":    [1770, 570],
+		"exit_pos":    [3900, 490],
 		"spawn_rob":   [50,   560],
 		"spawn_bog":   [150,  560],
-		"loopy_start": [1600, 572],
-		"loopy_end":   [1760, 572],
+		"loopy_start": [3780, 492],
+		"loopy_end":   [3900, 492],
 	}

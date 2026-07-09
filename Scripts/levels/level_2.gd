@@ -13,7 +13,7 @@ static func get_data() -> Dictionary:
 		"dialogues": [
 			{"speaker": "Rob", "text": "Cuidado, o chão tá escorregando!"},
 			{"speaker": "Bog", "text": "Já percebi... quase caí! Que frio!"},
-			{"speaker": "Rob", "text": "Vamos juntos, essa mochila pesada deve ajudar..."},
+			{"speaker": "Rob", "text": "Vamos juntos, essa mochila pesada deve ajudar em algo..."},
 			{"speaker": "Rob", "text": "Espera... O que é aquela ventania ali na frente?"},
 			{"speaker": "Bog", "text": "Vamos lá descobrir..."},
 		],
@@ -54,6 +54,11 @@ static func get_data() -> Dictionary:
 		"checkpoints": [
 			[885, 570],
 		],
+		
+		"hints": [
+			[810, 250, "Talvez seja necessário um impacto maior..."],
+		],
+		
 		"hazards": [
 			[ 320, 610,  80, 38],
 			[ 1060, 590,  1690, 28],

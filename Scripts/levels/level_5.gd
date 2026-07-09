@@ -42,14 +42,16 @@ static func get_data() -> Dictionary:
 		],
 		"checkpoints": [
 			[1050, 595],
-			[1860, 290],
+		],
+		"hints": [
+			[1500, 350, "Os portões não servem somente para fechar seu caminho..."]
 		],
 		
 		"switches": [
 			[2, 1150, 608, 40, 12, true]
 		],
 		"gates": [
-			[2, 1310, 370, 20, 200]
+			[2, 1305, 370, 30, 200]
 		],
 		
 		"stars": [
