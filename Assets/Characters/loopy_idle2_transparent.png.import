@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1fmtc37rgt7s"
-path="res://.godot/imported/loopy_walk2.png-03d5648001f2f413c1244deb357b1170.ctex"
+uid="uid://costeg7w5xl6m"
+path="res://.godot/imported/loopy_idle2_transparent.png-8454b7097ab9020df4083270891a4181.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Characters/loopy_walk2.png"
-dest_files=["res://.godot/imported/loopy_walk2.png-03d5648001f2f413c1244deb357b1170.ctex"]
+source_file="res://Assets/Characters/loopy_idle2_transparent.png"
+dest_files=["res://.godot/imported/loopy_idle2_transparent.png-8454b7097ab9020df4083270891a4181.ctex"]
 
 [params]
 
